@@ -1,0 +1,175 @@
+.gallery {
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  background-color: #ffffff;
+}
+
+/* Header Section */
+.gallery-header {
+  background-color: #ffffff;
+  padding: 4rem 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.gallery-header-container {
+  max-width: 1200px;
+  width: 100%;
+  text-align: center;
+}
+
+.gallery-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 1.5rem;
+  line-height: 1.2;
+}
+
+.gallery-description {
+  font-size: 1rem;
+  color: #64748b;
+  line-height: 1.6;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Gallery Carousel */
+.gallery-carousel {
+  width: 100%;
+  position: relative;
+  padding: 0 0 4rem 0;
+  background-color: #ffffff;
+  overflow: hidden;
+}
+
+.gallery-carousel-wrapper {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.gallery-images-container {
+  display: flex;
+  gap: 0;
+  width: fit-content;
+  animation: scroll-horizontal 30s linear infinite;
+  will-change: transform;
+}
+
+.gallery-images-container:hover {
+  animation-play-state: paused;
+}
+
+.gallery-image-item {
+  flex: 0 0 calc(100% / 4);
+  width: calc(100vw / 4);
+  min-width: calc(100vw / 4);
+  height: 500px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+@keyframes scroll-horizontal {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Navigation Dots */
+.gallery-dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 2rem;
+  padding: 0 2rem;
+}
+
+.gallery-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #000000;
+  border: none;
+  padding: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .gallery-image-item {
+    height: 400px;
+  }
+}
+
+@media (max-width: 768px) {
+  .gallery-header {
+    padding: 3rem 1.5rem;
+  }
+
+  .gallery-title {
+    font-size: 2rem;
+  }
+
+  .gallery-description {
+    font-size: 0.9rem;
+  }
+
+  .gallery-image-item {
+    height: 350px;
+    flex: 0 0 50%;
+    width: 50%;
+  }
+
+
+  .gallery-dots {
+    margin-top: 1.5rem;
+    padding: 0 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .gallery-header {
+    padding: 2.5rem 1rem;
+  }
+
+  .gallery-title {
+    font-size: 1.75rem;
+  }
+
+  .gallery-carousel {
+    padding: 0 0 3rem 0;
+  }
+
+  .gallery-image-item {
+    height: 300px;
+    flex: 0 0 100%;
+    width: 100%;
+  }
+
+  .gallery-dots {
+    gap: 0.5rem;
+    margin-top: 1.25rem;
+    padding: 0 1rem;
+  }
+
+  .gallery-dot {
+    width: 10px;
+    height: 10px;
+  }
+
+  .gallery-dot.active {
+    width: 12px;
+    height: 12px;
+  }
+}
+

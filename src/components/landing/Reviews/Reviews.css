@@ -1,0 +1,260 @@
+.reviews-section {
+  padding: 80px 20px;
+  background: linear-gradient(180deg, #ffffff 0%, #f0f4ff 100%);
+}
+
+.reviews-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.reviews-header {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.reviews-header h2 {
+  font-size: 48px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 20px;
+}
+
+.reviews-header p {
+  font-size: 16px;
+  color: #64748b;
+  max-width: 800px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.reviews-carousel {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  position: relative;
+}
+
+.carousel-btn {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #4fd1c5;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(79, 209, 197, 0.3);
+}
+
+.carousel-btn:hover {
+  background: #38b2ac;
+  transform: scale(1.1);
+}
+
+.carousel-btn:active {
+  transform: scale(0.95);
+}
+
+.reviews-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+  flex: 1;
+}
+
+.review-card {
+  background: white;
+  border-radius: 20px;
+  padding: 40px 30px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.review-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.quote-icon {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 60px;
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.review-text {
+  font-size: 15px;
+  line-height: 1.8;
+  color: #475569;
+  margin: 30px 0;
+  flex-grow: 1;
+}
+
+.reviewer-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: auto;
+}
+
+.reviewer-image {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #4fd1c5;
+  box-shadow: 0 4px 12px rgba(79, 209, 197, 0.3);
+  transition: all 0.3s ease;
+}
+
+.review-card:hover .reviewer-image {
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(79, 209, 197, 0.4);
+}
+
+.reviewer-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+@media (max-width: 1200px) {
+  .reviews-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .review-card:last-child {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .reviews-section {
+    padding: 50px 1rem;
+  }
+
+  .reviews-header h2 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  .reviews-header p {
+    font-size: 0.9rem;
+  }
+
+  .reviews-carousel {
+    gap: 15px;
+    padding: 0 0.5rem;
+  }
+
+  .reviews-cards {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .review-card:nth-child(2),
+  .review-card:last-child {
+    display: none;
+  }
+
+  .carousel-btn {
+    width: 45px;
+    height: 45px;
+    flex-shrink: 0;
+  }
+
+  .carousel-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .review-card {
+    padding: 25px 18px;
+  }
+
+  .review-text {
+    font-size: 0.875rem;
+    line-height: 1.6;
+    margin-bottom: 1.25rem;
+  }
+
+  .reviewer-name {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .reviews-section {
+    padding: 40px 1rem;
+  }
+
+  .reviews-header h2 {
+    font-size: 1.75rem;
+  }
+
+  .reviews-header p {
+    font-size: 0.85rem;
+  }
+
+  .reviews-carousel {
+    gap: 10px;
+  }
+
+  .carousel-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .carousel-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .review-card {
+    padding: 20px 15px;
+  }
+
+  .review-text {
+    font-size: 0.8rem;
+    margin-bottom: 1rem;
+  }
+
+  .quote-icon {
+    width: 35px;
+    height: 35px;
+    margin-bottom: 0.75rem;
+  }
+
+  .reviewer-info {
+    gap: 0.75rem;
+  }
+
+  .reviewer-image {
+    width: 40px;
+    height: 40px;
+  }
+
+  .reviewer-name {
+    font-size: 0.85rem;
+  }
+}

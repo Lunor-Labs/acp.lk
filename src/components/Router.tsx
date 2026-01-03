@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import Login from './auth/Login';
-import Register from './auth/Register';
+import { AuthPanel } from './landing/Auth';
 import AdminDashboard from './admin/AdminDashboard';
 import TeacherDashboard from './teacher/TeacherDashboard';
 import StudentDashboard from './student/StudentDashboard';
@@ -9,8 +8,7 @@ import LandingPage from './public/LandingPage';
 
 export default function Router() {
   const { user, profile, loading } = useAuth();
-  const [showLogin, setShowLogin] = useState(true);
-  const [showLanding, setShowLanding] = useState(true);
+  const [showAuth, setShowAuth] = useState<'landing' | 'login' | 'register'>('landing');
 
   if (loading) {
     return (
@@ -24,15 +22,15 @@ export default function Router() {
   }
 
   if (!user || !profile) {
-    if (showLanding) {
-      return <LandingPage onGetStarted={() => setShowLanding(false)} />;
+    if (showAuth === 'landing') {
+      return <LandingPage onLoginRequest={() => setShowAuth('login')} />;
     }
 
-    if (showLogin) {
-      return <Login onToggle={() => setShowLogin(false)} />;
-    }
-
-    return <Register onToggle={() => setShowLogin(true)} />;
+    return (
+      <AuthPanel
+        defaultMode={showAuth === 'login' ? 'login' : 'register'}
+      />
+    );
   }
 
   switch (profile.role) {

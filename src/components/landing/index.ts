@@ -1,0 +1,13 @@
+export { default as Hero } from './Hero/Hero';
+export { default as Success } from './Success/Success';
+export { default as Centers } from './Centers/Centers';
+export { default as Process } from './Process/Process';
+export { default as Discussion } from './Discussion/Discussion';
+export { default as Topstudent } from './Topstudent/Topstudent';
+export { default as Gallery } from './Gallery/Gallery';
+export { default as Reviews } from './Reviews/Reviews';
+export { default as Contact } from './Contact/Contact';
+export { default as Navbar } from './Navbar';
+export { default as Teacher } from './Teacher';
+export { default as Channels } from './Channels';
+export { AuthPanel } from './Auth';
