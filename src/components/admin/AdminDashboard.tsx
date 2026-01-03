@@ -1,28 +1,52 @@
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { LayoutDashboard, Users, GraduationCap, BookOpen, LogOut, BarChart3, User } from 'lucide-react';
+import { LayoutDashboard, Users, GraduationCap, BookOpen, LogOut, BarChart3, User, Menu, X } from 'lucide-react';
 
 export default function AdminDashboard() {
   const { profile, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      <aside className="w-64 bg-gradient-to-b from-teal-600 to-teal-700 text-white flex flex-col">
+      {isMobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      <aside className={`
+        fixed lg:static inset-y-0 left-0 z-50
+        w-64 bg-gradient-to-b from-teal-600 to-teal-700 text-white flex flex-col
+        transform transition-transform duration-300 ease-in-out
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
         <div className="p-6 flex-1 flex flex-col relative">
-          <div className="flex items-center space-x-3 mb-8">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center space-x-3">
             <div className="bg-white p-2 rounded-lg">
               <GraduationCap className="w-6 h-6 text-teal-600" />
             </div>
-            <div>
-              <h1 className="text-xl font-bold">EduPortal</h1>
-              <p className="text-xs text-teal-100">Academy</p>
+              <div>
+                <h1 className="text-xl font-bold">EduPortal</h1>
+                <p className="text-xs text-teal-100">Academy</p>
+              </div>
             </div>
+            <button
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="lg:hidden text-white hover:bg-teal-500 p-2 rounded-lg"
+            >
+              <X className="w-6 h-6" />
+            </button>
           </div>
 
           <nav className="space-y-1">
             <button
-              onClick={() => setActiveTab('dashboard')}
+              onClick={() => {
+                setActiveTab('dashboard');
+                setIsMobileMenuOpen(false);
+              }}
               className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${
                 activeTab === 'dashboard'
                   ? 'bg-white text-teal-700 shadow-lg'
@@ -34,7 +58,10 @@ export default function AdminDashboard() {
             </button>
 
             <button
-              onClick={() => setActiveTab('teachers')}
+              onClick={() => {
+                setActiveTab('teachers');
+                setIsMobileMenuOpen(false);
+              }}
               className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${
                 activeTab === 'teachers'
                   ? 'bg-white text-teal-700 shadow-lg'
@@ -46,7 +73,10 @@ export default function AdminDashboard() {
             </button>
 
             <button
-              onClick={() => setActiveTab('students')}
+              onClick={() => {
+                setActiveTab('students');
+                setIsMobileMenuOpen(false);
+              }}
               className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${
                 activeTab === 'students'
                   ? 'bg-white text-teal-700 shadow-lg'
@@ -58,7 +88,10 @@ export default function AdminDashboard() {
             </button>
 
             <button
-              onClick={() => setActiveTab('classes')}
+              onClick={() => {
+                setActiveTab('classes');
+                setIsMobileMenuOpen(false);
+              }}
               className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${
                 activeTab === 'classes'
                   ? 'bg-white text-teal-700 shadow-lg'
@@ -70,7 +103,10 @@ export default function AdminDashboard() {
             </button>
 
             <button
-              onClick={() => setActiveTab('analytics')}
+              onClick={() => {
+                setActiveTab('analytics');
+                setIsMobileMenuOpen(false);
+              }}
               className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${
                 activeTab === 'analytics'
                   ? 'bg-white text-teal-700 shadow-lg'
@@ -110,8 +146,17 @@ export default function AdminDashboard() {
         </div>
       </aside>
 
-      <main className="flex-1 p-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-6">
+      <main className="flex-1 overflow-auto lg:ml-0">
+        <div className="lg:hidden bg-white border-b border-gray-200 p-4 sticky top-0 z-30">
+          <button
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="text-gray-600 hover:text-gray-900"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
+        </div>
+        <div className="p-4 sm:p-6 lg:p-8">
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">
           {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
         </h2>
 
@@ -167,6 +212,7 @@ export default function AdminDashboard() {
 
         <div className="bg-white rounded-xl shadow-sm p-6">
           <p className="text-gray-600">Content for {activeTab} will appear here</p>
+        </div>
         </div>
       </main>
     </div>

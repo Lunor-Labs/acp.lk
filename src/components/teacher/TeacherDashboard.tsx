@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { LayoutDashboard, Users, BookOpen, FileText, Package, LogOut, GraduationCap, TrendingUp, DollarSign, UserPlus, User } from 'lucide-react';
+import { LayoutDashboard, Users, BookOpen, FileText, Package, LogOut, GraduationCap, TrendingUp, DollarSign, UserPlus, User, Menu, X } from 'lucide-react';
 import MyClasses from './MyClasses';
 import Exams from './Exams';
 import StudyPacks from './StudyPacks';
@@ -21,6 +21,7 @@ interface StudentGrowthData {
 export default function TeacherDashboard() {
   const { profile, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState('classes');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [stats, setStats] = useState<DashboardStats>({
     totalStudents: 0,
     newStudents: 0,
@@ -146,21 +147,44 @@ export default function TeacherDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
-      <aside className="w-64 bg-gradient-to-b from-teal-600 to-teal-700 text-white flex flex-col">
+      {isMobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      <aside className={`
+        fixed lg:static inset-y-0 left-0 z-50
+        w-64 bg-gradient-to-b from-teal-600 to-teal-700 text-white flex flex-col
+        transform transition-transform duration-300 ease-in-out
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
         <div className="p-6 flex-1 flex flex-col relative">
-          <div className="flex items-center space-x-3 mb-8">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center space-x-3">
             <div className="bg-white p-2 rounded-lg">
               <GraduationCap className="w-6 h-6 text-teal-600" />
             </div>
-            <div>
-              <h1 className="text-xl font-bold">EduPortal</h1>
-              <p className="text-xs text-teal-100">Academy</p>
+              <div>
+                <h1 className="text-xl font-bold">EduPortal</h1>
+                <p className="text-xs text-teal-100">Academy</p>
+              </div>
             </div>
+            <button
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="lg:hidden text-white hover:bg-teal-500 p-2 rounded-lg"
+            >
+              <X className="w-6 h-6" />
+            </button>
           </div>
 
           <nav className="space-y-1">
             <button
-              onClick={() => setActiveTab('dashboard')}
+              onClick={() => {
+                setActiveTab('dashboard');
+                setIsMobileMenuOpen(false);
+              }}
               className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${
                 activeTab === 'dashboard'
                   ? 'bg-white text-teal-700 shadow-lg'
@@ -172,7 +196,10 @@ export default function TeacherDashboard() {
             </button>
 
             <button
-              onClick={() => setActiveTab('classes')}
+              onClick={() => {
+                setActiveTab('classes');
+                setIsMobileMenuOpen(false);
+              }}
               className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${
                 activeTab === 'classes'
                   ? 'bg-white text-teal-700 shadow-lg'
@@ -184,7 +211,10 @@ export default function TeacherDashboard() {
             </button>
 
             <button
-              onClick={() => setActiveTab('exams')}
+              onClick={() => {
+                setActiveTab('exams');
+                setIsMobileMenuOpen(false);
+              }}
               className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${
                 activeTab === 'exams'
                   ? 'bg-white text-teal-700 shadow-lg'
@@ -196,7 +226,10 @@ export default function TeacherDashboard() {
             </button>
 
             <button
-              onClick={() => setActiveTab('study-packs')}
+              onClick={() => {
+                setActiveTab('study-packs');
+                setIsMobileMenuOpen(false);
+              }}
               className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${
                 activeTab === 'study-packs'
                   ? 'bg-white text-teal-700 shadow-lg'
@@ -238,7 +271,15 @@ export default function TeacherDashboard() {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto lg:ml-0">
+        <div className="lg:hidden bg-white border-b border-gray-200 p-4 sticky top-0 z-30">
+          <button
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="text-gray-600 hover:text-gray-900"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
+        </div>
         {activeTab === 'classes' ? (
           <MyClasses />
         ) : activeTab === 'exams' ? (
@@ -246,8 +287,8 @@ export default function TeacherDashboard() {
         ) : activeTab === 'study-packs' ? (
           <StudyPacks />
         ) : activeTab === 'dashboard' ? (
-          <div className="p-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-6">Dashboard</h2>
+          <div className="p-4 sm:p-6 lg:p-8">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">Dashboard</h2>
 
             {loading ? (
               <div className="flex items-center justify-center h-64">
@@ -309,8 +350,8 @@ export default function TeacherDashboard() {
             )}
           </div>
         ) : (
-          <div className="p-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-6">
+          <div className="p-4 sm:p-6 lg:p-8">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">
               {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
             </h2>
             <div className="bg-white rounded-xl shadow-sm p-6">
