@@ -15,7 +15,7 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
 
-      // Scroll spy logic
+      // Scroll spy
       const sections = ['home', 'success', 'centers', 'process', 'top10', 'gallery', 'reviews', 'contact'];
       const scrollPosition = window.scrollY + 100;
 
@@ -63,7 +63,7 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
   ];
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-neutral-white shadow-md' : 'bg-neutral-white'
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-dark shadow-2xl' : 'bg-dark/95 backdrop-blur-sm'
       }`}>
       <div className="max-w-7xl mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
@@ -72,12 +72,15 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
             className="flex items-center gap-3 cursor-pointer group"
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           >
-            <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-              <span className="text-neutral-white font-bold text-xl">AL</span>
+            <div className="relative">
+              <div className="absolute inset-0 bg-primary rounded-lg blur-md opacity-50 group-hover:opacity-75 transition-opacity"></div>
+              <div className="relative bg-primary px-4 py-2 rounded-lg">
+                <span className="text-dark font-black text-2xl">AL</span>
+              </div>
             </div>
             <div className="flex flex-col">
-              <span className="text-neutral-black font-bold text-xl leading-tight">Physics</span>
-              <span className="text-neutral-gray-600 text-xs font-medium">Online Tuition</span>
+              <span className="text-neutral-white font-bold text-xl leading-tight">Physics</span>
+              <span className="text-gray text-xs font-medium">Online Tuition</span>
             </div>
           </div>
 
@@ -87,12 +90,15 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
               <button
                 key={link.id}
                 onClick={() => scrollToSection(link.id)}
-                className={`text-sm font-semibold transition-colors ${activeSection === link.id
-                    ? 'text-primary'
-                    : 'text-neutral-black hover:text-primary'
+                className={`text-sm font-semibold transition-all relative group ${activeSection === link.id
+                  ? 'text-primary'
+                  : 'text-neutral-white hover:text-primary'
                   }`}
               >
                 {link.label}
+                {activeSection === link.id && (
+                  <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary"></span>
+                )}
               </button>
             ))}
           </div>
@@ -102,9 +108,10 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
             {!user && (
               <button
                 onClick={onLoginRequest}
-                className="bg-primary hover:bg-primary-600 text-neutral-white font-bold px-8 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+                className="relative group bg-primary hover:bg-primary-500 text-dark font-bold px-8 py-3 rounded-lg transition-all duration-300 hover:shadow-2xl hover:shadow-primary/50 hover:-translate-y-0.5"
               >
-                Student Portal
+                <span className="relative z-10">Student Portal</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-primary-400 to-primary-600 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
               </button>
             )}
           </div>
@@ -115,23 +122,23 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             aria-label="Toggle menu"
           >
-            <span className={`w-6 h-0.5 bg-neutral-black transition-all ${isMobileMenuOpen ? 'rotate-45 translate-y-2' : ''}`}></span>
-            <span className={`w-6 h-0.5 bg-neutral-black transition-all ${isMobileMenuOpen ? 'opacity-0' : ''}`}></span>
-            <span className={`w-6 h-0.5 bg-neutral-black transition-all ${isMobileMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}></span>
+            <span className={`w-6 h-0.5 bg-neutral-white transition-all ${isMobileMenuOpen ? 'rotate-45 translate-y-2' : ''}`}></span>
+            <span className={`w-6 h-0.5 bg-neutral-white transition-all ${isMobileMenuOpen ? 'opacity-0' : ''}`}></span>
+            <span className={`w-6 h-0.5 bg-neutral-white transition-all ${isMobileMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}></span>
           </button>
         </div>
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden mt-4 pb-4 border-t border-neutral-gray-200 pt-4">
+          <div className="lg:hidden mt-4 pb-4 border-t border-neutral-gray-800 pt-4">
             <div className="flex flex-col gap-3">
               {navLinks.map((link) => (
                 <button
                   key={link.id}
                   onClick={() => scrollToSection(link.id)}
                   className={`text-left py-2 px-4 rounded-lg font-semibold transition-colors ${activeSection === link.id
-                      ? 'bg-primary-50 text-primary'
-                      : 'text-neutral-black hover:bg-neutral-gray-100'
+                    ? 'bg-primary text-dark'
+                    : 'text-neutral-white hover:bg-dark-50'
                     }`}
                 >
                   {link.label}
@@ -140,7 +147,7 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
               {!user && (
                 <button
                   onClick={onLoginRequest}
-                  className="bg-primary hover:bg-primary-600 text-neutral-white font-bold px-6 py-3 rounded-lg shadow-lg mt-2"
+                  className="bg-primary hover:bg-primary-500 text-dark font-bold px-6 py-3 rounded-lg mt-2"
                 >
                   Student Portal
                 </button>

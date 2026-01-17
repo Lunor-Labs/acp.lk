@@ -1,5 +1,4 @@
 import React from 'react';
-import './Centers.css';
 import type { ClassCenter } from '../../../types/landing';
 
 const Centers: React.FC = () => {
@@ -21,116 +20,78 @@ const Centers: React.FC = () => {
     }
   ];
 
+  const badges = ['Premium', 'Featured', 'Live Online'];
+  const icons = ['star', 'star', 'live'];
+
+  const renderIcon = (type: string) => {
+    if (type === 'star') {
+      return (
+        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+        </svg>
+      );
+    }
+    return (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="3" strokeWidth="2" />
+        <path d="M12 1v4m0 14v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    );
+  };
+
   return (
-    <section className="centers" id="centers">
-      {/* Header Section */}
-      <div className="centers-header">
-        <div className="centers-header-container">
-          <h2 className="centers-title">Our Class Centers</h2>
-          <p className="centers-description">
-            Ornare id fames interdum porttitor nulla turpis etiam. Diam vitae sollicitudin at nec nam et pharetra gravida. Adipiscing a quis ultrices eu ornare tristique vel nisl orci.
+    <section className="relative bg-dark py-24" id="centers">
+      <div className="max-w-7xl mx-auto px-6">
+
+        {/* Header */}
+        <div className="text-center mb-16">
+          <h2 className="text-4xl lg:text-5xl font-black text-neutral-white mb-4">
+            Our <span className="text-primary">Class Centers</span>
+          </h2>
+          <p className="text-lg text-gray max-w-2xl mx-auto">
+            Choose from our physical locations or join our live online classes from anywhere in Sri Lanka.
           </p>
         </div>
-      </div>
 
-      {/* Cards Section */}
-      <div className="centers-content">
-        <div className="centers-container">
+        {/* Centers Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {centers.map((center, index) => (
-            <div key={index} className="center-card">
+            <div
+              key={index}
+              className="group relative rounded-2xl overflow-hidden shadow-2xl hover:shadow-primary/20 transition-all duration-300 hover:-translate-y-2"
+            >
+              {/* Image Background */}
               <div
-                className="center-card-image"
+                className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
                 style={{ backgroundImage: `url(${center.image})` }}
-              >
-                <div className="center-card-badge">
-                  {index === 0 && (
-                    <div className="badge premium">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor"/>
-                      </svg>
-                      Premium
-                    </div>
-                  )}
-                  {index === 1 && (
-                    <div className="badge featured">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor"/>
-                      </svg>
-                      Featured
-                    </div>
-                  )}
-                  {index === 2 && (
-                    <div className="badge online">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2"/>
-                        <path d="m12 1 2.09 6.26L21 8.27l-5 4.87 1.18 6.88L12 15.77l-6.18 3.25L7 12.14 2 8.27l6.91-1.01L12 1z" stroke="currentColor" strokeWidth="2"/>
-                      </svg>
-                      Live Online
-                    </div>
-                  )}
-                </div>
-                <div className="center-card-overlay">
-                  <div className="center-info">
-                    <div className="center-icon">
-                      {index === 0 && (
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor"/>
-                        </svg>
-                      )}
-                      {index === 1 && (
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-7 7z" fill="currentColor"/>
-                        </svg>
-                      )}
-                      {index === 2 && (
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-7 7z" fill="currentColor"/>
-                          <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2"/>
-                        </svg>
-                      )}
-                    </div>
-                    <div className="center-rating">
-                      <div className="stars">
-                        {[1,2,3,4,5].map(star => (
-                          <svg key={star} width="14" height="14" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                          </svg>
-                        ))}
-                      </div>
-                      <span className="rating-text">4.8</span>
-                    </div>
-                  </div>
-                  <h3 className="center-card-title">{center.title}</h3>
-                  <div className="center-features">
-                    <div className="feature-item">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2"/>
-                        <path d="m12 1 2.09 6.26L21 8.27l-5 4.87 1.18 6.88L12 15.77l-6.18 3.25L7 12.14 2 8.27l6.91-1.01L12 1z" stroke="currentColor" strokeWidth="2"/>
-                      </svg>
-                      Expert Teachers
-                    </div>
-                    <div className="feature-item">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                      {index === 2 ? 'Interactive Sessions' : 'Small Batches'}
-                    </div>
-                  </div>
-                  <button className="center-card-button">
-                    <span>{center.buttonText}</span>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M7 17L17 7M17 7H7M17 7V17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </button>
+              ></div>
+
+              {/* Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-dark via-dark/80 to-dark/40"></div>
+
+              {/* Content */}
+              <div className="relative z-10 p-8 flex flex-col justify-between min-h-[400px]">
+
+                {/* Bottom Content */}
+                <div>
+
+                  {/* Title */}
+                  <h3 className="text-3xl font-black text-neutral-white mb-4">
+                    {center.title}
+                  </h3>
                 </div>
               </div>
             </div>
           ))}
         </div>
+
       </div>
+
+      {/* Background Decoration */}
+      <div className="absolute top-20 left-10 w-32 h-32 border-4 border-primary/20 rounded-full"></div>
+      <div className="absolute bottom-20 right-10 w-40 h-40 border-4 border-gray-700 rounded-full"></div>
     </section>
   );
 };
 
 export default Centers;
-
