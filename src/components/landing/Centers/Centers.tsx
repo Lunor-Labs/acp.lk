@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ClassCenter } from '../../../types/landing';
 
 const Centers: React.FC = () => {
@@ -20,35 +19,16 @@ const Centers: React.FC = () => {
     }
   ];
 
-  const badges = ['Premium', 'Featured', 'Live Online'];
-  const icons = ['star', 'star', 'live'];
-
-  const renderIcon = (type: string) => {
-    if (type === 'star') {
-      return (
-        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-        </svg>
-      );
-    }
-    return (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="3" strokeWidth="2" />
-        <path d="M12 1v4m0 14v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-    );
-  };
-
   return (
-    <section className="relative bg-dark py-24" id="centers">
-      <div className="max-w-7xl mx-auto px-6">
+    <section className="landing-section bg-dark" id="centers">
+      <div className="landing-container">
 
         {/* Header */}
         <div className="text-center mb-16">
-          <h2 className="text-4xl lg:text-5xl font-black text-neutral-white mb-4">
+          <h2 className="text-4xl lg:text-5xl font-black text-white mb-4">
             Our <span className="text-primary">Class Centers</span>
           </h2>
-          <p className="text-lg text-gray max-w-2xl mx-auto">
+          <p className="text-lg text-gray-400 max-w-2xl mx-auto">
             Choose from our physical locations or join our live online classes from anywhere in Sri Lanka.
           </p>
         </div>
@@ -58,7 +38,7 @@ const Centers: React.FC = () => {
           {centers.map((center, index) => (
             <div
               key={index}
-              className="group relative rounded-2xl overflow-hidden shadow-2xl hover:shadow-primary/20 transition-all duration-300 hover:-translate-y-2"
+              className="group relative rounded-2xl overflow-hidden shadow-2xl hover:shadow-primary/20 transition-all duration-300 hover:-translate-y-2 aspect-[4/5]"
             >
               {/* Image Background */}
               <div
@@ -67,29 +47,25 @@ const Centers: React.FC = () => {
               ></div>
 
               {/* Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-dark via-dark/80 to-dark/40"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-dark via-dark/80 to-transparent"></div>
 
               {/* Content */}
-              <div className="relative z-10 p-8 flex flex-col justify-between min-h-[400px]">
-
-                {/* Bottom Content */}
-                <div>
-
-                  {/* Title */}
-                  <h3 className="text-3xl font-black text-neutral-white mb-4">
-                    {center.title}
-                  </h3>
-                </div>
+              <div className="relative z-10 p-8 flex flex-col justify-end h-full">
+                <h3 className="text-2xl font-bold text-white mb-2">
+                  {center.title}
+                </h3>
+                <button className="text-primary font-semibold flex items-center gap-2 group/btn">
+                  {center.buttonText}
+                  <svg className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </svg>
+                </button>
               </div>
             </div>
           ))}
         </div>
-
       </div>
-
-      {/* Background Decoration */}
-      <div className="absolute top-20 left-10 w-32 h-32 border-4 border-primary/20 rounded-full"></div>
-      <div className="absolute bottom-20 right-10 w-40 h-40 border-4 border-gray-700 rounded-full"></div>
     </section>
   );
 };

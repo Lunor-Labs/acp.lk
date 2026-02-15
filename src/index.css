@@ -1,3 +1,25 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+    .landing-section {
+        @apply py-24 px-6 md:px-12 lg:px-24 bg-white;
+    }
+
+    .landing-container {
+        @apply max-w-7xl mx-auto;
+    }
+
+    .landing-title {
+        @apply text-3xl md:text-4xl lg:text-5xl font-bold text-dark mb-6 text-center;
+    }
+
+    .landing-description {
+        @apply text-lg text-gray max-w-2xl mx-auto text-center mb-16;
+    }
+
+    .landing-card {
+        @apply bg-white border-2 border-gray-100 rounded-2xl p-8 transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
+    }
+}

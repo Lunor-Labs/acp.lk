@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import studentImage from '../../../assets/student1.png';
 
 const Success: React.FC = () => {
@@ -33,8 +33,8 @@ const Success: React.FC = () => {
     });
 
     return (
-        <section className="relative bg-neutral-white py-24 overflow-hidden" id="success">
-            <div className="max-w-7xl mx-auto px-6">
+        <section className="landing-section overflow-hidden" id="success">
+            <div className="landing-container">
 
                 {/* Header */}
                 <div className="text-center mb-12">

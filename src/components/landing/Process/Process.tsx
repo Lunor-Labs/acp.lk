@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ProcessStep } from '../../../types/landing';
 
 const Process: React.FC = () => {
@@ -55,8 +54,8 @@ const Process: React.FC = () => {
   };
 
   return (
-    <section className="relative bg-neutral-white py-24" id="process">
-      <div className="max-w-7xl mx-auto px-6">
+    <section className="landing-section" id="process">
+      <div className="landing-container">
 
         {/* Header */}
         <div className="text-center mb-16">

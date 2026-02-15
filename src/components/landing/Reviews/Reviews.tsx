@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import './Reviews.css';
 import type { Review } from '../../../types/landing';
 
 const Reviews: React.FC = () => {
@@ -33,54 +32,94 @@ const Reviews: React.FC = () => {
   ];
 
   const handlePrev = () => {
-    setCurrentIndex((prevIndex) => 
-      prevIndex === 0 ? reviews.length - 3 : prevIndex - 1
+    setCurrentIndex((prevIndex) =>
+      prevIndex === 0 ? reviews.length - 1 : prevIndex - 1
     );
   };
 
   const handleNext = () => {
-    setCurrentIndex((prevIndex) => 
-      prevIndex >= reviews.length - 3 ? 0 : prevIndex + 1
+    setCurrentIndex((prevIndex) =>
+      prevIndex >= reviews.length - 1 ? 0 : prevIndex + 1
     );
   };
 
-  const visibleReviews = reviews.slice(currentIndex, currentIndex + 3);
 
   return (
-    <section className="reviews-section" id="reviews">
-      <div className="reviews-container">
-        <div className="reviews-header">
-          <h2>Student Reviews</h2>
-          <p>Ornare id fames interdum porttitor nulla turpis etiam. Diam vitae sollicitudin at nec nam et pharetra gravida. Adipiscing a quis ultrices eu ornare tristique vel nisl orci.</p>
+    <section className="landing-section bg-gradient-to-b from-white to-gray-50" id="reviews">
+      <div className="landing-container">
+        <div className="text-center mb-16">
+          <h3 className="landing-title">Student Reviews</h3>
+          <p className="landing-description">
+            Ornare id fames interdum porttitor nulla turpis etiam. Diam vitae sollicitudin at nec nam et pharetra gravida. Adipiscing a quis ultrices eu ornare tristique vel nisl orci.
+          </p>
         </div>
 
-        <div className="reviews-carousel">
-          <button className="carousel-btn prev-btn" onClick={handlePrev} aria-label="Previous review">
+        <div className="relative flex items-center gap-4 md:gap-8 lg:gap-12">
+          {/* Navigation Buttons for Large Screens */}
+          <button
+            className="hidden md:flex flex-shrink-0 w-12 h-12 rounded-full bg-white shadow-lg border border-gray-100 items-center justify-center text-dark hover:text-primary transition-all duration-300 hover:scale-110 z-10"
+            onClick={handlePrev}
+            aria-label="Previous review"
+          >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
 
-          <div className="reviews-cards">
-            {visibleReviews.map((review) => (
-              <div key={review.id} className="review-card">
-                <div className="quote-icon">
-                  <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <text x="10" y="30" fontSize="32" fill="#4fd1c5" fontWeight="bold">"</text>
-                  </svg>
+          <div className="flex-grow overflow-hidden relative py-8">
+            <div
+              className="flex transition-transform duration-500 ease-in-out gap-6"
+              style={{ transform: `translateX(-${currentIndex * (100 / reviews.length)}%)` }}
+            >
+              {reviews.map((review) => (
+                <div
+                  key={review.id}
+                  className="min-w-full md:min-w-[calc(50%-12px)] lg:min-w-[calc(33.333%-16px)] landing-card flex flex-col items-center text-center relative"
+                >
+                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg text-primary text-4xl font-serif">
+                    "
+                  </div>
+                  <p className="text-gray text-sm leading-8 my-8 flex-grow italic">
+                    {review.text}
+                  </p>
+                  <div className="flex flex-col items-center gap-4 mt-auto">
+                    <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-primary shadow-lg p-0.5">
+                      <img src={review.image} alt={review.name} className="w-full h-full object-cover rounded-full" />
+                    </div>
+                    <p className="font-bold text-dark">{review.name}</p>
+                  </div>
                 </div>
-                <p className="review-text">{review.text}</p>
-                <div className="reviewer-info">
-                  <img src={review.image} alt={review.name} className="reviewer-image" />
-                  <p className="reviewer-name">{review.name}</p>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
 
-          <button className="carousel-btn next-btn" onClick={handleNext} aria-label="Next review">
+          <button
+            className="hidden md:flex flex-shrink-0 w-12 h-12 rounded-full bg-white shadow-lg border border-gray-100 items-center justify-center text-dark hover:text-primary transition-all duration-300 hover:scale-110 z-10"
+            onClick={handleNext}
+            aria-label="Next review"
+          >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Mobile Navigation */}
+        <div className="flex md:hidden justify-center gap-4 mt-8">
+          <button
+            className="w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center"
+            onClick={handlePrev}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          <button
+            className="w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center"
+            onClick={handleNext}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
         </div>
