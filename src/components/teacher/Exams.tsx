@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
+import { ExamRepository, ClassRepository, TeacherRepository } from '../../repositories';
 import { Plus, Calendar, Clock, Users, MoreVertical, CheckCircle, Circle } from 'lucide-react';
 
 interface Exam {
@@ -39,6 +39,10 @@ export default function Exams() {
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('all');
 
+  const examRepo = new ExamRepository();
+  const classRepo = new ClassRepository();
+  const teacherRepo = new TeacherRepository();
+
   const [formData, setFormData] = useState({
     class_id: '',
     title: '',
@@ -66,23 +70,11 @@ export default function Exams() {
 
   async function fetchClasses() {
     try {
-      const { data: teacher } = await supabase
-        .from('teachers')
-        .select('id')
-        .eq('profile_id', profile?.id)
-        .maybeSingle();
-
+      const teacher = await teacherRepo.findByProfileId(profile?.id!);
       if (!teacher) return;
 
-      const { data, error } = await supabase
-        .from('classes')
-        .select('id, title, subject')
-        .eq('teacher_id', teacher.id)
-        .eq('is_active', true)
-        .order('title');
-
-      if (error) throw error;
-      setClasses(data || []);
+      const data = await classRepo.findActiveByTeacherId(teacher.id);
+      setClasses(data.map(c => ({ id: c.id, title: c.title, subject: c.subject })));
     } catch (error) {
       console.error('Error fetching classes:', error);
     }
@@ -92,37 +84,26 @@ export default function Exams() {
     try {
       setLoading(true);
 
-      const { data: teacher } = await supabase
-        .from('teachers')
-        .select('id')
-        .eq('profile_id', profile?.id)
-        .maybeSingle();
-
+      const teacher = await teacherRepo.findByProfileId(profile?.id!);
       if (!teacher) return;
 
-      const { data: examsData, error } = await supabase
-        .from('exams')
-        .select(`
-          *,
-          classes:classes(title)
-        `)
-        .eq('teacher_id', teacher.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
+      const examsData = await examRepo.findByTeacherId(teacher.id);
 
       const examsWithStats = await Promise.all(
-        (examsData || []).map(async (exam) => {
-          const { count: submissionCount } = await supabase
-            .from('exam_attempts')
-            .select('*', { count: 'exact', head: true })
-            .eq('exam_id', exam.id)
-            .not('submitted_at', 'is', null);
+        examsData.map(async (exam) => {
+          const submissionCount = await examRepo.getSubmissionCount(exam.id);
+
+          // Get class title if class_id exists
+          let classTitle = 'Unknown';
+          if (exam.class_id) {
+            const classData = await classRepo.findById(exam.class_id);
+            classTitle = classData?.title || 'Unknown';
+          }
 
           return {
             ...exam,
-            class_title: exam.classes?.title || 'Unknown',
-            submission_count: submissionCount || 0,
+            class_title: classTitle,
+            submission_count: submissionCount,
           };
         })
       );
@@ -137,11 +118,7 @@ export default function Exams() {
 
   async function handleCreateExam() {
     try {
-      const { data: teacher } = await supabase
-        .from('teachers')
-        .select('id')
-        .eq('profile_id', profile?.id)
-        .maybeSingle();
+      const teacher = await teacherRepo.findByProfileId(profile?.id!);
 
       if (!teacher) {
         alert('Teacher profile not found');
@@ -162,25 +139,7 @@ export default function Exams() {
       const startTime = new Date(`${formData.exam_date}T${formData.exam_time}`);
       const endTime = new Date(startTime.getTime() + formData.duration_minutes * 60000);
 
-      const { data: exam, error: examError } = await supabase
-        .from('exams')
-        .insert({
-          teacher_id: teacher.id,
-          title: formData.title,
-          description: formData.description,
-          subject: formData.subject,
-          start_time: startTime.toISOString(),
-          end_time: endTime.toISOString(),
-          duration_minutes: formData.duration_minutes,
-          total_marks: validQuestions.reduce((sum, q) => sum + q.marks, 0),
-        })
-        .select()
-        .single();
-
-      if (examError) throw examError;
-
       const questionsToInsert = validQuestions.map((q, index) => ({
-        exam_id: exam.id,
         question_number: index + 1,
         question_text: q.question_text,
         options: q.options.filter(opt => opt.trim()),
@@ -188,11 +147,20 @@ export default function Exams() {
         marks: q.marks,
       }));
 
-      const { error: questionsError } = await supabase
-        .from('exam_questions')
-        .insert(questionsToInsert);
-
-      if (questionsError) throw questionsError;
+      await examRepo.createWithQuestions(
+        {
+          teacher_id: teacher.id,
+          class_id: formData.class_id,
+          title: formData.title,
+          description: formData.description,
+          subject: formData.subject,
+          start_time: startTime.toISOString(),
+          end_time: endTime.toISOString(),
+          duration_minutes: formData.duration_minutes,
+          total_marks: validQuestions.reduce((sum, q) => sum + q.marks, 0),
+        },
+        questionsToInsert
+      );
 
       alert('Exam created successfully!');
       resetForm();
@@ -319,12 +287,11 @@ export default function Exams() {
                       className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition"
                     >
                       <div className="flex items-start space-x-4">
-                        <div className={`w-16 h-16 rounded-xl flex items-center justify-center ${
-                          exam.subject.toLowerCase().includes('physics') ? 'bg-red-100' :
+                        <div className={`w-16 h-16 rounded-xl flex items-center justify-center ${exam.subject.toLowerCase().includes('physics') ? 'bg-red-100' :
                           exam.subject.toLowerCase().includes('chemistry') ? 'bg-blue-100' :
-                          exam.subject.toLowerCase().includes('maths') ? 'bg-purple-100' :
-                          'bg-teal-100'
-                        }`}>
+                            exam.subject.toLowerCase().includes('maths') ? 'bg-purple-100' :
+                              'bg-teal-100'
+                          }`}>
                           <span className="text-2xl font-bold">
                             {exam.subject.substring(0, 2).toUpperCase()}
                           </span>
@@ -334,12 +301,11 @@ export default function Exams() {
                           <div className="flex items-start justify-between mb-2">
                             <div>
                               <div className="flex items-center space-x-2 mb-1">
-                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                  exam.subject.toLowerCase().includes('physics') ? 'bg-red-100 text-red-700' :
+                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${exam.subject.toLowerCase().includes('physics') ? 'bg-red-100 text-red-700' :
                                   exam.subject.toLowerCase().includes('chemistry') ? 'bg-blue-100 text-blue-700' :
-                                  exam.subject.toLowerCase().includes('maths') ? 'bg-purple-100 text-purple-700' :
-                                  'bg-teal-100 text-teal-700'
-                                }`}>
+                                    exam.subject.toLowerCase().includes('maths') ? 'bg-purple-100 text-purple-700' :
+                                      'bg-teal-100 text-teal-700'
+                                  }`}>
                                   {exam.subject.toUpperCase()}
                                 </span>
                                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${status.color}`}>
@@ -383,152 +349,152 @@ export default function Exams() {
         </div>
 
         <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-sm p-6 sticky top-6">
-              <div className="flex items-center space-x-2 mb-6">
-                <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center">
-                  <Plus className="w-4 h-4 text-teal-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900">Create New Exam</h3>
-                  <p className="text-xs text-gray-500">Setup Area Details & Questions</p>
-                </div>
+          <div className="bg-white rounded-xl shadow-sm p-6 sticky top-6">
+            <div className="flex items-center space-x-2 mb-6">
+              <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center">
+                <Plus className="w-4 h-4 text-teal-600" />
               </div>
-
-              <div className="space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto pr-2">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Assign to Class
-                  </label>
-                  <select
-                    value={formData.class_id}
-                    onChange={(e) => {
-                      const selectedClass = classes.find(c => c.id === e.target.value);
-                      setFormData({
-                        ...formData,
-                        class_id: e.target.value,
-                        subject: selectedClass?.subject || '',
-                      });
-                    }}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                  >
-                    <option value="">Select a class</option>
-                    {classes.map((cls) => (
-                      <option key={cls.id} value={cls.id}>
-                        {cls.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Exam Title
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder="e.g. Weekly Theory Test 05"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Date
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.exam_date}
-                      onChange={(e) => setFormData({ ...formData, exam_date: e.target.value })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Time
-                    </label>
-                    <input
-                      type="time"
-                      value={formData.exam_time}
-                      onChange={(e) => setFormData({ ...formData, exam_time: e.target.value })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Duration (Minutes)
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.duration_minutes}
-                    onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) || 60 })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                  />
-                </div>
-
-                {questions.map((question, qIndex) => (
-                  <div key={question.id} className="border border-gray-200 rounded-lg p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold text-gray-900">
-                        QUESTION {qIndex + 1}
-                      </span>
-                      <span className="text-xs text-gray-500">{question.marks} Point</span>
-                    </div>
-
-                    <input
-                      type="text"
-                      value={question.question_text}
-                      onChange={(e) => updateQuestion(question.id, 'question_text', e.target.value)}
-                      placeholder="Enter your question here..."
-                      className="w-full border-0 border-b border-gray-200 px-0 py-2 focus:ring-0 focus:border-teal-500 text-sm"
-                    />
-
-                    <div className="space-y-2">
-                      {question.options.map((option, optIndex) => (
-                        <div key={optIndex} className="flex items-center space-x-2">
-                          <input
-                            type="radio"
-                            name={`correct-${question.id}`}
-                            checked={question.correct_answer === String.fromCharCode(65 + optIndex)}
-                            onChange={() => updateQuestion(question.id, 'correct_answer', String.fromCharCode(65 + optIndex))}
-                            className="text-teal-600 focus:ring-teal-500"
-                          />
-                          <input
-                            type="text"
-                            value={option}
-                            onChange={(e) => updateQuestionOption(question.id, optIndex, e.target.value)}
-                            placeholder={`Option ${String.fromCharCode(65 + optIndex)}`}
-                            className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                          />
-                        </div>
-                      ))}
-                      <p className="text-xs text-gray-400 italic mt-2">
-                        select the radio button to mark correct answer
-                      </p>
-                    </div>
-                  </div>
-                ))}
-
-                <button
-                  onClick={addQuestion}
-                  className="w-full border-2 border-dashed border-teal-300 text-teal-600 px-4 py-3 rounded-lg font-medium hover:bg-teal-50 transition flex items-center justify-center space-x-2"
-                >
-                  <Plus className="w-5 h-5" />
-                  <span>Add Another Question</span>
-                </button>
-
-                <button
-                  onClick={handleCreateExam}
-                  className="w-full bg-teal-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-teal-700 transition"
-                >
-                  Publish Exam
-                </button>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Create New Exam</h3>
+                <p className="text-xs text-gray-500">Setup Area Details & Questions</p>
               </div>
             </div>
+
+            <div className="space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto pr-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Assign to Class
+                </label>
+                <select
+                  value={formData.class_id}
+                  onChange={(e) => {
+                    const selectedClass = classes.find(c => c.id === e.target.value);
+                    setFormData({
+                      ...formData,
+                      class_id: e.target.value,
+                      subject: selectedClass?.subject || '',
+                    });
+                  }}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                >
+                  <option value="">Select a class</option>
+                  {classes.map((cls) => (
+                    <option key={cls.id} value={cls.id}>
+                      {cls.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Exam Title
+                </label>
+                <input
+                  type="text"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  placeholder="e.g. Weekly Theory Test 05"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Date
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.exam_date}
+                    onChange={(e) => setFormData({ ...formData, exam_date: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Time
+                  </label>
+                  <input
+                    type="time"
+                    value={formData.exam_time}
+                    onChange={(e) => setFormData({ ...formData, exam_time: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Duration (Minutes)
+                </label>
+                <input
+                  type="number"
+                  value={formData.duration_minutes}
+                  onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) || 60 })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                />
+              </div>
+
+              {questions.map((question, qIndex) => (
+                <div key={question.id} className="border border-gray-200 rounded-lg p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-gray-900">
+                      QUESTION {qIndex + 1}
+                    </span>
+                    <span className="text-xs text-gray-500">{question.marks} Point</span>
+                  </div>
+
+                  <input
+                    type="text"
+                    value={question.question_text}
+                    onChange={(e) => updateQuestion(question.id, 'question_text', e.target.value)}
+                    placeholder="Enter your question here..."
+                    className="w-full border-0 border-b border-gray-200 px-0 py-2 focus:ring-0 focus:border-teal-500 text-sm"
+                  />
+
+                  <div className="space-y-2">
+                    {question.options.map((option, optIndex) => (
+                      <div key={optIndex} className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          name={`correct-${question.id}`}
+                          checked={question.correct_answer === String.fromCharCode(65 + optIndex)}
+                          onChange={() => updateQuestion(question.id, 'correct_answer', String.fromCharCode(65 + optIndex))}
+                          className="text-teal-600 focus:ring-teal-500"
+                        />
+                        <input
+                          type="text"
+                          value={option}
+                          onChange={(e) => updateQuestionOption(question.id, optIndex, e.target.value)}
+                          placeholder={`Option ${String.fromCharCode(65 + optIndex)}`}
+                          className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                        />
+                      </div>
+                    ))}
+                    <p className="text-xs text-gray-400 italic mt-2">
+                      select the radio button to mark correct answer
+                    </p>
+                  </div>
+                </div>
+              ))}
+
+              <button
+                onClick={addQuestion}
+                className="w-full border-2 border-dashed border-teal-300 text-teal-600 px-4 py-3 rounded-lg font-medium hover:bg-teal-50 transition flex items-center justify-center space-x-2"
+              >
+                <Plus className="w-5 h-5" />
+                <span>Add Another Question</span>
+              </button>
+
+              <button
+                onClick={handleCreateExam}
+                className="w-full bg-teal-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-teal-700 transition"
+              >
+                Publish Exam
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
+import { db } from '../../lib/database';
 import { payHereService } from '../../lib/payhere';
 import {
   Search,
@@ -79,8 +79,8 @@ export default function MyClasses() {
     try {
       setLoading(true);
 
-      const { data: allClasses, error } = await supabase
-        .from('classes')
+      const { data: allClasses, error } = await db
+        .from<any>('classes')
         .select(`
           id,
           title,
@@ -101,23 +101,26 @@ export default function MyClasses() {
           )
         `)
         .eq('is_active', true)
-        .order('next_session_date', { ascending: true, nullsFirst: false });
+        .order('next_session_date', { ascending: true })
+        .execute();
 
       if (error) throw error;
 
-      const { data: enrollments } = await supabase
-        .from('enrollments')
+      const { data: enrollments } = await db
+        .from<any>('enrollments')
         .select('class_id')
         .eq('student_id', profile?.id)
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .execute();
 
       const enrolledClassIds = new Set(enrollments?.map(e => e.class_id) || []);
 
-      const { data: payments } = await supabase
-        .from('class_payments')
+      const { data: payments } = await db
+        .from<any>('class_payments')
         .select('class_id, payment_status')
         .eq('student_id', profile?.id)
-        .eq('payment_status', 'completed');
+        .eq('payment_status', 'completed')
+        .execute();
 
       const paidClassIds = new Set(payments?.map(p => p.class_id) || []);
 
@@ -179,8 +182,8 @@ export default function MyClasses() {
     setProcessingPayment(classItem.id);
 
     try {
-      const { data: payment, error: paymentError } = await supabase
-        .from('class_payments')
+      const { data: dbPaymentData, error: paymentError } = await db
+        .from<any>('class_payments')
         .insert({
           student_id: profile?.id,
           class_id: classItem.id,
@@ -189,9 +192,11 @@ export default function MyClasses() {
           payment_method: 'payhere',
         })
         .select()
-        .single();
+        .execute();
 
-      if (paymentError) throw paymentError;
+      const payment = dbPaymentData?.[0];
+
+      if (paymentError || !payment) throw paymentError || new Error('Failed to create payment');
 
       if (!payHereService.isPayHereLoaded()) {
         alert('Payment gateway is loading. Please try again in a moment.');
@@ -218,14 +223,15 @@ export default function MyClasses() {
 
       await payHereService.initiatePayment(paymentData, {
         onCompleted: async (orderId: string) => {
-          await supabase
-            .from('class_payments')
+          await db
+            .from<any>('class_payments')
             .update({
               payment_status: 'completed',
               payment_reference: orderId,
               paid_at: new Date().toISOString(),
             })
-            .eq('id', payment.id);
+            .eq('id', payment.id)
+            .execute();
 
           await fetchClasses();
           setProcessingPayment(null);
@@ -235,10 +241,11 @@ export default function MyClasses() {
         },
         onError: async (error: any) => {
           console.error('Payment error:', error);
-          await supabase
-            .from('class_payments')
+          await db
+            .from<any>('class_payments')
             .update({ payment_status: 'failed' })
-            .eq('id', payment.id);
+            .eq('id', payment.id)
+            .execute();
 
           setProcessingPayment(null);
         },
@@ -370,11 +377,10 @@ export default function MyClasses() {
                         <span className="px-3 py-1 bg-teal-50 text-teal-700 text-xs font-semibold rounded-full">
                           {cls.subject}
                         </span>
-                        <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                          cls.status === 'active'
-                            ? 'bg-green-50 text-green-700'
-                            : 'bg-gray-100 text-gray-600'
-                        }`}>
+                        <span className={`px-3 py-1 text-xs font-semibold rounded-full ${cls.status === 'active'
+                          ? 'bg-green-50 text-green-700'
+                          : 'bg-gray-100 text-gray-600'
+                          }`}>
                           {cls.status === 'active' ? 'Active' : 'Completed'}
                         </span>
                       </div>
@@ -447,11 +453,10 @@ export default function MyClasses() {
                         href={cls.zoom_link || '#'}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold transition-all duration-300 ${
-                          cls.zoom_link
-                            ? 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
-                            : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
-                        }`}
+                        className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold transition-all duration-300 ${cls.zoom_link
+                          ? 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
+                          : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
+                          }`}
                         onClick={(e) => {
                           if (!cls.zoom_link) e.preventDefault();
                         }}

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { LayoutDashboard, BookOpen, FileText, Package, LogOut, GraduationCap, User, Menu, X } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { db } from '../../lib/database';
+import { ExamRepository } from '../../repositories';
 import MyClasses from './MyClasses';
 import StudyPacks from './StudyPacks';
 import Exams from './Exams';
@@ -29,6 +30,8 @@ export default function StudentDashboard() {
   const [performanceData, setPerformanceData] = useState<PerformanceData[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const examRepo = new ExamRepository();
+
   useEffect(() => {
     if (activeTab === 'dashboard' && profile?.id) {
       fetchDashboardData();
@@ -39,47 +42,50 @@ export default function StudentDashboard() {
     try {
       setLoading(true);
 
-      const enrolledClassesQuery = supabase
-        .from('enrollments')
-        .select('id', { count: 'exact' })
+      // Get counts using db abstraction with proper typing
+      const enrolledClassesPromise = db
+        .from<any>('enrollments')
+        .select('id')
         .eq('student_id', profile?.id)
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .execute();
 
-      const purchasedPacksQuery = supabase
-        .from('purchases')
-        .select('id', { count: 'exact' })
-        .eq('student_id', profile?.id);
+      const purchasedPacksPromise = db
+        .from<any>('purchases')
+        .select('id')
+        .eq('student_id', profile?.id)
+        .execute();
 
-      const upcomingExamsQuery = supabase
-        .from('exams')
-        .select('id', { count: 'exact' })
-        .gte('start_time', new Date().toISOString());
+      // Use repository method for upcoming exams
+      const upcomingExamsPromise = examRepo.findUpcoming();
 
-      const [enrolledRes, purchasedRes, upcomingRes] = await Promise.all([
-        enrolledClassesQuery,
-        purchasedPacksQuery,
-        upcomingExamsQuery,
+      const [enrolledRes, purchasedRes, upcomingExams] = await Promise.all([
+        enrolledClassesPromise,
+        purchasedPacksPromise,
+        upcomingExamsPromise,
       ]);
 
       setStats({
-        enrolledClasses: enrolledRes.count || 0,
-        purchasedStudyPacks: purchasedRes.count || 0,
-        upcomingExams: upcomingRes.count || 0,
+        enrolledClasses: (enrolledRes.data || []).length,
+        purchasedStudyPacks: (purchasedRes.data || []).length,
+        upcomingExams: upcomingExams.length,
       });
 
       const sixMonthsAgo = new Date();
       sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
-      const { data: examResults } = await supabase
-        .from('exam_attempts')
+      // Get exam attempts using db abstraction
+      const { data: examResults } = await db
+        .from<any>('exam_attempts')
         .select('percentage, submitted_at')
         .eq('student_id', profile?.id)
         .not('submitted_at', 'is', null)
         .gte('submitted_at', sixMonthsAgo.toISOString())
-        .order('submitted_at', { ascending: true });
+        .order('submitted_at', { ascending: true })
+        .execute();
 
       const monthPerformance: { [key: string]: { total: number; count: number } } = {};
-      examResults?.forEach(result => {
+      examResults?.forEach((result: any) => {
         const month = new Date(result.submitted_at!).toISOString().slice(0, 7);
         if (!monthPerformance[month]) {
           monthPerformance[month] = { total: 0, count: 0 };
@@ -127,9 +133,9 @@ export default function StudentDashboard() {
         <div className="p-6 flex-1 flex flex-col relative">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center space-x-3">
-            <div className="bg-white p-2 rounded-lg">
-              <GraduationCap className="w-6 h-6 text-teal-600" />
-            </div>
+              <div className="bg-white p-2 rounded-lg">
+                <GraduationCap className="w-6 h-6 text-teal-600" />
+              </div>
               <div>
                 <h1 className="text-xl font-bold">EduPortal</h1>
                 <p className="text-xs text-teal-100">Academy</p>
@@ -149,11 +155,10 @@ export default function StudentDashboard() {
                 setActiveTab('dashboard');
                 setIsMobileMenuOpen(false);
               }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${
-                activeTab === 'dashboard'
-                  ? 'bg-white text-teal-700 shadow-lg'
-                  : 'text-white hover:bg-teal-500'
-              }`}
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${activeTab === 'dashboard'
+                ? 'bg-white text-teal-700 shadow-lg'
+                : 'text-white hover:bg-teal-500'
+                }`}
             >
               <LayoutDashboard className="w-5 h-5" />
               <span className="font-medium">Dashboard</span>
@@ -164,11 +169,10 @@ export default function StudentDashboard() {
                 setActiveTab('classes');
                 setIsMobileMenuOpen(false);
               }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${
-                activeTab === 'classes'
-                  ? 'bg-white text-teal-700 shadow-lg'
-                  : 'text-white hover:bg-teal-500'
-              }`}
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${activeTab === 'classes'
+                ? 'bg-white text-teal-700 shadow-lg'
+                : 'text-white hover:bg-teal-500'
+                }`}
             >
               <BookOpen className="w-5 h-5" />
               <span className="font-medium">My Classes</span>
@@ -179,11 +183,10 @@ export default function StudentDashboard() {
                 setActiveTab('studypacks');
                 setIsMobileMenuOpen(false);
               }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${
-                activeTab === 'studypacks'
-                  ? 'bg-white text-teal-700 shadow-lg'
-                  : 'text-white hover:bg-teal-500'
-              }`}
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${activeTab === 'studypacks'
+                ? 'bg-white text-teal-700 shadow-lg'
+                : 'text-white hover:bg-teal-500'
+                }`}
             >
               <Package className="w-5 h-5" />
               <span className="font-medium">Study Packs</span>
@@ -194,11 +197,10 @@ export default function StudentDashboard() {
                 setActiveTab('exams');
                 setIsMobileMenuOpen(false);
               }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${
-                activeTab === 'exams'
-                  ? 'bg-white text-teal-700 shadow-lg'
-                  : 'text-white hover:bg-teal-500'
-              }`}
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${activeTab === 'exams'
+                ? 'bg-white text-teal-700 shadow-lg'
+                : 'text-white hover:bg-teal-500'
+                }`}
             >
               <FileText className="w-5 h-5" />
               <span className="font-medium">Exams & Results</span>

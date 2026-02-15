@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
+import { ClassRepository, EnrollmentRepository, TeacherRepository } from '../../repositories';
 import { Plus, Users, Clock, MoreVertical, Search, ChevronDown, Upload, AlertTriangle, Check, Beaker, Microscope, Calculator, BookOpen, FlaskConical, Atom } from 'lucide-react';
 
 interface Class {
@@ -63,6 +63,10 @@ export default function MyClasses() {
   const [teacherId, setTeacherId] = useState<string | null>(null);
   const [enrollmentCounts, setEnrollmentCounts] = useState<Record<string, number>>({});
 
+  const classRepo = new ClassRepository();
+  const enrollmentRepo = new EnrollmentRepository();
+  const teacherRepo = new TeacherRepository();
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -88,13 +92,7 @@ export default function MyClasses() {
 
   const loadTeacherAndClasses = async () => {
     try {
-      const { data: teacherData, error: teacherError } = await supabase
-        .from('teachers')
-        .select('id')
-        .eq('profile_id', profile?.id)
-        .maybeSingle();
-
-      if (teacherError) throw teacherError;
+      const teacherData = await teacherRepo.findByProfileId(profile?.id!);
 
       if (teacherData) {
         setTeacherId(teacherData.id);
@@ -108,19 +106,11 @@ export default function MyClasses() {
   const loadClasses = async (tId: string) => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('classes')
-        .select('*')
-        .eq('teacher_id', tId)
-        .order('created_at', { ascending: false });
+      const data = await classRepo.findByTeacherId(tId);
+      setClasses(data);
 
-      if (error) throw error;
-      setClasses(data || []);
-
-      if (data) {
-        for (const cls of data) {
-          loadEnrollmentCount(cls.id);
-        }
+      for (const cls of data) {
+        loadEnrollmentCount(cls.id);
       }
     } catch (error) {
       console.error('Error loading classes:', error);
@@ -131,14 +121,8 @@ export default function MyClasses() {
 
   const loadEnrollmentCount = async (classId: string) => {
     try {
-      const { count, error } = await supabase
-        .from('enrollments')
-        .select('*', { count: 'exact', head: true })
-        .eq('class_id', classId)
-        .eq('is_active', true);
-
-      if (error) throw error;
-      setEnrollmentCounts(prev => ({ ...prev, [classId]: count || 0 }));
+      const count = await enrollmentRepo.getEnrollmentCount(classId);
+      setEnrollmentCounts(prev => ({ ...prev, [classId]: count }));
     } catch (error) {
       console.error('Error loading enrollment count:', error);
     }
@@ -149,7 +133,7 @@ export default function MyClasses() {
     if (!teacherId) return;
 
     try {
-      const { error } = await supabase.from('classes').insert({
+      await classRepo.create({
         teacher_id: teacherId,
         title: formData.title,
         description: formData.description,
@@ -162,8 +146,6 @@ export default function MyClasses() {
         is_active: true,
       });
 
-      if (error) throw error;
-
       await loadClasses(teacherId);
       resetForm();
     } catch (error) {
@@ -174,12 +156,7 @@ export default function MyClasses() {
 
   const handleToggleActive = async (classId: string, currentStatus: boolean) => {
     try {
-      const { error } = await supabase
-        .from('classes')
-        .update({ is_active: !currentStatus })
-        .eq('id', classId);
-
-      if (error) throw error;
+      await classRepo.toggleActive(classId, !currentStatus);
       if (teacherId) await loadClasses(teacherId);
     } catch (error) {
       console.error('Error toggling class status:', error);
@@ -292,11 +269,10 @@ export default function MyClasses() {
                               </div>
                             )}
                             <div className="flex items-center space-x-1">
-                              <span className={`px-2 py-1 rounded text-xs font-medium ${
-                                cls.is_active
+                              <span className={`px-2 py-1 rounded text-xs font-medium ${cls.is_active
                                   ? 'bg-emerald-50 text-emerald-700'
                                   : 'bg-gray-100 text-gray-600'
-                              }`}>
+                                }`}>
                                 {cls.is_active ? 'Active' : 'Paused'}
                               </span>
                             </div>

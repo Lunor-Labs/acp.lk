@@ -1,9 +1,9 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { User } from '@supabase/supabase-js';
-import { supabase, Profile } from '../lib/supabase';
+import { db } from '../lib/database';
+import { ProfileRepository, Profile } from '../repositories';
 
 interface AuthContextType {
-  user: User | null;
+  user: any | null;
   profile: Profile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
@@ -14,12 +14,13 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const profileRepo = new ProfileRepository();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    db.auth.getSession().then(({ session }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
         loadProfile(session.user.id);
@@ -28,7 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { unsubscribe } = db.auth.onAuthStateChange((_event, session) => {
       (async () => {
         setUser(session?.user ?? null);
         if (session?.user) {
@@ -40,19 +41,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })();
     });
 
-    return () => subscription.unsubscribe();
+    return () => unsubscribe();
   }, []);
 
   async function loadProfile(userId: string) {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
-
-      if (error) throw error;
-      setProfile(data);
+      const profileData = await profileRepo.findById(userId);
+      setProfile(profileData);
     } catch (error) {
       console.error('Error loading profile:', error);
     } finally {
@@ -61,21 +56,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function signIn(email: string, password: string) {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await db.auth.signIn(email, password);
     if (error) throw error;
   }
 
   async function signUp(email: string, password: string, fullName: string, role: string) {
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-            role: role
-          }
-        }
+      const { user: newUser, error } = await db.auth.signUp(email, password, {
+        full_name: fullName,
+        role: role
       });
 
       if (error) {
@@ -83,26 +72,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
 
-      if (data.user) {
-        const { error: profileError } = await supabase.from('profiles').insert({
-          id: data.user.id,
+      if (newUser) {
+        await profileRepo.create({
+          id: newUser.id,
           email,
           full_name: fullName,
-          role,
+          role: role as 'admin' | 'teacher' | 'student',
           is_active: true,
         });
 
-        if (profileError) {
-          console.error('Profile creation error:', profileError);
-          throw new Error(`Failed to create profile: ${profileError.message}`);
-        }
-
         if (role === 'teacher') {
-          const { error: teacherError } = await supabase.from('teachers').insert({
-            profile_id: data.user.id,
-            subjects: [],
-            visible_on_landing: true,
-          });
+          const { error: teacherError } = await db.from('teachers')
+            .insert({
+              profile_id: newUser.id,
+              subjects: [],
+              visible_on_landing: true,
+            })
+            .execute();
 
           if (teacherError) {
             console.error('Teacher profile creation error:', teacherError);
@@ -117,7 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function signOut() {
-    const { error } = await supabase.auth.signOut();
+    const { error } = await db.auth.signOut();
     if (error) throw error;
   }
 
