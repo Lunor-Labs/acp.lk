@@ -1,142 +1,84 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import studentImage from '../../../assets/student1.png';
-import "./Topstudent.css";
-
-interface TopStudentData {
-  name: string;
-  subtitle: string;
-  faculty: string;
-  university: string;
-  grade: string;
-  image: string;
-}
+import type { TopStudent } from '../../../types/landing';
 
 const Topstudent: React.FC = () => {
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [activeFilter, setActiveFilter] = useState('2026 A/L Physics');
 
-  const students: TopStudentData[] = [
-    {
-      name: 'Yasas Ravihara',
-      subtitle: 'කණිෂ්ඨ',
-      faculty: 'Faculty of Engineering',
-      university: 'University of Moratuwa',
-      grade: 'AAA',
-      image: studentImage
-    },
-    {
-      name: 'Malki Wihara',
-      subtitle: 'කණිෂ්ඨ',
-      faculty: 'Faculty of Engineering',
-      university: 'University of Moratuwa',
-      grade: 'AAA',
-      image: studentImage
-    },
-    {
-      name: 'Himasara Sayuranga',
-      subtitle: 'කණිෂ්ඨ',
-      faculty: 'Faculty of Engineering',
-      university: 'University of Moratuwa',
-      grade: 'AAA',
-      image: studentImage
-    },
-    {
-      name: 'Sathsara Perera',
-      subtitle: 'කණිෂ්ඨ',
-      faculty: 'Faculty of Science',
-      university: 'University of Colombo',
-      grade: 'AAA',
-      image: studentImage
-    },
-    {
-      name: 'Kavindi Silva',
-      subtitle: 'කණිෂ්ඨ',
-      faculty: 'Faculty of Medicine',
-      university: 'University of Peradeniya',
-      grade: 'AAA',
-      image: studentImage
-    },
-    {
-      name: 'Nethmi Fernando',
-      subtitle: 'කණිෂ්ඨ',
-      faculty: 'Faculty of Engineering',
-      university: 'University of Ruhuna',
-      grade: 'AAA',
-      image: studentImage
-    }
+  const allStudents: TopStudent[] = [
+    { rank: 1, name: 'Yasith Banula', school: 'Sri Sumangala Maha Vidyalaya', marks: 60, image: studentImage },
+    { rank: 2, name: 'Yasith Banula', school: 'Sri Sumangala Maha Vidyalaya', marks: 60, image: studentImage },
+    { rank: 3, name: 'Yasith Banula', school: 'Sri Sumangala Maha Vidyalaya', marks: 60, image: studentImage },
+    { rank: 4, name: 'Yasith Banula', school: 'Sri Sumangala Maha Vidyalaya', marks: 60, image: studentImage },
+    { rank: 5, name: 'Yasith Banula', school: 'Sri Sumangala Maha Vidyalaya', marks: 60, image: studentImage },
+    { rank: 6, name: 'Yasith Banula', school: 'Sri Sumangala Maha Vidyalaya', marks: 60, image: studentImage },
+    { rank: 7, name: 'Yasith Banula', school: 'Sri Sumangala Maha Vidyalaya', marks: 60, image: studentImage },
+    { rank: 8, name: 'Yasith Banula', school: 'Sri Sumangala Maha Vidyalaya', marks: 60, image: studentImage },
+    { rank: 9, name: 'Yasith Banula', school: 'Sri Sumangala Maha Vidyalaya', marks: 60, image: studentImage },
+    { rank: 10, name: 'Yasith Banula', school: 'Sri Sumangala Maha Vidyalaya', marks: 60, image: studentImage },
   ];
 
-  const handlePrevious = () => {
-    setCurrentSlide((prev) => (prev > 0 ? prev - 1 : students.length - 3));
-  };
-
-  const handleNext = () => {
-    setCurrentSlide((prev) => (prev < students.length - 3 ? prev + 1 : 0));
-  };
-
-  const visibleStudents = students.slice(currentSlide, currentSlide + 3);
+  const filters = ['2026 A/L Physics', '2025 A/L Physics', '2024 A/L Physics'];
 
   return (
-    <section className="topstudent-section" id="topstudents">
-      <div className="topstudent-container">
-        {/* Header */}
-        <div className="topstudent-header">
-          <h2 className="topstudent-title">
-            පීවිකය <span className="topstudent-title-highlight">දිනු දිරිය</span> දරුවන්
-          </h2>
-        </div>
+    <section className="landing-section bg-white" id="top10">
+      <div className="landing-container">
+        <div className="text-center mb-16">
+          <h2 className="landing-title">Paper Class Top 10 Students</h2>
+          <p className="landing-description">
+            Recognizing excellence in our physics paper classes. These students have demonstrated exceptional performance and dedication.
+          </p>
 
-        {/* Carousel Wrapper */}
-        <div className="topstudent-carousel-wrapper">
-          {/* Previous Button */}
-          <button
-            className="topstudent-nav-button topstudent-nav-button-left"
-            onClick={handlePrevious}
-            aria-label="Previous students"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-          </button>
-
-          {/* Student Grid */}
-          <div ref={scrollContainerRef} className="topstudent-grid">
-            {visibleStudents.map((student, index) => (
-              <div key={index} className="topstudent-card">
-                {/* Image with Badge */}
-                <div className="topstudent-image-wrapper">
-                  <div className="topstudent-image-container">
-                    <img
-                      src={student.image}
-                      alt={student.name}
-                      className="topstudent-image"
-                      loading="lazy"
-                    />
-                  </div>
-                  <div className="topstudent-badge">{student.grade}</div>
-                </div>
-
-                {/* Student Info */}
-                <div className="topstudent-info">
-                  <p className="topstudent-subtitle">{student.subtitle}</p>
-                  <h3 className="topstudent-name">{student.name}</h3>
-                  <p className="topstudent-faculty">{student.faculty}</p>
-                  <p className="topstudent-university">{student.university}</p>
-                </div>
-              </div>
+          {/* Filter Buttons */}
+          <div className="flex flex-wrap justify-center gap-4 mt-8">
+            {filters.map((filter) => (
+              <button
+                key={filter}
+                className={`px-8 py-3 rounded-full font-bold transition-all duration-300 ${activeFilter === filter
+                    ? 'bg-primary text-dark shadow-lg shadow-primary/20'
+                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                  }`}
+                onClick={() => setActiveFilter(filter)}
+              >
+                {filter}
+              </button>
             ))}
           </div>
+        </div>
+      </div>
 
-          {/* Next Button */}
-          <button
-            className="topstudent-nav-button topstudent-nav-button-right"
-            onClick={handleNext}
-            aria-label="Next students"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 18l6-6-6-6" />
-            </svg>
-          </button>
+      {/* Student List Section */}
+      <div className="w-full overflow-hidden py-12">
+        <div className="flex w-max animate-scroll-horizontal hover:[animation-play-state:paused] will-change-transform gap-8 px-8">
+          {[...allStudents, ...allStudents].map((student, index) => (
+            <div
+              key={`${student.rank}-${index}`}
+              className="w-72 landing-card flex flex-col items-center gap-4 relative pt-12"
+            >
+              {/* Rank Badge */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-primary text-dark rounded-full flex items-center justify-center font-black text-2xl shadow-xl border-4 border-white">
+                {student.rank}
+              </div>
+
+              <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-gray-100 shadow-inner">
+                <img
+                  src={student.image || studentImage}
+                  alt={student.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+
+              <div className="text-center">
+                <h4 className="font-bold text-dark text-lg mb-1">{student.name}</h4>
+                <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-4">{student.school}</p>
+
+                <div className="flex items-center justify-center gap-2 py-2 px-4 bg-gray-50 rounded-lg">
+                  <span className="text-sm text-gray-500">Score:</span>
+                  <span className="font-bold text-primary">{student.marks}</span>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </section>

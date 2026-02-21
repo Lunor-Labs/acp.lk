@@ -9,7 +9,6 @@ import {
   Discussion,
   Topstudent,
   Gallery,
-  Reviews,
   Channels,
   Contact,
   Footer,
@@ -31,7 +30,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginRequest }) => {
       <Discussion />
       <Topstudent />
       <Gallery />
-      <Reviews />
       <Channels />
       <Contact />
       <Footer />
