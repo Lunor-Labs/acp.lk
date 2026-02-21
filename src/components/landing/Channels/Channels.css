@@ -1,0 +1,304 @@
+/* ========================================
+   TELEGRAM CHANNELS SECTION
+   ======================================== */
+
+.channels-section {
+  background-color: #fbfbfb;
+  padding: 3.5rem 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.channels-section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(0, 0, 0, 0.06) 0, rgba(0, 0, 0, 0.06) 2px, transparent 2.5px) 0 0 / 36px 36px,
+    radial-gradient(circle at 70% 55%, rgba(0, 0, 0, 0.04) 0, rgba(0, 0, 0, 0.04) 2px, transparent 2.5px) 0 0 / 48px 48px;
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+@media (min-width: 640px) {
+  .channels-section {
+    padding: 4rem 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .channels-section {
+    padding: 6rem 6rem;
+  }
+}
+
+/* ========================================
+   SECTION HEADER
+   ======================================== */
+
+.channels-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+.channels-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.channels-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #383838;
+  margin: 0;
+  letter-spacing: -0.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+@media (min-width: 640px) {
+  .channels-title {
+    font-size: 2.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .channels-title {
+    font-size: 3rem;
+  }
+}
+
+.channels-telegram-text {
+  color: #d1291a;
+  font-weight: 700;
+}
+
+.channels-telegram-icon {
+  width: 2.75rem;
+  height: 2.75rem;
+  margin-left: 0.5rem;
+  flex-shrink: 0;
+  padding: 0.5rem;
+  background: #d1291a;
+  border-radius: 50%;
+  object-fit: contain;
+}
+
+@media (min-width: 640px) {
+  .channels-telegram-icon {
+    width: 3.25rem;
+    height: 3.25rem;
+    padding: 0.6rem;
+  }
+}
+
+/* ========================================
+   GRID LAYOUT
+   ======================================== */
+
+.channels-grid {
+  display: grid;
+  gap: 2.5rem;
+  grid-template-columns: 1fr;
+  justify-items: center;
+}
+
+@media (min-width: 640px) {
+  .channels-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 3rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .channels-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 3.5rem;
+  }
+}
+
+/* ========================================
+   CHANNEL ITEM WRAPPER
+   ======================================== */
+
+.channel-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  width: 100%;
+  max-width: 280px;
+}
+
+/* ========================================
+   CHANNEL CARD
+   ======================================== */
+
+.channel-card-container {
+  position: relative;
+  background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 1.25rem;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  width: 100%;
+  height: 280px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+@media (min-width: 640px) {
+  .channel-card-container {
+    height: 300px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .channel-card-container {
+    height: 320px;
+  }
+}
+
+.channel-card-container:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+/* ========================================
+   CHANNEL CARD - IMAGE
+   ======================================== */
+
+.channel-card-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.channel-card-container:hover .channel-card-image {
+  transform: scale(1.08);
+}
+
+/* ========================================
+   CHANNEL CARD - CONTENT
+   ======================================== */
+
+.channel-card-content {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 1.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 0.25rem;
+  text-align: left;
+  z-index: 1;
+}
+
+.channel-card-year {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  line-height: 1;
+  margin-bottom: 0.15rem;
+  text-shadow: 2px 2px 8px rgba(255, 255, 255, 0.9), -1px -1px 4px rgba(255, 255, 255, 0.8);
+}
+
+@media (min-width: 640px) {
+  .channel-card-year {
+    font-size: 2.75rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .channel-card-year {
+    font-size: 3rem;
+  }
+}
+
+.channel-card-category {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #d1291a;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  text-shadow: 2px 2px 8px rgba(255, 255, 255, 0.9), -1px -1px 4px rgba(255, 255, 255, 0.8);
+}
+
+@media (min-width: 640px) {
+  .channel-card-category {
+    font-size: 1.15rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .channel-card-category {
+    font-size: 1.2rem;
+  }
+}
+
+/* ========================================
+   CHANNEL BUTTON (BELOW CARD)
+   ======================================== */
+
+.channel-button {
+  padding: 0.55rem 1.75rem;
+  background: #d1291a;
+  color: white;
+  border: none;
+  border-radius: 2rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(209, 41, 26, 0.2);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+@media (min-width: 640px) {
+  .channel-button {
+    padding: 0.6rem 2rem;
+    font-size: 0.9rem;
+  }
+}
+
+.channel-button:hover {
+  background: #b91e14;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(209, 41, 26, 0.3);
+}
+
+.channel-button:active {
+  transform: translateY(0);
+}
+
+.channel-button:focus-visible {
+  outline: 2px solid #d1291a;
+  outline-offset: 2px;
+}
+
+/* ========================================
+   ACCESSIBILITY
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .channel-card-container,
+  .channel-card-image,
+  .channel-button {
+    transition: none !important;
+  }
+}

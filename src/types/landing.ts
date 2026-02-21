@@ -19,6 +19,7 @@ export interface Review {
   text: string;
   name: string;
   image: string;
+  rating: number;
 }
 
 export interface ProcessStep {
@@ -28,8 +29,23 @@ export interface ProcessStep {
 }
 
 export interface ClassCenter {
+  topTitle?: string;
   title: string;
+  titleHighlight?: string;
+  subtitle?: string;
+  description: string;
   buttonText: string;
   image: string;
+  theme?: 'light' | 'dark';
+  rating?: number;
+  brand?: string;
+}
+
+export interface TelegramChannel {
+  year: string;
+  category: string;
+  buttonText: string;
+  image: string;
+  joinLink?: string;
 }
 
