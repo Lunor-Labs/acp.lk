@@ -44,7 +44,7 @@ const Reviews: React.FC = () => {
     if (isAnimating) return;
     setIsAnimating(true);
     setEnableTransition(true);
-    setOffset(33.333); // move row right a bit
+    setOffset(35.5); // move row right a bit
     setTimeout(() => {
       setEnableTransition(false); // snap back without animation
       setOffset(0);
@@ -59,7 +59,7 @@ const Reviews: React.FC = () => {
     if (isAnimating) return;
     setIsAnimating(true);
     setEnableTransition(true);
-    setOffset(-33.333); // move row left a bit
+    setOffset(-35.5); // move row left a bit
     setTimeout(() => {
       setEnableTransition(false); // snap back without animation
       setOffset(0);
