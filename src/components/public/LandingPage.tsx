@@ -9,9 +9,9 @@ import {
   Discussion,
   Topstudent,
   Gallery,
-  Reviews,
   Channels,
   Contact,
+  Footer,
 } from '../landing';
 
 interface LandingPageProps {
@@ -30,9 +30,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginRequest }) => {
       <Discussion />
       <Topstudent />
       <Gallery />
-      <Reviews />
       <Channels />
       <Contact />
+      <Footer />
     </>
   );
 };
