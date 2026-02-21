@@ -1,17 +1,23 @@
+import React from 'react';
 import "./Centers.css";
+
+// Import images so Vite bundles them correctly
+import image1 from '../../../assets/clz-banner.jpg';
+import image2 from '../../../assets/second-slider-second.jpg';
+import image3 from '../../../assets/image.png';
 
 const Centers: React.FC = () => {
   const centersImages = [
     {
-      src: '/src/assets/clz-banner.jpg',
+      src: image1,
       alt: 'Islandwide Online class center',
     },
     {
-      src: '/src/assets/second-slider-second.jpg',
+      src: image2,
       alt: 'Vision Institute class center',
     },
     {
-      src: '/src/assets/image.png',
+      src: image3,
       alt: 'Riochem Institute class center',
     }
   ];
