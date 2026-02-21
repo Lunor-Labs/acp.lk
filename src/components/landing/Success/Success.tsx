@@ -88,9 +88,6 @@ const Success: React.FC = () => {
                 <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-neutral-white to-transparent pointer-events-none"></div>
             </div>
 
-            {/* Subtle Background Decoration */}
-            <div className="absolute top-20 right-10 w-32 h-32 border-2 border-primary/10 rounded-full"></div>
-            <div className="absolute bottom-20 left-10 w-40 h-40 border-2 border-gray-100 rounded-full"></div>
         </section>
     );
 };
