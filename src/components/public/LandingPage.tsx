@@ -12,6 +12,7 @@ import {
   Channels,
   Contact,
   Footer,
+  Reviews
 } from '../landing';
 
 interface LandingPageProps {
@@ -25,13 +26,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginRequest }) => {
       <Hero onLoginRequest={onLoginRequest} />
       <Success />
       <Centers />
-      <Process />
       <Teacher />
-      <Discussion />
       <Topstudent />
+      <Reviews />
       <Gallery />
       <Channels />
-      <Contact />
       <Footer />
     </>
   );

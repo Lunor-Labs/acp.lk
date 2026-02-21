@@ -11,3 +11,4 @@ export { default as Teacher } from './Teacher';
 export { default as Channels } from './Channels/Channels';
 export { default as Footer } from './Footer/Footer';
 export { AuthPanel } from './Auth';
+export { default as Reviews } from './Reviews/Reviews';
