@@ -98,10 +98,6 @@ const Process: React.FC = () => {
         </div>
 
       </div>
-
-      {/* Background Decoration */}
-      <div className="absolute top-20 left-10 w-32 h-32 border-4 border-primary/10 rounded-full"></div>
-      <div className="absolute bottom-20 right-10 w-40 h-40 border-4 border-gray-200 rounded-full"></div>
     </section>
   );
 };
