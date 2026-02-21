@@ -47,11 +47,11 @@ const Hero: React.FC<HeroProps> = ({ onLoginRequest }) => {
             alt={`Hero Slide ${index + 1}`}
             className="w-full h-full object-cover object-center"
           />
-          <div className="absolute inset-0 bg-black/60 lg:bg-black/50"></div>
+          {/* Removed heavy dark overlay so baked-in text shines */}
         </div>
       ))}
 
-      {/* Mobile Hero Images (split left/right) - Keeping original for simplicity or updating for slider if needed */}
+      {/* Mobile Hero Images (split left/right) */}
       <div className="absolute inset-0 flex md:hidden">
         <img
           src={heroMobileLeft}
@@ -63,18 +63,16 @@ const Hero: React.FC<HeroProps> = ({ onLoginRequest }) => {
           alt="Hero Sword Fantasy Right"
           className="w-1/2 h-full object-cover object-right"
         />
-        <div className="absolute inset-0 bg-black/70"></div>
+        <div className="absolute inset-0 bg-black/40"></div>
       </div>
 
       {/* Content */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 pb-12 pt-60 flex flex-col md:flex-row items-end justify-between min-h-screen">
-        {/* Left: Buttons and Text */}
-        <div className="w-full md:w-3/5 flex flex-col items-start justify-end gap-12">
-
-          {/* Slide Text removed as per request */}
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 pb-12 pt-60 flex flex-col md:flex-row items-end justify-between min-h-screen pointer-events-none">
+        {/* Left: Buttons Area */}
+        <div className="w-full md:w-3/5 flex flex-col items-start justify-end gap-12 pb-12 pointer-events-auto">
 
           {/* Buttons Area */}
-          <div className="flex flex-col sm:flex-row gap-6 w-full max-w-md mt-auto">
+          <div className="flex flex-col sm:flex-row gap-6 w-full max-w-xl">
             <button
               onClick={onLoginRequest}
               className="bg-[#eb1b23] hover:bg-red-700 text-white font-bold px-10 py-4 rounded-full shadow-lg text-xl transition-all w-full sm:w-auto flex items-center justify-center gap-3 group"
@@ -95,11 +93,11 @@ const Hero: React.FC<HeroProps> = ({ onLoginRequest }) => {
           </div>
         </div>
 
-        {/* Right: Empty for spacing on desktop, image is background */}
+        {/* Right: Empty for spacing on desktop */}
         <div className="hidden md:block w-2/5"></div>
 
         {/* Carousel Dots */}
-        <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 flex gap-3 z-20">
+        <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 flex gap-3 z-20 pointer-events-auto">
           {slides.map((_, index) => (
             <button
               key={index}
