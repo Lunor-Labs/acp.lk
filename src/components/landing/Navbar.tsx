@@ -17,7 +17,7 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
       setIsScrolled(window.scrollY > 20);
 
       // Scroll spy
-      const sections = ['home', 'success', 'centers', 'process', 'top10', 'gallery', 'reviews', 'contact'];
+      const sections = ['home', 'success', 'teacher', 'centers', 'reviews', 'gallery', 'top10', 'channels', 'contact'];
       const scrollPosition = window.scrollY + 100;
 
       for (const section of sections) {
@@ -55,10 +55,12 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
   const navLinks = [
     { id: 'home', label: 'Home' },
     { id: 'success', label: 'Our Success' },
-    { id: 'process', label: 'Process' },
-    { id: 'top10', label: 'Top 10' },
-    { id: 'gallery', label: 'Gallery' },
+    { id: 'teacher', label: 'Teacher' },
+    { id: 'centers', label: 'Centers' },
     { id: 'reviews', label: 'Student Reviews' },
+    { id: 'gallery', label: 'Gallery' },
+    { id: 'top10', label: 'Top 10' },
+    { id: 'channels', label: 'Channels' },
     { id: 'contact', label: 'Contact' },
   ];
 

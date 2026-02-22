@@ -32,7 +32,7 @@ const Channels: React.FC = () => {
   ];
 
   return (
-    <section className="channels-section">
+    <section className="channels-section" id="channels">
       <div className="channels-container">
         <div className="channels-header">
           <h2 className="channels-title">
