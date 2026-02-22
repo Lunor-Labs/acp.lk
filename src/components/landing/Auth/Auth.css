@@ -13,10 +13,11 @@
 }
 
 .auth-image-container {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  min-height: 100vh;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
 
 .auth-image {
@@ -32,7 +33,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(17, 184, 177, 0.85) 0%, rgba(17, 184, 177, 0.6) 100%);
+  background: linear-gradient(135deg, rgba(235, 27, 35, 0.85) 0%, rgba(139, 14, 17, 0.7) 100%);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -98,9 +99,9 @@
 }
 
 .back-to-home:hover {
-  color: #11b8b1;
-  background-color: rgba(17, 184, 177, 0.05);
-  border-color: rgba(17, 184, 177, 0.2);
+  color: #eb1b23;
+  background-color: rgba(235, 27, 35, 0.05);
+  border-color: rgba(235, 27, 35, 0.2);
 }
 
 .back-to-home svg {
@@ -116,21 +117,47 @@
 .auth-brand .logo {
   text-align: center;
   font-weight: 700;
-  color: #11b8b1;
+  color: #eb1b23;
   font-size: 20px;
   margin-bottom: 8px;
 }
 
-.auth-toggle { display:flex; gap:8px; justify-content:center; margin-bottom:12px }
-.auth-toggle button{ background:#f3f7f7; border:none; padding:8px 18px; border-radius:20px }
-.auth-toggle button.active{ background:#11b8b1; color:white }
+.auth-toggle {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 12px
+}
 
-.auth-form { display:flex; flex-direction:column; gap:8px }
-.auth-form label{ font-size:12px; color:#666 }
-.auth-form input{
-  padding:10px 12px;
-  border-radius:999px;
-  border:1px solid #e6f2f1;
+.auth-toggle button {
+  background: #f5f5f5;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 20px;
+  transition: all 0.2s;
+  color: #64748b
+}
+
+.auth-toggle button.active {
+  background: #eb1b23;
+  color: white
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px
+}
+
+.auth-form label {
+  font-size: 12px;
+  color: #666
+}
+
+.auth-form input {
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid #e0e0e0;
   color: #333;
   background: white;
   font-family: inherit;
@@ -140,21 +167,85 @@
 
 .auth-form input:focus {
   outline: none;
-  border-color: #11b8b1;
-  box-shadow: 0 0 0 2px rgba(17, 184, 177, 0.1);
+  border-color: #eb1b23;
+  box-shadow: 0 0 0 2px rgba(235, 27, 35, 0.1);
 }
 
 .auth-form input::placeholder {
   color: #999;
 }
-.btn-otp{ margin-top:4px; background:#fff; border:1px solid #11b8b1; color:#11b8b1; padding:8px 12px; border-radius:20px }
-.btn-submit{ margin-top:8px; background:#11b8b1; color:white; border:none; padding:10px; border-radius:20px }
-.divider{ text-align:center; margin:8px 0; color:#bbb }
-.auth-footer{ text-align:center; margin-top:8px }
-.link{ background:none; border:none; color:#11b8b1; cursor:pointer }
-.auth-error{ color:#c0392b; font-size:13px }
 
-.otp-inputs input{ width:100%; padding:12px; text-align:center }
+.btn-otp {
+  margin-top: 4px;
+  background: #fff;
+  border: 1px solid #eb1b23;
+  color: #eb1b23;
+  padding: 8px 12px;
+  border-radius: 20px;
+  transition: all 0.2s
+}
+
+.btn-otp:hover {
+  background: rgba(235, 27, 35, 0.05);
+}
+
+.btn-submit {
+  margin-top: 8px;
+  background: #eb1b23;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 20px;
+  font-weight: 600;
+  transition: all 0.2s
+}
+
+.btn-submit:hover {
+  background: #b9151b;
+}
+
+.btn-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.divider {
+  text-align: center;
+  margin: 8px 0;
+  color: #cbd5e1
+}
+
+.auth-footer {
+  text-align: center;
+  margin-top: 8px;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.link {
+  background: none;
+  border: none;
+  color: #eb1b23;
+  cursor: pointer;
+  transition: color 0.2s;
+  font-weight: 500
+}
+
+.link:hover {
+  color: #b9151b;
+  text-decoration: underline
+}
+
+.auth-error {
+  color: #c0392b;
+  font-size: 13px
+}
+
+.otp-inputs input {
+  width: 100%;
+  padding: 12px;
+  text-align: center
+}
 
 .auth-options {
   display: flex;
@@ -166,7 +257,7 @@
 .btn-link {
   background: none;
   border: none;
-  color: #11b8b1;
+  color: #eb1b23;
   cursor: pointer;
   font-size: 12px;
   text-align: left;
@@ -196,8 +287,8 @@
 .loading-spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid #e6f2f1;
-  border-top: 3px solid #11b8b1;
+  border: 3px solid #f5f5f5;
+  border-top: 3px solid #eb1b23;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -210,8 +301,13 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Responsive Design */
