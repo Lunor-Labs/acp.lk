@@ -67,20 +67,33 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'shadow-2xl' : ''} bg-[#eb1b23]`}
     >
       <div className="max-w-full mx-auto px-0">
-        <div className="flex items-center h-28">
-          {/* Logo/Brand Section with dark red background */}
+        <div className="flex items-center justify-between h-20 lg:h-28 px-4 lg:px-0 relative">
+          {/* Mobile Menu Button - Left */}
+          <div className="lg:hidden flex-shrink-0 z-10 w-[100px] flex justify-start">
+            <button
+              className="flex flex-col gap-1.5 p-2 bg-transparent rounded-lg"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              <span className={`w-7 h-0.5 bg-white transition-all ${isMobileMenuOpen ? 'rotate-45 translate-y-2' : ''}`}></span>
+              <span className={`w-7 h-0.5 bg-white transition-all ${isMobileMenuOpen ? 'opacity-0' : ''}`}></span>
+              <span className={`w-7 h-0.5 bg-white transition-all ${isMobileMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}></span>
+            </button>
+          </div>
+
+          {/* Logo/Brand Section - Centered on Mobile, Left/DarkRed on Desktop */}
           <div
-            className="flex items-center justify-center px-8 cursor-pointer bg-[#8b0e11] h-full min-w-[240px]"
+            className="absolute left-1/2 -translate-x-1/2 lg:static lg:transform-none flex items-center justify-center lg:px-8 cursor-pointer bg-transparent lg:bg-[#8b0e11] h-full min-w-[120px] lg:min-w-[240px] z-10"
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           >
             <img
               src={acpLogo}
               alt="ACP Logo"
-              className="h-24 w-auto object-contain drop-shadow-xl lg:scale-110 transform origin-center"
+              className="h-10 lg:h-24 w-auto object-contain drop-shadow-xl lg:scale-110 transform origin-center"
             />
           </div>
 
-          <div className="flex items-center justify-between flex-1 h-full pr-8">
+          <div className="flex items-center justify-end lg:justify-between lg:flex-1 h-full lg:pr-8 z-10 w-[100px] lg:w-auto">
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center h-full">
               {navLinks.map((link) => (
@@ -98,26 +111,15 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
             </div>
 
             {/* CTA Button and Mobile Menu */}
-            <div className="flex items-center gap-8 lg:gap-4">
+            <div className="flex items-center gap-8 lg:gap-4 justify-end">
               {!user && (
                 <button
                   onClick={onLoginRequest}
-                  className="bg-white text-black font-bold px-8 py-3 rounded-full shadow-lg transition-all duration-200 hover:bg-gray-100 text-sm whitespace-nowrap"
+                  className="bg-white text-black font-bold px-4 lg:px-8 py-2 md:py-3 rounded-full shadow-lg transition-all duration-200 hover:bg-gray-100 text-sm whitespace-nowrap"
                 >
                   Register
                 </button>
               )}
-
-              {/* Mobile Menu Button */}
-              <button
-                className="lg:hidden flex flex-col gap-1.5 p-2 bg-white/10 rounded-lg"
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                aria-label="Toggle menu"
-              >
-                <span className={`w-6 h-0.5 bg-white transition-all ${isMobileMenuOpen ? 'rotate-45 translate-y-2' : ''}`}></span>
-                <span className={`w-6 h-0.5 bg-white transition-all ${isMobileMenuOpen ? 'opacity-0' : ''}`}></span>
-                <span className={`w-6 h-0.5 bg-white transition-all ${isMobileMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}></span>
-              </button>
             </div>
           </div>
         </div>
