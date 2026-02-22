@@ -12,6 +12,7 @@ export interface TopStudent {
   school: string;
   marks: number;
   image: string;
+  year: string;
 }
 
 export interface Review {
