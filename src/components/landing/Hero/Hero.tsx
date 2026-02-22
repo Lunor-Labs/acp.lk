@@ -42,14 +42,14 @@ const Hero: React.FC<HeroProps> = ({ onLoginRequest }) => {
             <img
               src={slide.mobile}
               alt={`Hero Slide ${index + 1}`}
-              className="w-full h-full object-cover object-center"
+              className="w-full h-full object-cover object-left"
             />
           </div>
         ))}
 
         {/* Mobile Content */}
-        <div className="relative z-10 w-full h-full flex flex-col justify-end px-4 pb-8 pointer-events-none">
-          <div className="flex flex-row gap-3 w-full pointer-events-auto">
+        <div className="relative z-10 w-full h-full flex flex-col justify-end px-4 pb-4 pointer-events-none">
+          <div className="flex flex-row gap-3 w-full pointer-events-auto mb-4">
             <button
               onClick={onLoginRequest}
               className="bg-[#eb1b23] hover:bg-red-700 text-white font-bold px-5 py-2.5 rounded-full shadow-lg text-sm transition-all flex items-center justify-center gap-2 group"
@@ -69,8 +69,8 @@ const Hero: React.FC<HeroProps> = ({ onLoginRequest }) => {
             </a>
           </div>
 
-          {/* Carousel Dots */}
-          <div className="flex gap-2 mt-4 pointer-events-auto">
+          {/* Carousel Dots - centered */}
+          <div className="flex gap-2 justify-center w-full pointer-events-auto">
             {slides.map((_, index) => (
               <button
                 key={index}
