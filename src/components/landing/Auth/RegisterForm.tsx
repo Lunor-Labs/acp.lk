@@ -12,7 +12,6 @@ const RegisterForm: React.FC<Props> = ({ onSwitchToLogin, onRegisterSuccess }) =
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [userRole, setUserRole] = useState<'student' | 'teacher'>('student');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { signUp } = useAuth();
@@ -44,7 +43,7 @@ const RegisterForm: React.FC<Props> = ({ onSwitchToLogin, onRegisterSuccess }) =
     setError(null);
     try {
       const fullName = `${firstName} ${lastName}`;
-      await signUp(email, password, fullName, userRole);
+      await signUp(email, password, fullName, 'student');
       onRegisterSuccess?.();
     } catch (err: any) {
       setError(err.message || 'Registration failed. Email may already be registered.');
@@ -55,26 +54,6 @@ const RegisterForm: React.FC<Props> = ({ onSwitchToLogin, onRegisterSuccess }) =
 
   return (
     <div>
-      {/* Role Selection */}
-      <div className="auth-toggle">
-        <button
-          type="button"
-          className={userRole === 'student' ? 'active' : ''}
-          onClick={() => setUserRole('student')}
-          disabled={loading}
-        >
-          Register as Student
-        </button>
-        <button
-          type="button"
-          className={userRole === 'teacher' ? 'active' : ''}
-          onClick={() => setUserRole('teacher')}
-          disabled={loading}
-        >
-          Register as Teacher
-        </button>
-      </div>
-
       <form onSubmit={handleRegister} className="auth-form">
         <label>First Name</label>
         <input
