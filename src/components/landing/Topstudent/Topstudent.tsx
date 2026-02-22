@@ -77,6 +77,12 @@ const Topstudent: React.FC = () => {
     return [...leftClones, ...filteredStudents, ...rightClones];
   }, [filteredStudents]);
 
+  // simple duplicated list for CSS-based marquee animation (desktop)
+  const marqueeStudents = useMemo(
+    () => [...filteredStudents, ...filteredStudents],
+    [filteredStudents]
+  );
+
   const SMOOTH_SCROLL_DURATION = 800; // milliseconds
   const AUTO_SCROLL_INTERVAL = 2000; // milliseconds
   const AUTO_SCROLL_MIN_ITEMS = 7; // disable auto-scroll if items <= this
@@ -208,47 +214,12 @@ const Topstudent: React.FC = () => {
     };
   }, [isDesktop]);
 
-  // auto-scroll on desktop only, with adaptive interval
+  // auto-scroll disabled: movement is CSS-only on desktop, manual swipe/buttons on mobile/tablet
   useEffect(() => {
-    // Disable auto-scroll on mobile or if too few items
-    if (!isDesktop || filteredStudents.length <= AUTO_SCROLL_MIN_ITEMS) {
-      if (autoScrollTimerRef.current) {
-        clearTimeout(autoScrollTimerRef.current);
-        autoScrollTimerRef.current = null;
-      }
-      return;
+    if (autoScrollTimerRef.current) {
+      clearTimeout(autoScrollTimerRef.current);
+      autoScrollTimerRef.current = null;
     }
-
-    const startAutoScroll = () => {
-      const advance = async () => {
-        // Skip if currently animating
-        if (isAnimatingRef.current) {
-          autoScrollTimerRef.current = window.setTimeout(advance, 300);
-          return;
-        }
-
-        // Calculate next index
-        const len = filteredStudents.length;
-        const nextIndex = (currentIndexRef.current + 1) % len;
-
-        // Navigate without backward wrap flag (always forward)
-        await navigateToIndex(nextIndex, false);
-
-        // Schedule next advance
-        autoScrollTimerRef.current = window.setTimeout(advance, AUTO_SCROLL_INTERVAL);
-      };
-
-      autoScrollTimerRef.current = window.setTimeout(advance, AUTO_SCROLL_INTERVAL);
-    };
-
-    startAutoScroll();
-
-    return () => {
-      if (autoScrollTimerRef.current) {
-        clearTimeout(autoScrollTimerRef.current);
-        autoScrollTimerRef.current = null;
-      }
-    };
   }, [filteredStudents, isDesktop]);
 
   // reset carousel when filter changes
@@ -316,13 +287,45 @@ const Topstudent: React.FC = () => {
 
       <div className="w-full" style={{ backgroundColor: '#000000' }}>
 
-        <div className="relative w-full flex items-center overflow-hidden" style={{ backgroundColor: '#3a3a3a' }}>
+        {/* Desktop: CSS-based continuous scroll like Gallery */}
+        <div className="hidden lg:block relative w-full overflow-hidden" style={{ backgroundColor: '#3a3a3a' }}>
+          <div className="flex w-max animate-scroll-horizontal hover:[animation-play-state:paused] will-change-transform py-10 gap-6">
+            {marqueeStudents.map((student, idx) => (
+              <div
+                key={idx + '-' + student.rank}
+                className="flex-shrink-0 w-80 h-80 landing-card flex flex-col items-center gap-4 relative pt-16 pb-8 bg-white rounded-3xl shadow-lg"
+              >
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/3 w-16 h-16 rounded-full flex items-center justify-center font-black text-2xl shadow-xl" style={{ backgroundColor: '#ebe6e6', color: '#ffffff' }}>
+                  <img
+                    src={student.image || studentImage}
+                    alt={student.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
+                <div className="text-center px-4">
+                  <p className="text-4xl font-extrabold mb-1" style={{ color: '#d12121' }}>
+                    {student.marks}%
+                  </p>
+                  <p className="text-xl font-bold mb-2" style={{ color: '#d12121' }}>
+                    Rank {student.rank.toString().padStart(2, '0')}
+                  </p>
+                  <h4 className="font-extrabold text-black text-xl mb-1 whitespace-nowrap truncate">{student.name}</h4>
+                  <p className="text-s text-gray-500 font-bold uppercase tracking-wider mb-1 text-gray/100">{student.school}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Mobile & tablet: keep existing swipeable carousel */}
+        <div className="lg:hidden relative w-full flex items-center overflow-hidden" style={{ backgroundColor: '#3a3a3a' }}>
 
           {/* Mobile chevron (overlay) */}
           <button
             type="button"
             onClick={handlePrev}
-            className="lg:hidden absolute left-4 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-8 h-8 rounded-full border border-red-600 text-red-600 bg-black/40"
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-8 h-8 rounded-full border border-red-600 text-red-600 bg-black/40"
             aria-label="Previous student mobile"
           >
             &#8249;
@@ -336,19 +339,12 @@ const Topstudent: React.FC = () => {
             ref={carouselRef}
             className="overflow-x-auto no-scrollbar w-full py-10 snap-x snap-mandatory flex gap-6"
             style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}
-            // wheel handler left in place only for logging; it won't fire on desktop because
-            // we attach a non-passive listener that preventsDefault even before React sees it.
-            onWheel={() => {
-              if (window.innerWidth < 1024) return; // desktop only
-            }}
             onTouchStart={(e) => {
-              // Only start tracking if not currently animating
               if (!isAnimatingRef.current) {
                 touchStartXRef.current = e.touches[0].clientX;
               }
             }}
             onTouchEnd={(e) => {
-              // Ignore swipe if animation is in progress
               if (isAnimatingRef.current) {
                 touchStartXRef.current = null;
                 return;
@@ -360,13 +356,10 @@ const Topstudent: React.FC = () => {
               const endX = e.changedTouches[0].clientX;
               const diff = startX - endX;
 
-              // Only trigger if swipe distance > 50px
               if (Math.abs(diff) > 50) {
                 if (diff > 0) {
-                  // Swiped left → next
                   handleNext();
                 } else {
-                  // Swiped right → prev
                   handlePrev();
                 }
               }
@@ -379,34 +372,33 @@ const Topstudent: React.FC = () => {
                 key={idx + '-' + student.rank}
                 className="flex-shrink-0 w-80 h-80 landing-card flex flex-col items-center gap-4 relative pt-16 pb-8 bg-white rounded-3xl shadow-lg snap-center"
               >
-                  {/* profile pic */}
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/3 w-16 h-16 rounded-full flex items-center justify-center font-black text-2xl shadow-xl" style={{ backgroundColor: '#ebe6e6', color: '#ffffff' }}>
-                    <img
-                      src={student.image || studentImage}
-                      alt={student.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-
-                  <div className="text-center px-4">
-                    <p className="text-5xl font-extrabold mb-1" style={{ color: '#d12121' }}>
-                      {student.marks}%
-                    </p>
-                    <p className="text-2xl font-extrabold mb-2" style={{ color: '#d12121' }}>
-                      Rank {student.rank.toString().padStart(2, '0')}
-                    </p>
-                    <h4 className="font-extrabold text-black text-2xl mb-1 whitespace-nowrap truncate">{student.name}</h4>
-                    <p className="text-s text-gray-500 font-bold uppercase tracking-wider mb-1 text-gray/100">{student.school}</p>
-                  </div>
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/3 w-16 h-16 rounded-full flex items-center justify-center font-black text-2xl shadow-xl" style={{ backgroundColor: '#ebe6e6', color: '#ffffff' }}>
+                  <img
+                    src={student.image || studentImage}
+                    alt={student.name}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
-              ))}
-            </div>
+
+                <div className="text-center px-4">
+                  <p className="text-4xl font-extrabold mb-1" style={{ color: '#d12121' }}>
+                    {student.marks}%
+                  </p>
+                  <p className="text-xl font-bold mb-2" style={{ color: '#d12121' }}>
+                    Rank {student.rank.toString().padStart(2, '0')}
+                  </p>
+                  <h4 className="font-extrabold text-black text-xl mb-1 whitespace-nowrap truncate">{student.name}</h4>
+                  <p className="text-s text-gray-500 font-bold uppercase tracking-wider mb-1 text-gray/100">{student.school}</p>
+                </div>
+              </div>
+            ))}
+          </div>
 
           {/* Right chevron - mobile overlay */}
           <button
             type="button"
             onClick={handleNext}
-            className="lg:hidden absolute right-4 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-8 h-8 rounded-full border border-red-600 text-red-600 bg-black/40"
+            className="absolute right-4 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-8 h-8 rounded-full border border-red-600 text-red-600 bg-black/40"
             aria-label="Next student mobile"
           >
             &#8250;
