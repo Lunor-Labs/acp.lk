@@ -68,12 +68,12 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'shadow-2xl' : ''} bg-[#eb1b23]`}
     >
-      <div className="max-w-full mx-auto px-0">
-        <div className="flex items-center justify-between h-20 lg:h-28 px-4 lg:px-0 relative">
+      <div className="max-w-full mx-auto">
+        <div className="flex items-center justify-between h-16 lg:h-28 px-4 lg:px-0 relative">
           {/* Mobile Menu Button - Left */}
-          <div className="lg:hidden flex-shrink-0 z-10 w-[100px] flex justify-start">
+          <div className="lg:hidden flex-shrink-0 z-10">
             <button
-              className="flex flex-col gap-1.5 p-2 bg-transparent rounded-lg"
+              className="flex flex-col gap-1.5 p-1 bg-transparent"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-label="Toggle menu"
             >
@@ -83,7 +83,7 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
             </button>
           </div>
 
-          {/* Logo/Brand Section - Centered on Mobile, Left/DarkRed on Desktop */}
+          {/* Logo/Brand Section - Centered on Mobile */}
           <div
             className="absolute left-1/2 -translate-x-1/2 lg:static lg:transform-none flex items-center justify-center lg:px-8 cursor-pointer bg-transparent lg:bg-[#8b0e11] h-full min-w-[120px] lg:min-w-[240px] z-10"
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
@@ -95,7 +95,7 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
             />
           </div>
 
-          <div className="flex items-center justify-end lg:justify-between lg:flex-1 h-full lg:pr-8 z-10 w-[100px] lg:w-auto">
+          <div className="flex items-center justify-end lg:justify-between lg:flex-1 h-full lg:pr-8 z-10">
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center h-full">
               {navLinks.map((link) => (
@@ -113,11 +113,11 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
             </div>
 
             {/* CTA Button and Mobile Menu */}
-            <div className="flex items-center gap-8 lg:gap-4 justify-end">
+            <div className="flex items-center">
               {!user && (
                 <button
                   onClick={onLoginRequest}
-                  className="bg-white text-black font-bold px-4 lg:px-8 py-2 md:py-3 rounded-full shadow-lg transition-all duration-200 hover:bg-gray-100 text-sm whitespace-nowrap"
+                  className="bg-white text-black font-bold px-5 lg:px-8 py-2 lg:py-3 rounded-full shadow-lg transition-all duration-200 hover:bg-gray-100 text-sm lg:text-sm whitespace-nowrap"
                 >
                   Register
                 </button>
@@ -125,7 +125,6 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
             </div>
           </div>
         </div>
-
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
           <div className="lg:hidden border-t border-white/20 bg-[#eb1b23] shadow-xl">
