@@ -75,12 +75,27 @@
 }
 
 .footer-logo {
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.footer-logo-img {
+  height: 50px;
+  width: auto;
+  object-fit: contain;
+  filter: brightness(1.1);
+}
+
+@media (min-width: 1024px) {
+  .footer-logo-img {
+    height: 60px;
+  }
 }
 
 .footer-logo-text {
   font-size: 2rem;
-  font-weight: 700;
+  font-weight: 800;
   margin: 0;
   letter-spacing: 2px;
   color: #f3b113;
@@ -94,16 +109,17 @@
 }
 
 .footer-tagline {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   line-height: 1.5;
-  color: #a0a0a0;
+  color: #ffffff;
   margin: 0 0 1.5rem 0;
-  max-width: 250px;
+  max-width: 280px;
+  font-weight: 500;
 }
 
 @media (min-width: 1024px) {
   .footer-tagline {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
   }
 }
 
@@ -250,11 +266,12 @@
 }
 
 .footer-contact-icon {
-  font-size: 1.25rem;
-  min-width: 24px;
+  font-size: 1rem;
+  min-width: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: #f3b113;
 }
 
 .footer-contact-value {

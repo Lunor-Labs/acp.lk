@@ -1,25 +1,13 @@
-import "./Centers.css";
+import React from 'react';
+import './Centers.css';
+import islandwideImg from '../../../assets/clz-banner.jpg';
+import visionImg from '../../../assets/second-slider-second.jpg';
+import riochemImg from '../../../assets/visionwalasmulla.png';
 
 const Centers: React.FC = () => {
-  const centersImages = [
-    {
-      src: '/src/assets/clz-banner.jpg',
-      alt: 'Islandwide Online class center',
-    },
-    {
-      src: '/src/assets/second-slider-second.jpg',
-      alt: 'Vision Institute class center',
-    },
-    {
-      src: '/src/assets/image.png',
-      alt: 'Riochem Institute class center',
-    }
-  ];
-
   return (
     <section className="centers-section" id="centers">
       <div className="centers-container">
-
         {/* Header */}
         <div className="centers-header">
           <h2 className="centers-title">
@@ -27,37 +15,40 @@ const Centers: React.FC = () => {
           </h2>
         </div>
 
-        {/* Grid Layout */}
+        {/* Centers Grid */}
         <div className="centers-grid">
-          {/* Left Large Image */}
-          <div className="centers-grid-left">
-            <div className="centers-image-card centers-image-large">
-              <img
-                src={centersImages[0].src}
-                alt={centersImages[0].alt}
-                className="centers-image"
-                loading="lazy"
-              />
-            </div>
+          {/* Left - Islandwide Online Card */}
+          <div className="center-card center-card-large">
+            <img src={islandwideImg} alt="Islandwide Online" className="center-card-bg" />
+            
           </div>
 
-          {/* Right Stacked Images */}
-          <div className="centers-grid-right">
-            <div className="centers-image-card">
-              <img
-                src={centersImages[1].src}
-                alt={centersImages[1].alt}
-                className="centers-image"
-                loading="lazy"
-              />
+          {/* Right Column - Two Stacked Cards */}
+          <div className="center-cards-column">
+            {/* Vision Institute Card */}
+            <div className="center-card center-card-small">
+              <img src={visionImg} alt="Vision Institute" className="center-card-bg" />
+              <div className="center-card-content">
+                <div className="center-card-inner">
+                  
+                  
+                </div>
+              </div>
             </div>
-            <div className="centers-image-card">
-              <img
-                src={centersImages[2].src}
-                alt={centersImages[2].alt}
-                className="centers-image"
-                loading="lazy"
-              />
+
+            {/* Riochem Institute Card */}
+            <div className="center-card center-card-small">
+              <img src={riochemImg} alt="Riochem Institute" className="center-card-bg" />
+              <div className="center-card-content">
+                <div className="center-card-inner">
+                  <div className="center-info-block">
+                    
+
+                    
+                  </div>
+                  
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -65,5 +56,7 @@ const Centers: React.FC = () => {
     </section>
   );
 };
+
+
 
 export default Centers;

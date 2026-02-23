@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useRef } from 'react';
 import studentImage from '../../../assets/student1.png';
 import "./Success.css";
 
@@ -12,7 +12,6 @@ interface SuccessStudentData {
 }
 
 const Success: React.FC = () => {
-  const [currentSlide, setCurrentSlide] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const students: SuccessStudentData[] = [
@@ -66,15 +65,31 @@ const Success: React.FC = () => {
     }
   ];
 
+  const handleScroll = (direction: 'left' | 'right') => {
+    if (!scrollContainerRef.current) return;
+    
+    const container = scrollContainerRef.current;
+    const cardWidth = container.querySelector('.success-card')?.clientWidth || 0;
+    const gap = 32; // 2rem gap
+    const scrollAmount = cardWidth + gap;
+    
+    const newScrollPosition = direction === 'left' 
+      ? container.scrollLeft - scrollAmount 
+      : container.scrollLeft + scrollAmount;
+    
+    container.scrollTo({
+      left: newScrollPosition,
+      behavior: 'smooth'
+    });
+  };
+
   const handlePrevious = () => {
-    setCurrentSlide((prev) => (prev > 0 ? prev - 1 : students.length - 3));
+    handleScroll('left');
   };
 
   const handleNext = () => {
-    setCurrentSlide((prev) => (prev < students.length - 3 ? prev + 1 : 0));
+    handleScroll('right');
   };
-
-  const visibleStudents = students.slice(currentSlide, currentSlide + 3);
 
   return (
     <section className="success-section" id="success">
@@ -94,14 +109,12 @@ const Success: React.FC = () => {
             onClick={handlePrevious}
             aria-label="Previous students"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
+            &lt;
           </button>
 
           {/* Student Grid */}
-          <div ref={scrollContainerRef} className="success-grid">
-            {visibleStudents.map((student, index) => (
+          <div ref={scrollContainerRef} className="success-grid success-grid-scroll">
+            {students.map((student, index) => (
               <div key={index} className="success-card">
                 {/* Image with Badge */}
                 <div className="success-image-wrapper">
@@ -133,9 +146,7 @@ const Success: React.FC = () => {
             onClick={handleNext}
             aria-label="Next students"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 18l6-6-6-6" />
-            </svg>
+            &gt;
           </button>
         </div>
       </div>

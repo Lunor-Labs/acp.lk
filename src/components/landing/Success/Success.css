@@ -83,6 +83,7 @@
   width: 100%;
   max-width: 1100px;
   margin: 0 auto;
+  overflow: hidden;
 }
 
 /* Navigation Arrows */
@@ -102,6 +103,9 @@
   transition: all 0.3s ease;
   z-index: 10;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  font-size: 1.2rem;
+  color: #666;
+  font-weight: 600;
 }
 
 .success-nav-button:hover {
@@ -122,6 +126,7 @@
   .success-nav-button {
     width: 48px;
     height: 48px;
+    font-size: 1.3rem;
   }
   
   .success-nav-button-left {
@@ -131,12 +136,6 @@
   .success-nav-button-right {
     right: -60px;
   }
-}
-
-.success-nav-button svg {
-  width: 20px;
-  height: 20px;
-  color: #666;
 }
 
 /* ========================================
@@ -149,6 +148,20 @@
   grid-template-columns: 1fr;
   justify-items: center;
   padding: 1rem 0;
+  position: relative;
+}
+
+/* Scrollable Grid for Desktop */
+.success-grid-scroll {
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.success-grid-scroll::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
 
 @media (min-width: 640px) {
@@ -159,9 +172,48 @@
 }
 
 @media (min-width: 1024px) {
-  .success-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .success-grid-scroll {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    overflow-x: auto;
     gap: 2rem;
+    padding: 1rem 0.5rem;
+    scroll-snap-type: x mandatory;
+  }
+  
+  .success-grid-scroll .success-card {
+    flex: 0 0 auto;
+    width: 290px;
+    scroll-snap-align: start;
+  }
+}
+
+/* Carousel Transition Animation */
+.success-grid-transitioning .success-card {
+  animation: slideIn 0.5s ease-out;
+}
+
+.success-grid-transitioning .success-card:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.success-grid-transitioning .success-card:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.success-grid-transitioning .success-card:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+@keyframes slideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(30px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
   }
 }
 
@@ -324,5 +376,9 @@
   .success-image,
   .success-nav-button {
     transition: none !important;
+  }
+  
+  .success-grid-transitioning .success-card {
+    animation: none !important;
   }
 }
