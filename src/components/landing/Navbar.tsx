@@ -91,7 +91,7 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
             <img
               src={acpLogo}
               alt="ACP Logo"
-              className="h-10 lg:h-24 w-auto object-contain drop-shadow-xl lg:scale-110 transform origin-center"
+              className="h-20 lg:h-27 w-auto object-contain drop-shadow-xl scale-[1.25] lg:scale-110 transform origin-center"
             />
           </div>
 
