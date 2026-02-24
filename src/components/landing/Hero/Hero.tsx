@@ -28,58 +28,65 @@ const Hero: React.FC<HeroProps> = ({ onLoginRequest }) => {
 
   return (
     <>
-      {/* ── Mobile Hero (< md): 4:3 aspect ratio with mobile images ── */}
+      {/* ── Mobile Hero (< md): landscape slider with overlay ── */}
       <section
-        className="relative md:hidden aspect-[4/3] w-full overflow-hidden bg-dark"
+        className="relative md:hidden w-full overflow-hidden bg-dark"
         id="home"
       >
-        {slides.map((slide, index) => (
-          <div
-            key={index}
-            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentSlide ? 'opacity-100 z-0' : 'opacity-0 z-[-1]'
-              }`}
-          >
-            <img
-              src={slide.mobile}
-              alt={`Hero Slide ${index + 1}`}
-              className="w-full h-full object-cover object-left"
-            />
-          </div>
-        ))}
-
-        {/* Mobile Content */}
-        <div className="relative z-10 w-full h-full flex flex-col justify-end px-4 pb-4 pointer-events-none">
-          <div className="flex flex-row gap-3 w-full pointer-events-auto mb-4">
-            <button
-              onClick={onLoginRequest}
-              className="bg-[#eb1b23] hover:bg-red-700 text-white font-bold px-5 py-2.5 rounded-full shadow-lg text-sm transition-all flex items-center justify-center gap-2 group"
+        {/* 16:9 container matching mobile images */}
+        <div className="relative w-full aspect-[16/9]">
+          {slides.map((slide, index) => (
+            <div
+              key={index}
+              className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentSlide ? 'opacity-100 z-0' : 'opacity-0 z-[-1]'
+                }`}
             >
-              Student Portal
-              <div className="bg-white rounded-full p-0.5 group-hover:translate-x-1 transition-transform">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#eb1b23" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
-              </div>
-            </button>
-            <a
-              href="#contact"
-              className="bg-white hover:bg-gray-100 text-black font-bold px-5 py-2.5 rounded-full shadow-lg text-sm transition-all text-center flex items-center justify-center"
-            >
-              Contact Us
-            </a>
-          </div>
-
-          {/* Carousel Dots - centered */}
-          <div className="flex gap-2 justify-center w-full pointer-events-auto">
-            {slides.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentSlide(index)}
-                className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${index === currentSlide ? 'bg-[#eb1b23] scale-125' : 'bg-white hover:bg-white/80'
-                  }`}
-                aria-label={`Go to slide ${index + 1}`}
+              <img
+                src={slide.mobile}
+                alt={`Hero Slide ${index + 1}`}
+                className="w-full h-full object-cover object-left"
               />
-            ))}
+            </div>
+          ))}
+
+          {/* Dark gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent z-[1]" />
+
+          {/* Bottom overlay: buttons + dots */}
+          <div className="absolute bottom-0 left-0 right-0 z-10 px-3 pb-1.5">
+            {/* Buttons row */}
+            <div className="flex flex-row gap-2 mb-1.5">
+              <button
+                onClick={onLoginRequest}
+                className="bg-[#eb1b23] hover:bg-red-700 text-white font-bold px-3 py-1.5 rounded-full shadow-lg text-[10px] transition-all flex items-center justify-center gap-1.5 group"
+              >
+                Student Portal
+                <div className="bg-white rounded-full p-0.5 group-hover:translate-x-1 transition-transform">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#eb1b23" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </button>
+              <a
+                href="#contact"
+                className="bg-white hover:bg-gray-100 text-black font-bold px-3 py-1.5 rounded-full shadow-lg text-[10px] transition-all text-center flex items-center justify-center"
+              >
+                Contact Us
+              </a>
+            </div>
+
+            {/* Carousel Dots */}
+            <div className="flex gap-2 justify-center w-full">
+              {slides.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentSlide(index)}
+                  className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${index === currentSlide ? 'bg-[#eb1b23] scale-125' : 'bg-white hover:bg-white/80'
+                    }`}
+                  aria-label={`Go to slide ${index + 1}`}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </section>
