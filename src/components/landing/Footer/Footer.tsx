@@ -57,7 +57,7 @@ const Footer: React.FC = () => {
   ];
 
   return (
-    <footer className="footer-section">
+    <footer className="footer-section" id="contact">
       <div className="footer-content">
         {/* Main Footer Grid */}
         <div className="footer-grid">
@@ -67,8 +67,8 @@ const Footer: React.FC = () => {
               <img src={acpLogo} alt="ACP Logo" className="footer-logo-img" />
               
             </div>
-            <p className="footer-tagline"><b>ශ්‍රි ලංකාවේ විශ්වාසවන්ත හා විශිෂ්ටතම physics පංතිය</b></p>
-            
+            <p className="footer-tagline">උසස්වත්ම විධිමාතෘකා හා විස්තරිත physics සටහන</p>
+
             <div className="footer-social">
               {socialLinks.map((social) => (
                 <a

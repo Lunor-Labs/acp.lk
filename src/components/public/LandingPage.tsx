@@ -4,15 +4,12 @@ import {
   Hero,
   Success,
   Centers,
-  Process,
   Teacher,
-  Discussion,
   Topstudent,
   Gallery,
-  Reviews,
   Channels,
-  Contact,
   Footer,
+  Reviews
 } from '../landing';
 
 interface LandingPageProps {
@@ -25,15 +22,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginRequest }) => {
       <Navbar onLoginRequest={onLoginRequest} />
       <Hero onLoginRequest={onLoginRequest} />
       <Success />
-      <Centers />
-      <Process />
       <Teacher />
-      <Discussion />
-      <Topstudent />
-      <Gallery />
+      <Centers />
       <Reviews />
+      <Gallery />
+      <Topstudent />
       <Channels />
-      <Contact />
       <Footer />
     </>
   );

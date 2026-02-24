@@ -2,6 +2,10 @@ import type { TelegramChannel } from '../../../types/landing';
 import ChannelCard from './ChannelCard';
 import "./Channels.css";
 
+// Import images for Vite bundling
+import newTutionTelegramImg from '../../../assets/new-tution-telegram.jpg';
+import telegramIconImg from '../../../assets/telegram_imag-removebg-preview.png';
+
 const Channels: React.FC = () => {
   const channels: TelegramChannel[] = [
     {
@@ -9,33 +13,33 @@ const Channels: React.FC = () => {
       category: 'THEORY',
       buttonText: 'Join Now',
       joinLink: '#',
-      image: '/src/assets/new-tution-telegram.jpg'
+      image: newTutionTelegramImg
     },
     {
       year: '2027',
       category: 'THEORY',
       buttonText: 'Join Now',
       joinLink: '#',
-      image: '/src/assets/new-tution-telegram.jpg'
+      image: newTutionTelegramImg
     },
     {
       year: '2028',
       category: 'THEORY',
       buttonText: 'Join Now',
       joinLink: '#',
-      image: '/src/assets/new-tution-telegram.jpg'
+      image: newTutionTelegramImg
     }
   ];
 
   return (
-    <section className="channels-section">
+    <section className="channels-section" id="channels">
       <div className="channels-container">
         <div className="channels-header">
           <h2 className="channels-title">
             Our <span className="channels-telegram-text">Telegram</span> Channels
             <img
               className="channels-telegram-icon"
-              src="/src/assets/telegram_imag-removebg-preview.png"
+              src={telegramIconImg}
               alt="Telegram"
               loading="lazy"
             />
@@ -46,7 +50,7 @@ const Channels: React.FC = () => {
           {channels.map((channel, index) => (
             <div key={index} className="channel-item">
               <ChannelCard {...channel} />
-              <button 
+              <button
                 onClick={() => window.open(channel.joinLink, '_blank')}
                 className="channel-button"
                 aria-label={`Join ${channel.year} ${channel.category} channel`}

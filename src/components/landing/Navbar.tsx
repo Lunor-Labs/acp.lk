@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import acpLogo from '../../assets/acp-logo.png';
 
 interface NavbarProps {
   onLoginRequest?: () => void;
@@ -16,7 +17,7 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
       setIsScrolled(window.scrollY > 20);
 
       // Scroll spy
-      const sections = ['home', 'success', 'centers', 'process', 'top10', 'gallery', 'reviews', 'contact'];
+      const sections = ['home', 'success', 'teacher', 'centers', 'reviews', 'gallery', 'top10', 'channels', 'contact'];
       const scrollPosition = window.scrollY + 100;
 
       for (const section of sections) {
@@ -53,105 +54,93 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
 
   const navLinks = [
     { id: 'home', label: 'Home' },
-    { id: 'success', label: 'Success' },
+    { id: 'success', label: 'Our Success' },
+    { id: 'teacher', label: 'Teacher' },
     { id: 'centers', label: 'Centers' },
-    { id: 'process', label: 'Process' },
-    { id: 'top10', label: 'Top 10' },
+    { id: 'reviews', label: 'Student Reviews' },
     { id: 'gallery', label: 'Gallery' },
-    { id: 'reviews', label: 'Reviews' },
+    { id: 'top10', label: 'Top 10' },
+    { id: 'channels', label: 'Channels' },
     { id: 'contact', label: 'Contact' },
   ];
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-dark shadow-2xl' : 'bg-dark/95 backdrop-blur-sm'
-      }`}>
-      <div className="max-w-7xl mx-auto px-6 py-4">
-        <div className="flex items-center justify-between">
-          {/* Logo/Brand */}
+    <nav
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'shadow-2xl' : ''} bg-[#eb1b23]`}
+    >
+      <div className="max-w-full mx-auto">
+        <div className="flex items-center justify-between h-16 lg:h-28 px-4 lg:px-0 relative">
+          {/* Mobile Menu Button - Left */}
+          <div className="lg:hidden flex-shrink-0 z-10">
+            <button
+              className="flex flex-col gap-1.5 p-1 bg-transparent"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              <span className={`w-7 h-0.5 bg-white transition-all ${isMobileMenuOpen ? 'rotate-45 translate-y-2' : ''}`}></span>
+              <span className={`w-7 h-0.5 bg-white transition-all ${isMobileMenuOpen ? 'opacity-0' : ''}`}></span>
+              <span className={`w-7 h-0.5 bg-white transition-all ${isMobileMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}></span>
+            </button>
+          </div>
+
+          {/* Logo/Brand Section - Centered on Mobile */}
           <div
-            className="flex items-center gap-3 cursor-pointer group"
+            className="absolute left-1/2 -translate-x-1/2 lg:static lg:transform-none flex items-center justify-center lg:px-8 cursor-pointer bg-transparent lg:bg-[#8b0e11] h-full min-w-[120px] lg:min-w-[240px] z-10"
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           >
-            <div className="relative">
-              <div className="absolute inset-0 bg-primary rounded-lg blur-md opacity-50 group-hover:opacity-75 transition-opacity"></div>
-              <div className="relative bg-primary px-4 py-2 rounded-lg">
-                <span className="text-dark font-black text-2xl">AL</span>
-              </div>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-neutral-white font-bold text-xl leading-tight">Physics</span>
-              <span className="text-gray text-xs font-medium">Online Tuition</span>
-            </div>
+            <img
+              src={acpLogo}
+              alt="ACP Logo"
+              className="h-20 lg:h-27 w-auto object-contain drop-shadow-xl scale-[1.25] lg:scale-110 transform origin-center"
+            />
           </div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center gap-8">
-            {navLinks.map((link) => (
-              <button
-                key={link.id}
-                onClick={() => scrollToSection(link.id)}
-                className={`text-sm font-semibold transition-all relative group ${activeSection === link.id
-                  ? 'text-primary'
-                  : 'text-neutral-white hover:text-primary'
-                  }`}
-              >
-                {link.label}
-                {activeSection === link.id && (
-                  <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary"></span>
-                )}
-              </button>
-            ))}
-          </div>
-
-          {/* CTA Button */}
-          <div className="hidden lg:block">
-            {!user && (
-              <button
-                onClick={onLoginRequest}
-                className="relative group bg-primary hover:bg-primary-500 text-dark font-bold px-8 py-3 rounded-lg transition-all duration-300 hover:shadow-2xl hover:shadow-primary/50 hover:-translate-y-0.5"
-              >
-                <span className="relative z-10">Student Portal</span>
-                <div className="absolute inset-0 bg-gradient-to-r from-primary-400 to-primary-600 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              </button>
-            )}
-          </div>
-
-          {/* Mobile Menu Button */}
-          <button
-            className="lg:hidden flex flex-col gap-1.5 p-2"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            aria-label="Toggle menu"
-          >
-            <span className={`w-6 h-0.5 bg-neutral-white transition-all ${isMobileMenuOpen ? 'rotate-45 translate-y-2' : ''}`}></span>
-            <span className={`w-6 h-0.5 bg-neutral-white transition-all ${isMobileMenuOpen ? 'opacity-0' : ''}`}></span>
-            <span className={`w-6 h-0.5 bg-neutral-white transition-all ${isMobileMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}></span>
-          </button>
-        </div>
-
-        {/* Mobile Menu */}
-        {isMobileMenuOpen && (
-          <div className="lg:hidden mt-4 pb-4 border-t border-neutral-gray-800 pt-4">
-            <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-end lg:justify-between lg:flex-1 h-full lg:pr-8 z-10">
+            {/* Desktop Navigation */}
+            <div className="hidden lg:flex items-center h-full">
               {navLinks.map((link) => (
                 <button
                   key={link.id}
                   onClick={() => scrollToSection(link.id)}
-                  className={`text-left py-2 px-4 rounded-lg font-semibold transition-colors ${activeSection === link.id
-                    ? 'bg-primary text-dark'
-                    : 'text-neutral-white hover:bg-dark-50'
+                  className={`h-full px-6 text-sm lg:text-base font-bold tracking-wide transition-all flex items-center ${activeSection === link.id
+                    ? 'bg-white text-black'
+                    : 'text-white hover:bg-white/10'
                     }`}
                 >
                   {link.label}
                 </button>
               ))}
+            </div>
+
+            {/* CTA Button and Mobile Menu */}
+            <div className="flex items-center">
               {!user && (
                 <button
                   onClick={onLoginRequest}
-                  className="bg-primary hover:bg-primary-500 text-dark font-bold px-6 py-3 rounded-lg mt-2"
+                  className="bg-white text-black font-bold px-5 lg:px-8 py-2 lg:py-3 rounded-full shadow-lg transition-all duration-200 hover:bg-gray-100 text-sm lg:text-sm whitespace-nowrap"
                 >
-                  Student Portal
+                  Register
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+        {/* Mobile Menu */}
+        {isMobileMenuOpen && (
+          <div className="lg:hidden border-t border-white/20 bg-[#eb1b23] shadow-xl">
+            <div className="flex flex-col">
+              {navLinks.map((link) => (
+                <button
+                  key={link.id}
+                  onClick={() => scrollToSection(link.id)}
+                  className={`text-left py-4 px-8 font-bold transition-colors ${activeSection === link.id
+                    ? 'bg-white text-black'
+                    : 'text-white hover:bg-white/10'
+                    }`}
+                >
+                  {link.label}
+                </button>
+              ))}
             </div>
           </div>
         )}
