@@ -66,9 +66,9 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'shadow-2xl' : ''} bg-[#eb1b23]`}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'shadow-2xl' : ''} bg-[#eb1b23] w-full`}
     >
-      <div className="max-w-full mx-auto">
+      <div className="max-w-screen-2xl mx-auto w-full">
         <div className="flex items-center justify-between h-12 lg:h-12 px-4 lg:px-0 relative">
           {/* Mobile Menu Button - Left */}
           <div className="lg:hidden flex-shrink-0 z-10">
