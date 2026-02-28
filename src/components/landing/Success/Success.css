@@ -75,106 +75,59 @@
 }
 
 /* ========================================
-   CAROUSEL WRAPPER
+   MARQUEE CONTAINER
    ======================================== */
 
-.success-carousel-wrapper {
-  position: relative;
-  width: 100%;
-  max-width: 1100px;
+/* card width + gap constants:
+   card = 290px, gap = 2rem (32px)
+   1 card  = 290px
+   2 cards = 290 + 32 + 290        = 612px
+   3 cards = 290 + 32 + 290 + 32 + 290 = 934px          */
+
+/* Outer: clips overflow so only N cards show at once.
+   max-width narrows the viewport window per breakpoint. */
+.success-marquee-outer {
+  overflow: hidden;
+  padding: 1rem 0;
+  /* < 768px: show 1 card */
+  max-width: 290px;
   margin: 0 auto;
 }
 
-/* Navigation Arrows */
-.success-nav-button {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(0, 0, 0, 0.1);
+@media (min-width: 768px) {
+
+  /* 768–1023px: show 2 cards */
+  .success-marquee-outer {
+    max-width: 612px;
+  }
+}
+
+@media (min-width: 1024px) {
+
+  /* >= 1024px: show 3 cards */
+  .success-marquee-outer {
+    max-width: 934px;
+  }
+}
+
+/* Track: flex row, width is content-driven (w-max equivalent) */
+.success-marquee-track {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  z-index: 10;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.success-nav-button:hover {
-  background: #ffffff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transform: translateY(-50%) scale(1.05);
-}
-
-.success-nav-button-left {
-  left: -20px;
-}
-
-.success-nav-button-right {
-  right: -20px;
-}
-
-@media (min-width: 1024px) {
-  .success-nav-button {
-    width: 48px;
-    height: 48px;
-  }
-  
-  .success-nav-button-left {
-    left: -60px;
-  }
-  
-  .success-nav-button-right {
-    right: -60px;
-  }
-}
-
-.success-nav-button svg {
-  width: 20px;
-  height: 20px;
-  color: #666;
-}
-
-/* ========================================
-   STUDENT GRID
-   ======================================== */
-
-.success-grid {
-  display: grid;
   gap: 2rem;
-  grid-template-columns: 1fr;
-  justify-items: center;
-  padding: 1rem 0;
-}
-
-@media (min-width: 640px) {
-  .success-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 2.5rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .success-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 2rem;
-  }
+  width: max-content;
 }
 
 /* ========================================
    STUDENT CARD
    ======================================== */
 
+/* Fixed width — never changes across breakpoints */
 .success-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 100%;
-  max-width: 290px;
+  flex-shrink: 0;
+  width: 290px;
   text-align: center;
   transition: transform 0.3s ease;
   background: #ffffff;
@@ -320,6 +273,7 @@
    ======================================== */
 
 @media (prefers-reduced-motion: reduce) {
+
   .success-card,
   .success-image,
   .success-nav-button {
