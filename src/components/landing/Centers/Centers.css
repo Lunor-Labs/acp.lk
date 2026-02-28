@@ -59,6 +59,27 @@
   }
 }
 
+.centers-image-card {
+  width: 100%;
+  height: 100%;
+  border-radius: 1.25rem;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.centers-image-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+}
+
+.centers-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 /* ========================================
    CENTER CARD
    ======================================== */
@@ -268,27 +289,28 @@
   .centers-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .centers-grid-right {
     grid-template-rows: auto;
   }
-  
+
   .center-card-container {
     flex-direction: column !important;
     min-height: 400px;
   }
-  
+
   .center-card-light .center-card-image-section,
   .center-card-dark .center-card-image-section {
     padding: 1.5rem;
   }
-  
+
   .center-card-graphic {
     max-width: 200px !important;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .center-card-container,
   .center-card-button {
     transition: none;

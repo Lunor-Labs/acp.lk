@@ -66,10 +66,10 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'shadow-2xl' : ''} bg-[#eb1b23]`}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'shadow-2xl' : ''} bg-[#eb1b23] w-full`}
     >
-      <div className="max-w-full mx-auto">
-        <div className="flex items-center justify-between h-16 lg:h-28 px-4 lg:px-0 relative">
+      <div className="max-w-screen-2xl mx-auto w-full">
+        <div className="flex items-center justify-between h-12 lg:h-12 px-4 lg:px-0 relative">
           {/* Mobile Menu Button - Left */}
           <div className="lg:hidden flex-shrink-0 z-10">
             <button
@@ -85,24 +85,24 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
 
           {/* Logo/Brand Section - Centered on Mobile */}
           <div
-            className="absolute left-1/2 -translate-x-1/2 lg:static lg:transform-none flex items-center justify-center lg:px-8 cursor-pointer bg-transparent lg:bg-[#8b0e11] h-full min-w-[120px] lg:min-w-[240px] z-10"
+            className="absolute left-1/2 -translate-x-1/2 lg:static lg:transform-none flex items-center justify-center lg:px-4 xl:px-8 cursor-pointer bg-transparent lg:bg-[#8b0e11] h-full min-w-[120px] lg:min-w-[180px] xl:min-w-[240px] z-10"
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           >
             <img
               src={acpLogo}
               alt="ACP Logo"
-              className="h-20 lg:h-27 w-auto object-contain drop-shadow-xl scale-[1.25] lg:scale-110 transform origin-center"
+              className="h-10 lg:h-16 w-auto object-contain drop-shadow-xl transform origin-center"
             />
           </div>
 
-          <div className="flex items-center justify-end lg:justify-between lg:flex-1 h-full lg:pr-8 z-10">
-            {/* Desktop Navigation */}
-            <div className="hidden lg:flex items-center h-full">
+          <div className="hidden lg:flex items-center h-full lg:flex-1 z-10">
+            {/* Desktop Navigation links — flex-1 each so they fill all available space evenly */}
+            <div className="flex flex-1 items-center h-full">
               {navLinks.map((link) => (
                 <button
                   key={link.id}
                   onClick={() => scrollToSection(link.id)}
-                  className={`h-full px-6 text-sm lg:text-base font-bold tracking-wide transition-all flex items-center ${activeSection === link.id
+                  className={`flex-1 h-full text-sm font-bold tracking-wide transition-all flex items-center justify-center whitespace-nowrap ${activeSection === link.id
                     ? 'bg-white text-black'
                     : 'text-white hover:bg-white/10'
                     }`}
@@ -111,18 +111,27 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
                 </button>
               ))}
             </div>
+            {/* Register button — fixed size, no flex-grow */}
+            {!user && (
+              <button
+                onClick={onLoginRequest}
+                className="mx-4 bg-white text-black font-bold px-4 xl:px-6 py-1.5 rounded-full shadow-lg transition-all duration-200 hover:bg-gray-100 text-sm whitespace-nowrap flex-shrink-0"
+              >
+                Register
+              </button>
+            )}
+          </div>
 
-            {/* CTA Button and Mobile Menu */}
-            <div className="flex items-center">
-              {!user && (
-                <button
-                  onClick={onLoginRequest}
-                  className="bg-white text-black font-bold px-5 lg:px-8 py-2 lg:py-3 rounded-full shadow-lg transition-all duration-200 hover:bg-gray-100 text-sm lg:text-sm whitespace-nowrap"
-                >
-                  Register
-                </button>
-              )}
-            </div>
+          {/* Mobile CTA only */}
+          <div className="flex lg:hidden items-center z-10">
+            {!user && (
+              <button
+                onClick={onLoginRequest}
+                className="bg-white text-black font-bold px-5 py-2 rounded-full shadow-lg transition-all duration-200 hover:bg-gray-100 text-sm whitespace-nowrap"
+              >
+                Register
+              </button>
+            )}
           </div>
         </div>
         {/* Mobile Menu */}

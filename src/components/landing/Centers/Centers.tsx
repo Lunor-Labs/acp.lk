@@ -4,7 +4,7 @@ import "./Centers.css";
 // Import images so Vite bundles them correctly
 import image1 from '../../../assets/clz-banner.webp';
 import image2 from '../../../assets/second-slider-second.webp';
-import image3 from '../../../assets/image.webp';
+import image3 from '../../../assets/imagezzz.jpg';
 
 const Centers: React.FC = () => {
   const centersImages = [
