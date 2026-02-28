@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import acpLogo from '../../assets/acp-logo.png';
+import acpLogo from '../../assets/acp-logo.webp';
 
 interface NavbarProps {
   onLoginRequest?: () => void;

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import bgImage from '../../../assets/Bg.jpg';
-import bg2 from '../../../assets/bg2.jpg';
-import bg3 from '../../../assets/bg3.jpg';
-import bg4 from '../../../assets/bg4.jpg';
+import bgImage from '../../../assets/Bg.webp';
+import bg2 from '../../../assets/bg2.webp';
+import bg3 from '../../../assets/bg3.webp';
+import bg4 from '../../../assets/bg4.webp';
 
 const Gallery: React.FC = () => {
   const galleryImages = [bgImage, bg2, bg3, bg4];

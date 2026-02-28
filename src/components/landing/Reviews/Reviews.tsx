@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { Review } from '../../../types/landing';
-import testimonialBg from '../../../assets/testimonial-bg.png';
+import testimonialBg from '../../../assets/testimonial-bg.webp';
 
 const Reviews: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
