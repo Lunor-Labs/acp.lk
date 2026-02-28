@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
-import studentImage from '../../../assets/student1.png';
+import studentImage from '../../../assets/student1.webp';
 
 import type { TopStudent } from '../../../types/landing';
 

@@ -3,8 +3,8 @@ import ChannelCard from './ChannelCard';
 import "./Channels.css";
 
 // Import images for Vite bundling
-import newTutionTelegramImg from '../../../assets/new-tution-telegram.jpg';
-import telegramIconImg from '../../../assets/telegram_imag-removebg-preview.png';
+import newTutionTelegramImg from '../../../assets/new-tution-telegram.webp';
+import telegramIconImg from '../../../assets/telegram_imag-removebg-preview.webp';
 
 const Channels: React.FC = () => {
   const channels: TelegramChannel[] = [

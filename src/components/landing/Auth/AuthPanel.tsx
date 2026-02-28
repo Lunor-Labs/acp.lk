@@ -3,8 +3,8 @@ import { useAuth } from '../../../contexts/AuthContext';
 import './Auth.css';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
-import studentBg from '../../../assets/register/student-bg.jpg';
-import acpLogo from '../../../assets/acp-logo.png';
+import studentBg from '../../../assets/register/student-bg.webp';
+import acpLogo from '../../../assets/acp-logo.webp';
 
 interface AuthPanelProps {
   defaultMode?: 'login' | 'register';

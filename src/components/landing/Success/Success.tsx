@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import studentImage from '../../../assets/student1.png';
+import studentImage from '../../../assets/student1.webp';
 import "./Success.css";
 
 interface SuccessStudentData {
