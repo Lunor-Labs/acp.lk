@@ -69,11 +69,11 @@ const Topstudent: React.FC = () => {
   // display list with 5 full sets of clones at either end for seamless looping
   const displayStudents = useMemo(() => {
     if (filteredStudents.length <= 1) return filteredStudents;
-    
+
     const cloneSets = 5;
     const leftClones = Array.from({ length: cloneSets }, () => filteredStudents).flat();
     const rightClones = Array.from({ length: cloneSets }, () => filteredStudents).flat();
-    
+
     return [...leftClones, ...filteredStudents, ...rightClones];
   }, [filteredStudents]);
 
@@ -92,15 +92,15 @@ const Topstudent: React.FC = () => {
 
   const getDisplayIndex = (normalizedIndex: number, len: number, isWrappingBackward: boolean = false): number => {
     if (len <= 1) return 0;
-    
+
     // Normal case: item N maps to display index N + cloneCount
     let displayIndex = normalizedIndex + cloneCount;
-    
+
     // If wrapping backward (going to last from 0), use left clones area
     if (isWrappingBackward && normalizedIndex === len - 1) {
       displayIndex = cloneCount - 1;
     }
-    
+
     return displayIndex;
   };
 
@@ -165,22 +165,22 @@ const Topstudent: React.FC = () => {
 
   const handlePrev = () => {
     if (isAnimatingRef.current) return;
-    
+
     const len = filteredStudents.length;
     if (len === 0) return;
-    
+
     const nextIndex = (currentIndexRef.current - 1 + len) % len;
     const isWrappingBack = nextIndex === len - 1 && currentIndexRef.current === 0;
-    
+
     navigateToIndex(nextIndex, isWrappingBack);
   };
 
   const handleNext = () => {
     if (isAnimatingRef.current) return;
-    
+
     const len = filteredStudents.length;
     if (len === 0) return;
-    
+
     const nextIndex = (currentIndexRef.current + 1) % len;
     navigateToIndex(nextIndex, false);
   };
@@ -226,18 +226,18 @@ const Topstudent: React.FC = () => {
   useEffect(() => {
     currentIndexRef.current = 0;
     isAnimatingRef.current = false;
-    
+
     // Clear any pending auto-scroll timer
     if (autoScrollTimerRef.current) {
       clearTimeout(autoScrollTimerRef.current);
       autoScrollTimerRef.current = null;
     }
-    
+
     // Brief delay to ensure DOM is updated before scrolling
     const timeout = setTimeout(() => {
       scrollToDisplayIndex(cloneCount, false);
     }, 50);
-    
+
     return () => clearTimeout(timeout);
   }, [activeFilter, cloneCount]);
 
@@ -256,26 +256,25 @@ const Topstudent: React.FC = () => {
         <div className="text-center mb-16">
 
           <h2 className="landing-title text-white px-4 sm:px-0 text-2xl sm:text-4xl md:text-5xl max-w-full">
-              <span className="text-red-600">Paper</span> Class <span className="text-red-600">Top 10</span> Student List
-            </h2>
+            <span className="text-red-600">Paper</span> Class <span className="text-red-600">Top 10</span> Student List
+          </h2>
 
           {/* Filter Buttons */}
 
-          <div className="flex mt-8 bg-white w-full">
-              {filters.map((filter) => (
-                <button
-                  key={filter}
-                  className={`flex-1 px-2 sm:px-4 md:px-6 py-2 text-xs sm:text-sm md:text-base font-bold whitespace-nowrap transition-all duration-300 ${
-                    activeFilter === filter
-                      ? 'bg-red-600 text-white shadow-lg shadow-red-600/20'
-                      : 'bg-white text-black hover:bg-gray-100'
+          <div className="flex mt-8 bg-white max-w-2xl mx-auto border border-gray-200">
+            {filters.map((filter) => (
+              <button
+                key={filter}
+                className={`flex-1 px-2 sm:px-4 md:px-6 py-2 text-xs sm:text-sm md:text-base font-bold whitespace-nowrap transition-all duration-300 ${activeFilter === filter
+                  ? 'bg-red-600 text-white shadow-lg shadow-red-600/20'
+                  : 'bg-white text-black hover:bg-gray-100'
                   }`}
-                  onClick={() => setActiveFilter(filter)}
-                >
-                  {filter}
-                </button>
-              ))}
-            </div>
+                onClick={() => setActiveFilter(filter)}
+              >
+                {filter}
+              </button>
+            ))}
+          </div>
 
         </div>
 
@@ -289,11 +288,11 @@ const Topstudent: React.FC = () => {
 
         {/* Desktop: CSS-based continuous scroll like Gallery */}
         <div className="hidden lg:block relative w-full overflow-hidden" style={{ backgroundColor: '#3a3a3a' }}>
-          <div className="flex w-max animate-scroll-horizontal hover:[animation-play-state:paused] will-change-transform py-10 gap-6">
+          <div className="flex w-max animate-scroll-horizontal hover:[animation-play-state:paused] will-change-transform py-10 gap-10">
             {marqueeStudents.map((student, idx) => (
               <div
                 key={idx + '-' + student.rank}
-                className="flex-shrink-0 w-80 h-80 landing-card flex flex-col items-center gap-4 relative pt-16 pb-8 bg-white rounded-3xl shadow-lg"
+                className="flex-shrink-0 w-64 h-64 landing-card flex flex-col items-center gap-4 relative pt-16 pb-8 bg-white rounded-3xl shadow-lg"
               >
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/3 w-16 h-16 rounded-full flex items-center justify-center font-black text-2xl shadow-xl" style={{ backgroundColor: '#ebe6e6', color: '#ffffff' }}>
                   <img
@@ -337,7 +336,7 @@ const Topstudent: React.FC = () => {
               .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }`}</style>
           <div
             ref={carouselRef}
-            className="overflow-x-auto no-scrollbar w-full py-10 snap-x snap-mandatory flex gap-6"
+            className="overflow-x-auto no-scrollbar w-full py-10 snap-x snap-mandatory flex gap-10"
             style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}
             onTouchStart={(e) => {
               if (!isAnimatingRef.current) {
@@ -370,7 +369,7 @@ const Topstudent: React.FC = () => {
             {displayStudents.map((student, idx) => (
               <div
                 key={idx + '-' + student.rank}
-                className="flex-shrink-0 w-80 h-80 landing-card flex flex-col items-center gap-4 relative pt-16 pb-8 bg-white rounded-3xl shadow-lg snap-center"
+                className="flex-shrink-0 w-64 h-64 landing-card flex flex-col items-center gap-4 relative pt-16 pb-8 bg-white rounded-3xl shadow-lg snap-center"
               >
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/3 w-16 h-16 rounded-full flex items-center justify-center font-black text-2xl shadow-xl" style={{ backgroundColor: '#ebe6e6', color: '#ffffff' }}>
                   <img
