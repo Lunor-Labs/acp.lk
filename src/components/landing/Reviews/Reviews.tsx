@@ -13,25 +13,29 @@ const Reviews: React.FC = () => {
       id: 1,
       text: 'සර් උගන්වන ඉංග්‍රීසි පාඩම්වලින් කියලා හැම විෂයක පොඩිම පොඩිම ප්‍රශ්න වුනත් අදාළව සර් නිතිතම තමයි හොඳම විදිහ',
       name: 'Amara Fernando',
-      image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
+      image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+      rating: 5,
     },
     {
       id: 2,
       text: 'සර් උගන්වපු විදිහට, අභ්‍යාශයට කියලා ඉතාමොන්න කියලා පාඩම් එපා එපා මං සෙන්සුස් පුළුවන් කෙනාට දෙන්න පුළුවන් විදිහට සර්ලා තේරුම් කරදෙනව තාම කියනො',
       name: 'Kavindu Silva',
-      image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
+      image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+      rating: 5,
     },
     {
       id: 3,
       text: 'සර් නිසා තමයි මම අද විශයාව පෙරළවීම අතෙ සපය සර් නිතිතම පාඩම් වලින් හොඳොම සීමාව පරතෙහසත් ගොඩක් තිකිලා හොඳවුවා',
       name: 'Nisha Perera',
-      image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face'
+      image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
+      rating: 5,
     },
     {
       id: 4,
       text: 'සර් උගන්වන ඉංග්‍රීසි පාඩම්වලින් කියලා හැම විෂයක පොඩිම පොඩිම ප්‍රශ්න වුනත් අදාළව සර් නිතිතම තමයි හොඳම විදිහ',
       name: 'Roshan Gunasekara',
-      image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
+      image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+      rating: 4,
     }
   ];
 
@@ -107,11 +111,11 @@ const Reviews: React.FC = () => {
                   </p>
 
                   <div className="mt-6 flex justify-center gap-1 text-yellow-400">
-                    <span>★</span>
-                    <span>★</span>
-                    <span>★</span>
-                    <span>★</span>
-                    <span>★</span>
+                    {[...Array(5)].map((_, i) => (
+                      <span key={i} className={i < currentReview.rating ? "text-yellow-400" : "text-gray-400"}>
+                        {i < currentReview.rating ? '★' : '☆'}
+                      </span>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -121,9 +125,8 @@ const Reviews: React.FC = () => {
           {/* Desktop: three cards (prev, current, next) with cropped sides */}
           <div className="hidden md:block w-full overflow-hidden py-12 md:py-16">
             <div
-              className={`flex justify-center gap-6 lg:gap-10 ${
-                enableTransition ? 'transition-transform duration-500 ease-in-out' : ''
-              }`}
+              className={`flex justify-center gap-6 lg:gap-10 ${enableTransition ? 'transition-transform duration-500 ease-in-out' : ''
+                }`}
               style={{ transform: `translateX(${offset}%)` }}
             >
               {[prevReview, currentReview, nextReview].map((review, index) => (
@@ -146,21 +149,66 @@ const Reviews: React.FC = () => {
                     </p>
 
                     <div className="mt-6 flex justify-center gap-1 text-yellow-400">
-                      <span>★</span>
-                      <span>★</span>
-                      <span>★</span>
-                      <span>★</span>
-                      <span>★</span>
+                      {[...Array(5)].map((_, i) => (
+                        <span key={i} className={i < review.rating ? "text-yellow-400" : "text-gray-400"}>
+                          {i < review.rating ? '★' : '☆'}
+                        </span>
+                      ))}
                     </div>
                   </div>
                 </div>
               ))}
             </div>
           </div>
+          {/* Navigation Buttons for Mobile (Sides) and Desktop (Bottom) */}
+          <div className="absolute top-1/2 -translate-y-1/2 w-full flex justify-between px-2 sm:px-4 z-20 pointer-events-none md:hidden">
+            <button
+              className="w-10 h-10 rounded-full border border-white bg-neutral-900/80 flex items-center justify-center text-red-500 hover:bg-red-600 hover:text-white transition-colors duration-300 pointer-events-auto"
+              onClick={handlePrev}
+              aria-label="Previous review"
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M15 18L9 12L15 6"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+            <button
+              className="w-10 h-10 rounded-full border border-white bg-neutral-900/80 flex items-center justify-center text-red-500 hover:bg-red-600 hover:text-white transition-colors duration-300 pointer-events-auto"
+              onClick={handleNext}
+              aria-label="Next review"
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M9 18L15 12L9 6"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
 
-        {/* Navigation Buttons */}
-        <div className="mt-8 flex items-center justify-center gap-4">
+        {/* Navigation Buttons for Desktop (Bottom) */}
+        <div className="mt-8 hidden md:flex items-center justify-center gap-4">
           <button
             className="w-10 h-10 md:w-12 md:h-12 rounded-full border border-white bg-neutral-900 flex items-center justify-center text-red-500 hover:bg-red-600 hover:text-white transition-colors duration-300"
             onClick={handlePrev}
