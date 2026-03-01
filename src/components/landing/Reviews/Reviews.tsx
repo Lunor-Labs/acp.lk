@@ -95,7 +95,7 @@ const Reviews: React.FC = () => {
           {/* Mobile: single centered card */}
           <div className="w-full overflow-x-hidden py-10 md:hidden">
             <div className="flex justify-center">
-              <div className="w-full max-w-md mx-auto flex flex-col items-center">
+              <div className="w-full max-w-md mx-auto flex flex-col items-center px-14 sm:px-0">
                 <div className="relative w-full bg-gradient-to-b from-neutral-800 to-neutral-900 border border-white/60 rounded-[32px] px-6 py-10 text-center text-white shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col items-center justify-between min-h-[380px]">
                   <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-20 h-20 rounded-full border-4 border-white bg-black/80 overflow-hidden flex items-center justify-center">
                     <img
