@@ -14,6 +14,7 @@ export interface EnrollmentWithDetails extends Enrollment {
         id: string;
         full_name: string;
         email: string;
+        student_id: string;
         student_number: number;
     };
     class?: {

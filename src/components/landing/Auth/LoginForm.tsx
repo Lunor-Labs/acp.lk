@@ -39,7 +39,7 @@ const LoginForm: React.FC<Props> = ({ onSwitchToRegister, onLoginSuccess }) => {
     return <ForgotPasswordForm onBack={() => setShowForgot(false)} />;
   }
 
-  const isStudentId = /^\d{2}-\d-\d{5}$/.test(identifier.trim());
+  const isStudentId = /^\d{7}$/.test(identifier.trim());
 
   return (
     <div>
@@ -51,7 +51,7 @@ const LoginForm: React.FC<Props> = ({ onSwitchToRegister, onLoginSuccess }) => {
               type="text"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
-              placeholder="e.g. 26-0-00001"
+              placeholder="e.g. 2600001"
               required
               disabled={loading}
               autoComplete="username"

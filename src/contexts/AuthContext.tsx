@@ -78,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    *   - An email address (teachers / admins)
    */
   async function signIn(identifier: string, password: string) {
-    const studentIdPattern = /^\d{2}-\d-\d{5}$/;
+    const studentIdPattern = /^\d{7}$/;
     let email = identifier.trim();
 
     if (studentIdPattern.test(email)) {

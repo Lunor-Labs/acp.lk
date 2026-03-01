@@ -220,7 +220,7 @@ export default function StudentDashboard() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-white truncate">{profile?.full_name}</p>
                   <p className="text-xs text-teal-100">
-                    {profile?.student_number ? `Student #${profile.student_number}` : 'Student'}
+                    {profile?.student_id ? `ID: ${profile.student_id}` : 'Student'}
                   </p>
                 </div>
               </div>

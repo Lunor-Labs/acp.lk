@@ -66,7 +66,7 @@ export class ProfileRepository extends BaseRepository<Profile> {
     async generateStudentId(alYear: number, center: ClassCenter): Promise<string> {
         const yy = String(alYear).slice(-2);
         const c = CENTER_CODES[center];
-        const prefix = `${yy}-${c}-`;
+        const prefix = `${yy}${c}`;
 
         // Get count of existing students with this prefix
         // We select just the ID and check length to stay compliant with our Repository pattern
@@ -79,7 +79,7 @@ export class ProfileRepository extends BaseRepository<Profile> {
         if (error) throw error;
 
         const count = (data ?? []).length;
-        const seq = String(count + 1).padStart(5, '0');
+        const seq = String(count + 1).padStart(4, '0');
         return `${prefix}${seq}`;
     }
 

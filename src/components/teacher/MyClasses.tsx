@@ -31,6 +31,7 @@ interface Enrollment {
     id: string;
     full_name: string;
     email: string;
+    student_id: string;
     student_number: number;
   };
 }
@@ -270,8 +271,8 @@ export default function MyClasses() {
                             )}
                             <div className="flex items-center space-x-1">
                               <span className={`px-2 py-1 rounded text-xs font-medium ${cls.is_active
-                                  ? 'bg-emerald-50 text-emerald-700'
-                                  : 'bg-gray-100 text-gray-600'
+                                ? 'bg-emerald-50 text-emerald-700'
+                                : 'bg-gray-100 text-gray-600'
                                 }`}>
                                 {cls.is_active ? 'Active' : 'Paused'}
                               </span>

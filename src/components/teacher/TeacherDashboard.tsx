@@ -163,9 +163,9 @@ export default function TeacherDashboard() {
         <div className="p-6 flex-1 flex flex-col relative">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center space-x-3">
-            <div className="bg-white p-2 rounded-lg">
-              <GraduationCap className="w-6 h-6 text-teal-600" />
-            </div>
+              <div className="bg-white p-2 rounded-lg">
+                <GraduationCap className="w-6 h-6 text-teal-600" />
+              </div>
               <div>
                 <h1 className="text-xl font-bold">EduPortal</h1>
                 <p className="text-xs text-teal-100">Academy</p>
@@ -185,11 +185,10 @@ export default function TeacherDashboard() {
                 setActiveTab('dashboard');
                 setIsMobileMenuOpen(false);
               }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${
-                activeTab === 'dashboard'
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${activeTab === 'dashboard'
                   ? 'bg-white text-teal-700 shadow-lg'
                   : 'text-white hover:bg-teal-500'
-              }`}
+                }`}
             >
               <LayoutDashboard className="w-5 h-5" />
               <span className="font-medium">Dashboard</span>
@@ -200,11 +199,10 @@ export default function TeacherDashboard() {
                 setActiveTab('classes');
                 setIsMobileMenuOpen(false);
               }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${
-                activeTab === 'classes'
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${activeTab === 'classes'
                   ? 'bg-white text-teal-700 shadow-lg'
                   : 'text-white hover:bg-teal-500'
-              }`}
+                }`}
             >
               <GraduationCap className="w-5 h-5" />
               <span className="font-medium">My Classes</span>
@@ -215,11 +213,10 @@ export default function TeacherDashboard() {
                 setActiveTab('exams');
                 setIsMobileMenuOpen(false);
               }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${
-                activeTab === 'exams'
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${activeTab === 'exams'
                   ? 'bg-white text-teal-700 shadow-lg'
                   : 'text-white hover:bg-teal-500'
-              }`}
+                }`}
             >
               <FileText className="w-5 h-5" />
               <span className="font-medium">Exams</span>
@@ -230,11 +227,10 @@ export default function TeacherDashboard() {
                 setActiveTab('study-packs');
                 setIsMobileMenuOpen(false);
               }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${
-                activeTab === 'study-packs'
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${activeTab === 'study-packs'
                   ? 'bg-white text-teal-700 shadow-lg'
                   : 'text-white hover:bg-teal-500'
-              }`}
+                }`}
             >
               <Package className="w-5 h-5" />
               <span className="font-medium">Study Packs</span>
