@@ -292,7 +292,7 @@ const Topstudent: React.FC = () => {
             {marqueeStudents.map((student, idx) => (
               <div
                 key={idx + '-' + student.rank}
-                className="flex-shrink-0 w-64 h-64 landing-card flex flex-col items-center gap-4 relative pt-16 pb-8 bg-white rounded-3xl shadow-lg"
+                className="flex-shrink-0 w-56 h-56 landing-card flex flex-col items-center gap-4 relative pt-16 pb-8 bg-white rounded-3xl shadow-lg"
               >
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/3 w-16 h-16 rounded-full flex items-center justify-center font-black text-2xl shadow-xl" style={{ backgroundColor: '#ebe6e6', color: '#ffffff' }}>
                   <img
@@ -303,14 +303,14 @@ const Topstudent: React.FC = () => {
                 </div>
 
                 <div className="text-center px-4">
-                  <p className="text-4xl font-extrabold mb-1" style={{ color: '#d12121' }}>
+                  <p className="text-3xl font-extrabold mb-1" style={{ color: '#d12121' }}>
                     {student.marks}%
                   </p>
-                  <p className="text-xl font-bold mb-2" style={{ color: '#d12121' }}>
+                  <p className="text-lg font-bold mb-1" style={{ color: '#d12121' }}>
                     Rank {student.rank.toString().padStart(2, '0')}
                   </p>
-                  <h4 className="font-extrabold text-black text-xl mb-1 whitespace-nowrap truncate">{student.name}</h4>
-                  <p className="text-s text-gray-500 font-bold uppercase tracking-wider mb-1 text-gray/100">{student.school}</p>
+                  <h4 className="font-extrabold text-black text-lg mb-1 whitespace-nowrap truncate">{student.name}</h4>
+                  <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1 text-gray/100">{student.school}</p>
                 </div>
               </div>
             ))}
@@ -380,14 +380,14 @@ const Topstudent: React.FC = () => {
                 </div>
 
                 <div className="text-center px-4">
-                  <p className="text-4xl font-extrabold mb-1" style={{ color: '#d12121' }}>
+                  <p className="text-3xl font-extrabold mb-1" style={{ color: '#d12121' }}>
                     {student.marks}%
                   </p>
-                  <p className="text-xl font-bold mb-2" style={{ color: '#d12121' }}>
+                  <p className="text-lg font-bold mb-2" style={{ color: '#d12121' }}>
                     Rank {student.rank.toString().padStart(2, '0')}
                   </p>
-                  <h4 className="font-extrabold text-black text-xl mb-1 whitespace-nowrap truncate">{student.name}</h4>
-                  <p className="text-s text-gray-500 font-bold uppercase tracking-wider mb-1 text-gray/100">{student.school}</p>
+                  <h4 className="font-extrabold text-black text-lg mb-1 whitespace-nowrap truncate">{student.name}</h4>
+                  <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1 text-gray/100">{student.school}</p>
                 </div>
               </div>
             ))}

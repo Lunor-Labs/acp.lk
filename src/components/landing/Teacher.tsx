@@ -39,7 +39,7 @@ const Teacher: React.FC = () => {
               </p>
             </div>
 
-            <div className="mt-16">
+            <div className="mt-6">
               <img
                 src={signatureImg}
                 alt="අමිල සී.එදිරිමාන්න"
