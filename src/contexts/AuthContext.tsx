@@ -1,14 +1,30 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { db } from '../lib/database';
-import { ProfileRepository, Profile } from '../repositories';
+import { ProfileRepository, Profile, ClassCenter } from '../repositories';
 
+// ─── Center labels for UI ───────────────────────────────────────────────────
+export const CENTER_LABELS: Record<ClassCenter, string> = {
+  online: 'Online',
+  riochem: 'Riochem',
+  vision: 'Vision',
+};
+
+// ─── Context types ────────────────────────────────────────────────────────────
 interface AuthContextType {
   user: any | null;
   profile: Profile | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, fullName: string, role: string) => Promise<void>;
+  signIn: (identifier: string, password: string) => Promise<void>;
+  signUp: (
+    email: string,
+    password: string,
+    fullName: string,
+    role: string,
+    alYear?: number,
+    center?: ClassCenter
+  ) => Promise<{ studentId?: string }>;
   signOut: () => Promise<void>;
+  forgotPassword: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -55,16 +71,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  async function signIn(email: string, password: string) {
+  // ─── signIn ──────────────────────────────────────────────────────────────
+  /**
+   * Signs in using either:
+   *   - A Student ID (e.g. 26-0-00001) -> looks up email via ProfileRepository
+   *   - An email address (teachers / admins)
+   */
+  async function signIn(identifier: string, password: string) {
+    const studentIdPattern = /^\d{2}-\d-\d{5}$/;
+    let email = identifier.trim();
+
+    if (studentIdPattern.test(email)) {
+      // Look up profile by student_id to get email
+      const profile = await profileRepo.findByStudentId(email);
+
+      if (!profile) {
+        throw new Error('Student ID not found. Please check your ID and try again.');
+      }
+      email = profile.email;
+    }
+
     const { error } = await db.auth.signIn(email, password);
     if (error) throw error;
   }
 
-  async function signUp(email: string, password: string, fullName: string, role: string) {
+  // ─── signUp ──────────────────────────────────────────────────────────────
+  async function signUp(
+    email: string,
+    password: string,
+    fullName: string,
+    role: string,
+    alYear?: number,
+    center?: ClassCenter
+  ): Promise<{ studentId?: string }> {
     try {
+      let studentId: string | undefined;
+
+      // Generate student ID before signup so it can go into Supabase metadata
+      if (role === 'student' && alYear && center) {
+        studentId = await profileRepo.generateStudentId(alYear, center);
+      }
+
       const { user: newUser, error } = await db.auth.signUp(email, password, {
         full_name: fullName,
-        role: role
+        role,
+        ...(studentId ? { student_id: studentId } : {}),
       });
 
       if (error) {
@@ -79,6 +130,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           full_name: fullName,
           role: role as 'admin' | 'teacher' | 'student',
           is_active: true,
+          student_id: studentId,
+          al_year: alYear,
+          center: center,
         });
 
         if (role === 'teacher') {
@@ -96,19 +150,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
       }
+
+      return { studentId };
     } catch (error) {
       console.error('SignUp error:', error);
       throw error;
     }
   }
 
+  // ─── forgotPassword ───────────────────────────────────────────────────────
+  async function forgotPassword(email: string) {
+    const { error } = await db.auth.resetPassword(email);
+    if (error) throw error;
+  }
+
+  // ─── signOut ──────────────────────────────────────────────────────────────
   async function signOut() {
     const { error } = await db.auth.signOut();
     if (error) throw error;
   }
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, profile, loading, signIn, signUp, signOut, forgotPassword }}>
       {children}
     </AuthContext.Provider>
   );

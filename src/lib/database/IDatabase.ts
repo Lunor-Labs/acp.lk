@@ -46,6 +46,7 @@ export interface IDatabase {
         signIn(email: string, password: string): Promise<{ user: AuthUser | null; error: Error | null }>;
         signUp(email: string, password: string, metadata?: any): Promise<{ user: AuthUser | null; error: Error | null }>;
         signOut(): Promise<{ error: Error | null }>;
+        resetPassword(email: string): Promise<{ error: Error | null }>;
         getSession(): Promise<{ session: AuthSession | null; error: Error | null }>;
         onAuthStateChange(callback: (event: string, session: AuthSession | null) => void): { unsubscribe: () => void };
     };

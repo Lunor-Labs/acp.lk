@@ -17,4 +17,4 @@ export type { Class } from './ClassRepository';
 export type { Enrollment, EnrollmentWithDetails } from './EnrollmentRepository';
 export type { Exam, ExamQuestion, ExamAttempt } from './ExamRepository';
 export type { Teacher, TeacherWithProfile } from './TeacherRepository';
-export type { Profile, UserRole } from './ProfileRepository';
+export type { Profile, UserRole, ClassCenter } from './ProfileRepository';

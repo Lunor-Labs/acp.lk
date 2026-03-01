@@ -136,6 +136,13 @@ export class SupabaseAdapter implements IDatabase {
             return { error: error as Error | null };
         },
 
+        resetPassword: async (email: string) => {
+            const { error } = await this.client.auth.resetPasswordForEmail(email, {
+                redirectTo: `${window.location.origin}/reset-password`
+            });
+            return { error: error as Error | null };
+        },
+
         getSession: async () => {
             const { data, error } = await this.client.auth.getSession();
             return {

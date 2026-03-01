@@ -2,6 +2,13 @@ import { BaseRepository } from './BaseRepository';
 import { db } from '../lib/database';
 
 export type UserRole = 'admin' | 'teacher' | 'student';
+export type ClassCenter = 'online' | 'riochem' | 'vision';
+
+export const CENTER_CODES: Record<ClassCenter, string> = {
+    online: '0',
+    riochem: '1',
+    vision: '2',
+};
 
 export interface Profile {
     id: string;
@@ -11,7 +18,9 @@ export interface Profile {
     is_active: boolean;
     phone: string;
     avatar_url: string;
-    student_number?: number;
+    student_id?: string;
+    al_year?: number;
+    center?: ClassCenter;
     created_at: string;
     updated_at: string;
 }
@@ -36,6 +45,42 @@ export class ProfileRepository extends BaseRepository<Profile> {
 
         if (error) throw error;
         return data;
+    }
+
+    /**
+     * Find profile by student ID
+     */
+    async findByStudentId(studentId: string): Promise<Profile | null> {
+        const { data, error } = await db.from<Profile>(this.tableName)
+            .select()
+            .eq('student_id', studentId)
+            .maybeSingle();
+
+        if (error) throw error;
+        return data;
+    }
+
+    /**
+     * Generate a unique student ID in the format: YY-C-NNNNN
+     */
+    async generateStudentId(alYear: number, center: ClassCenter): Promise<string> {
+        const yy = String(alYear).slice(-2);
+        const c = CENTER_CODES[center];
+        const prefix = `${yy}-${c}-`;
+
+        // Get count of existing students with this prefix
+        // We select just the ID and check length to stay compliant with our Repository pattern
+        const { data, error } = await db.from<Profile>(this.tableName)
+            .select('id')
+            .eq('al_year', alYear as any)
+            .eq('center', center as any)
+            .execute();
+
+        if (error) throw error;
+
+        const count = (data ?? []).length;
+        const seq = String(count + 1).padStart(5, '0');
+        return `${prefix}${seq}`;
     }
 
     /**
@@ -125,12 +170,12 @@ export class ProfileRepository extends BaseRepository<Profile> {
      * Get profile count by role
      */
     async countByRole(role: UserRole): Promise<number> {
-        const { count, error } = await db.from<Profile>(this.tableName)
-            .select('*', { count: 'exact', head: true } as any)
+        const { data, error } = await db.from<Profile>(this.tableName)
+            .select('id')
             .eq('role', role)
             .execute();
 
         if (error) throw error;
-        return count || 0;
+        return (data ?? []).length;
     }
 }
