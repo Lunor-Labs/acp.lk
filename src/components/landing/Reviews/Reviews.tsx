@@ -93,11 +93,11 @@ const Reviews: React.FC = () => {
 
         <div className="relative w-full flex items-center justify-center">
           {/* Mobile: single centered card */}
-          <div className="w-full overflow-x-hidden py-10 md:hidden">
-            <div className="flex justify-center">
-              <div className="w-full max-w-md mx-auto flex flex-col items-center px-14 sm:px-0">
-                <div className="relative w-full bg-gradient-to-b from-neutral-800 to-neutral-900 border border-white/60 rounded-[32px] px-6 py-10 text-center text-white shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col items-center justify-between min-h-[380px]">
-                  <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-20 h-20 rounded-full border-4 border-white bg-black/80 overflow-hidden flex items-center justify-center">
+          <div className="w-full overflow-x-hidden py-6 sm:py-8 md:py-10 md:hidden">
+            <div className="flex justify-center px-2 sm:px-0">
+              <div className="w-52 sm:w-64 md:w-[22rem] h-52 sm:h-64 md:h-[22rem] mx-auto flex flex-col items-center">
+                <div className="relative w-full h-full bg-gradient-to-b from-neutral-800 to-neutral-900 border border-white/60 rounded-[20px] sm:rounded-[28px] md:rounded-[32px] px-2.5 sm:px-4 md:px-6 py-3 sm:py-6 md:py-8 text-center text-white shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col items-center justify-between">
+                  <div className="absolute -top-6 sm:-top-8 md:-top-10 left-1/2 -translate-x-1/2 w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full border-4 border-white bg-black/80 overflow-hidden flex items-center justify-center">
                     <img
                       src={currentReview.image}
                       alt={currentReview.name}
@@ -105,12 +105,12 @@ const Reviews: React.FC = () => {
                     />
                   </div>
 
-                  <h4 className="mt-8 text-xl font-bold">{currentReview.name}</h4>
-                  <p className="mt-6 text-sm leading-relaxed text-gray-100 max-w-2xl mx-auto">
+                  <h4 className="mt-3 sm:mt-6 md:mt-8 text-[10px] sm:text-sm md:text-xl font-bold">{currentReview.name}</h4>
+                  <p className="mt-1 sm:mt-2 md:mt-6 text-[8px] sm:text-xs md:text-sm leading-relaxed md:leading-relaxed text-gray-100 line-clamp-2 sm:line-clamp-3 md:line-clamp-none">
                     {currentReview.text}
                   </p>
 
-                  <div className="mt-6 flex justify-center gap-1 text-yellow-400">
+                  <div className="mt-1 sm:mt-2 md:mt-6 flex justify-center gap-0.5 text-yellow-400 text-xs sm:text-base md:text-base">
                     {[...Array(5)].map((_, i) => (
                       <span key={i} className={i < currentReview.rating ? "text-yellow-400" : "text-gray-400"}>
                         {i < currentReview.rating ? '★' : '☆'}
