@@ -318,26 +318,17 @@ export default function StudyPacks() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Subject
                 </label>
-                <select
-                  value={formData.subject}
-                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                >
-                  <option value="Physics">Physics</option>
-                  <option value="Chemistry">Chemistry</option>
-                  <option value="Maths">Maths</option>
-                  <option value="Biology">Biology</option>
-                  <option value="Combined Maths">Combined Maths</option>
-                </select>
+                <div className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 flex items-center">
+                  <span className="text-gray-900 font-medium">Physics</span>
+                </div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Price (USD)
+                  Price (LKR)
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <DollarSign className="h-4 w-4 text-gray-400" />
                   </div>
                   <input
                     type="number"

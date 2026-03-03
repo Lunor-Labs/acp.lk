@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { Package, Play, Lock, Check, Filter, Search, Video, X, ChevronRight, FileText } from 'lucide-react';
+import { Package, Play, Lock, Check, Filter, Search, Video, X, ChevronRight, FileText, Clock } from 'lucide-react';
 
 interface VideoLesson {
   id: string;
@@ -98,6 +98,48 @@ export default function StudyPacks() {
     return pack.is_free || hasPurchased(pack.id);
   };
 
+  const getTimeAgo = (dateString: string) => {
+    const now = new Date();
+    const date = new Date(dateString);
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    let interval = seconds / 31536000;
+    if (interval > 1) return Math.floor(interval) + ' year' + (Math.floor(interval) > 1 ? 's' : '') + ' ago';
+
+    interval = seconds / 2592000;
+    if (interval > 1) return Math.floor(interval) + ' month' + (Math.floor(interval) > 1 ? 's' : '') + ' ago';
+
+    interval = seconds / 86400;
+    if (interval > 1) return Math.floor(interval) + ' day' + (Math.floor(interval) > 1 ? 's' : '') + ' ago';
+
+    interval = seconds / 3600;
+    if (interval > 1) return Math.floor(interval) + ' hour' + (Math.floor(interval) > 1 ? 's' : '') + ' ago';
+
+    interval = seconds / 60;
+    if (interval > 1) return Math.floor(interval) + ' minute' + (Math.floor(interval) > 1 ? 's' : '') + ' ago';
+
+    return Math.floor(seconds) + ' second' + (Math.floor(seconds) > 1 ? 's' : '') + ' ago';
+  };
+
+  const getTotalDuration = (materials?: VideoLesson[]) => {
+    if (!materials || materials.length === 0) return null;
+    
+    let totalMinutes = 0;
+    materials.forEach(material => {
+      const match = material.duration.match(/(\d+)/);
+      if (match) {
+        totalMinutes += parseInt(match[1]);
+      }
+    });
+
+    if (totalMinutes >= 60) {
+      const hours = Math.floor(totalMinutes / 60);
+      const mins = totalMinutes % 60;
+      return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+    }
+    return `${totalMinutes}m`;
+  };
+
   const handlePurchase = (pack: StudyPack) => {
     alert(`Payment integration for "${pack.title}" - LKR ${pack.price}`);
   };
@@ -147,6 +189,7 @@ export default function StudyPacks() {
               value={filterType}
               onChange={(e) => setFilterType(e.target.value as any)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+              aria-label="Filter study packs by type"
             >
               <option value="all">All Packs</option>
               <option value="free">Free Only</option>
@@ -172,141 +215,86 @@ export default function StudyPacks() {
             // Extract featured thumbnail from first YouTube lesson
             const firstYoutubeLesson = pack.materials?.find(m => m.youtube_url);
             const featuredThumbnail = firstYoutubeLesson ? getYoutubeThumbnail(firstYoutubeLesson.youtube_url!) : null;
+            const totalDuration = getTotalDuration(pack.materials);
 
             return (
-              <div key={pack.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col">
-                {/* Pack Visual Aspect */}
-                <div className="relative aspect-video bg-gray-900 overflow-hidden group">
+              <div 
+                key={pack.id} 
+                className="cursor-pointer group"
+                onClick={() => {
+                  if (accessible && firstYoutubeLesson?.youtube_url) {
+                    setActiveVideo(firstYoutubeLesson.youtube_url);
+                  }
+                }}
+              >
+                {/* Thumbnail Container - YouTube Style */}
+                <div className="relative aspect-video bg-gray-900 overflow-hidden rounded-lg mb-3">
                   {featuredThumbnail ? (
                     <img
                       src={featuredThumbnail}
                       alt={pack.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-cover group-hover:brightness-75 transition-all duration-300"
                     />
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-teal-500 to-emerald-600 text-white">
                       <Package className="w-12 h-12 opacity-20 mb-2" />
-                      <span className="text-xs font-medium opacity-80">{pack.subject}</span>
                     </div>
                   )}
 
-                  {/* Status Overlay */}
-                  <div className="absolute top-3 left-3 flex gap-2">
-                    <span className="px-2 py-0.5 bg-black/50 backdrop-blur-md text-white rounded-full text-[9px] font-bold uppercase tracking-wider">
-                      {pack.subject}
-                    </span>
-                    {pack.is_free && (
-                      <span className="px-3 py-1 bg-green-500 text-white rounded-full text-[10px] font-bold uppercase tracking-wider">
-                        FREE
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Accessible Overlay */}
-                  {accessible && (
-                    <div
-                      onClick={() => firstYoutubeLesson?.youtube_url && setActiveVideo(firstYoutubeLesson.youtube_url)}
-                      className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer z-10"
-                    >
+                  {/* Play Button Overlay */}
+                  {accessible && featuredThumbnail && (
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       <div className="w-16 h-16 bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center border border-white/30 text-white">
                         <Play className="w-8 h-8 fill-current" />
                       </div>
                     </div>
                   )}
 
-                  {!accessible && !pack.is_free && (
-                    <div className="absolute top-3 right-3 bg-amber-500 text-white px-2 py-0.5 rounded-full text-[10px] font-bold shadow-lg">
-                      LKR {pack.price}
+                  {/* Free/Paid Tag - Top Left */}
+                  <div className="absolute top-2 left-2 z-10">
+                    <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider text-white ${
+                      pack.is_free 
+                        ? 'bg-green-600' 
+                        : 'bg-blue-600'
+                    }`}>
+                      {pack.is_free ? 'FREE' : 'PAID'}
+                    </span>
+                  </div>
+
+                  {/* Duration Badge - Bottom Right */}
+                  {totalDuration && (
+                    <div className="absolute bottom-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-[11px] font-bold flex items-center space-x-1">
+                      <Clock className="w-3 h-3" />
+                      <span>{totalDuration}</span>
+                    </div>
+                  )}
+
+                  {/* Lock Icon - if not accessible */}
+                  {!accessible && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                      <Lock className="w-12 h-12 text-white/50" />
                     </div>
                   )}
                 </div>
 
-                <div className="p-5 flex-1 flex flex-col">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2 text-xs text-teal-600 font-semibold mb-2">
-                      <span>{pack.teacher?.profile?.full_name || 'Teacher'}</span>
-                      <span className="w-1 h-1 rounded-full bg-gray-300"></span>
-                      <span className="text-gray-500 font-normal">{new Date(pack.created_at).toLocaleDateString()}</span>
-                    </div>
+                {/* Content - YouTube Style */}
+                <div className="space-y-2">
+                  {/* Title */}
+                  <h3 className="text-sm font-bold text-gray-900 line-clamp-2 group-hover:text-teal-600 transition-colors">
+                    {pack.title}
+                  </h3>
 
-                    <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-teal-600 transition-colors">{pack.title}</h3>
-                    <p className="text-xs text-gray-600 mb-4 leading-relaxed line-clamp-2">{pack.description}</p>
+                  {/* Description/Caption */}
+                  <p className="text-xs text-gray-600 line-clamp-2">
+                    {pack.description}
+                  </p>
 
-                    <div className="grid grid-cols-2 gap-3 mb-5">
-                      <div className="bg-gray-50 rounded-lg p-2 flex items-center space-x-2 border border-gray-100">
-                        <div className="text-gray-400"><FileText className="w-4 h-4" /></div>
-                        <div>
-                          <p className="text-[8px] text-gray-500 uppercase font-bold tracking-tight">Materials</p>
-                          <p className="text-xs font-bold text-gray-900">{pack.file_urls?.length || 0} Files</p>
-                        </div>
-                      </div>
-                      <div className="bg-gray-50 rounded-lg p-2 flex items-center space-x-2 border border-gray-100">
-                        <div className="text-gray-400"><Video className="w-4 h-4" /></div>
-                        <div>
-                          <p className="text-[8px] text-gray-500 uppercase font-bold tracking-tight">Lessons</p>
-                          <p className="text-xs font-bold text-gray-900">{(pack.video_urls?.length || 0) + (pack.materials?.length || 0)} Units</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {accessible ? (
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Curriculum</h4>
-                          {purchased && (
-                            <span className="flex items-center space-x-1 text-[10px] text-green-600 font-bold">
-                              <Check className="w-2.5 h-2.5" />
-                              <span>ENROLLED</span>
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1.5 custom-scrollbar">
-                          {pack.materials?.map((lesson, idx) => (
-                            <button
-                              key={lesson.id}
-                              onClick={() => lesson.youtube_url && setActiveVideo(lesson.youtube_url)}
-                              className={`w-full group/lesson flex items-center p-2 rounded-lg border transition-all ${lesson.youtube_url
-                                ? 'bg-white border-gray-100 hover:border-teal-500 hover:shadow-sm'
-                                : 'bg-gray-50 border-transparent cursor-default'
-                                }`}
-                            >
-                              <div className="w-6 h-6 rounded bg-gray-100 group-hover/lesson:bg-teal-50 flex items-center justify-center flex-shrink-0 text-gray-400 group-hover/lesson:text-teal-600 transition-colors">
-                                <span className="text-[10px] font-bold">{idx + 1}</span>
-                              </div>
-                              <div className="ml-3 flex-1 text-left min-w-0">
-                                <div className="flex items-center space-x-1.5 min-w-0">
-                                  {lesson.youtube_url ? <Video className="w-3 h-3 text-red-500 flex-shrink-0" /> : <FileText className="w-3 h-3 text-teal-500 flex-shrink-0" />}
-                                  <p className="text-[11px] font-semibold text-gray-900 truncate">{lesson.title}</p>
-                                </div>
-                              </div>
-                              {lesson.youtube_url && (
-                                <ChevronRight className="w-3.5 h-3.5 text-gray-300 group-hover/lesson:text-teal-500 group-hover/lesson:translate-x-0.5 transition-all" />
-                              )}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="mt-auto">
-                        <div className="bg-amber-50 rounded-lg p-3 border border-amber-100 mb-4">
-                          <div className="flex items-center space-x-2">
-                            <div className="bg-amber-100 p-1.5 rounded-md"><Lock className="w-4 h-4 text-amber-600" /></div>
-                            <div>
-                              <p className="text-[10px] font-bold text-amber-800 uppercase tracking-tight">Locked Case</p>
-                              <p className="text-[9px] text-amber-600">Purchase to unlock materials.</p>
-                            </div>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => handlePurchase(pack)}
-                          className="w-full bg-gray-900 text-white px-6 py-3 rounded-xl font-bold hover:bg-black transition-all transform hover:-translate-y-0.5 hover:shadow-md flex items-center justify-center space-x-2 text-sm"
-                        >
-                          <span>Purchase Access</span>
-                          <ChevronRight className="w-4 h-4" />
-                        </button>
-                      </div>
-                    )}
+                  {/* Meta - Teacher and Time Ago */}
+                  <div className="text-xs text-gray-500 space-y-0.5">
+                    {/* <p className="font-semibold text-gray-700">
+                      {pack.teacher?.profile?.full_name || 'Teacher'}
+                    </p> */}
+                    <p>{getTimeAgo(pack.created_at)}</p>
                   </div>
                 </div>
               </div>
@@ -321,6 +309,7 @@ export default function StudyPacks() {
             <button
               onClick={() => setActiveVideo(null)}
               className="absolute top-4 right-4 z-10 p-2 bg-black/50 hover:bg-black/80 text-white rounded-full transition"
+              aria-label="Close video"
             >
               <X className="w-6 h-6" />
             </button>
