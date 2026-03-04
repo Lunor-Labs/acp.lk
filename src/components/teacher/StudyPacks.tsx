@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { Plus, Video, DollarSign, ShoppingBag, MoreVertical, Trash2, Upload, Package } from 'lucide-react';
+import { Video, ShoppingBag, Trash2, Upload, Package, Pencil } from 'lucide-react';
 
 interface StudyPack {
   id: string;
@@ -30,6 +30,8 @@ export default function StudyPacks() {
   const [studyPacks, setStudyPacks] = useState<StudyPack[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('all');
+
+  const [editingPackId, setEditingPackId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -97,7 +99,7 @@ export default function StudyPacks() {
         return;
       }
 
-      const { error } = await supabase.from('study_packs').insert({
+      const packData = {
         teacher_id: teacher.id,
         title: formData.title,
         subject: formData.subject,
@@ -105,11 +107,17 @@ export default function StudyPacks() {
         price: formData.is_free ? 0 : parseFloat(formData.price) || 0,
         is_free: formData.is_free,
         materials: videos,
-      });
+      };
 
-      if (error) throw error;
-
-      alert(isDraft ? 'Study pack saved as draft!' : 'Study pack published successfully!');
+      if (editingPackId) {
+        const { error } = await supabase.from('study_packs').update(packData).eq('id', editingPackId);
+        if (error) throw error;
+        alert(isDraft ? 'Study pack draft updated!' : 'Study pack updated successfully!');
+      } else {
+        const { error } = await supabase.from('study_packs').insert(packData);
+        if (error) throw error;
+        alert(isDraft ? 'Study pack saved as draft!' : 'Study pack published successfully!');
+      }
       resetForm();
       fetchStudyPacks();
     } catch (error) {
@@ -119,6 +127,7 @@ export default function StudyPacks() {
   }
 
   function resetForm() {
+    setEditingPackId(null);
     setFormData({
       title: '',
       subject: 'Physics',
@@ -127,6 +136,37 @@ export default function StudyPacks() {
       is_free: false,
     });
     setVideos([]);
+  }
+
+  function handleEditPack(pack: StudyPack) {
+    setEditingPackId(pack.id);
+    setFormData({
+      title: pack.title,
+      subject: pack.subject,
+      price: pack.price.toString(),
+      description: pack.description || '',
+      is_free: pack.is_free,
+    });
+    setVideos(pack.materials || []);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  async function handleDeletePack(id: string) {
+    if (!window.confirm('Are you sure you want to delete this study pack?')) return;
+
+    try {
+      setLoading(true);
+      const { error } = await supabase.from('study_packs').delete().eq('id', id);
+      if (error) throw error;
+
+      setStudyPacks((prevPacks) => prevPacks.filter((pack) => pack.id !== id));
+      alert('Study pack deleted successfully');
+    } catch (error) {
+      console.error('Error deleting study pack:', error);
+      alert('Failed to delete study pack. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   }
   function addVideo() {
     const newVideo: VideoLesson = {
@@ -235,7 +275,7 @@ export default function StudyPacks() {
                           <div>
                             {!pack.is_free && (
                               <div className="text-lg font-bold text-gray-900 mb-2">
-                                ${pack.price.toFixed(2)}
+                                LKR {pack.price.toFixed(2)}
                               </div>
                             )}
                             <div className="flex items-center space-x-2 mb-2">
@@ -254,9 +294,22 @@ export default function StudyPacks() {
                             <h4 className="text-lg font-bold text-gray-900">{pack.title}</h4>
                             <p className="text-sm text-gray-600 mt-1 line-clamp-2">{pack.description}</p>
                           </div>
-                          <button className="text-gray-400 hover:text-gray-600">
-                            <MoreVertical className="w-5 h-5" />
-                          </button>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => handleEditPack(pack)}
+                              title="Edit"
+                              className="text-gray-400 hover:text-blue-600 transition"
+                            >
+                              <Pencil className="w-5 h-5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeletePack(pack.id)}
+                              title="Delete"
+                              className="text-gray-400 hover:text-red-600 transition"
+                            >
+                              <Trash2 className="w-5 h-5" />
+                            </button>
+                          </div>
                         </div>
 
                         <div className="flex items-center space-x-6 text-sm text-gray-600 mt-3">
@@ -294,9 +347,19 @@ export default function StudyPacks() {
               <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center">
                 <Package className="w-4 h-4 text-teal-600" />
               </div>
-              <div>
-                <h3 className="text-lg font-bold text-gray-900">Create New Pack</h3>
-                <p className="text-xs text-gray-500">Bundle videos for sale</p>
+              <div className="flex-1 flex justify-between items-start">
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">{editingPackId ? 'Edit Study Pack' : 'Create New Pack'}</h3>
+                  <p className="text-xs text-gray-500">{editingPackId ? 'Update pack details' : 'Bundle videos for sale'}</p>
+                </div>
+                {editingPackId && (
+                  <button
+                    onClick={resetForm}
+                    className="text-xs font-medium text-teal-600 hover:text-teal-800 bg-teal-50 px-2 py-1 rounded transition"
+                  >
+                    Cancel Edit
+                  </button>
+                )}
               </div>
             </div>
 
@@ -371,7 +434,7 @@ export default function StudyPacks() {
                   Video Content
                 </label>
                 <div className="space-y-2">
-                  {videos.map((video, index) => (
+                  {videos.map((video) => (
                     <div
                       key={video.id}
                       className="p-4 bg-gray-50 rounded-lg space-y-3"
@@ -464,13 +527,13 @@ export default function StudyPacks() {
                   onClick={() => handleCreatePack(true)}
                   className="flex-1 border border-gray-300 text-gray-700 px-4 py-3 rounded-lg font-medium hover:bg-gray-50 transition"
                 >
-                  Save Draft
+                  {editingPackId ? 'Update Draft' : 'Save Draft'}
                 </button>
                 <button
                   onClick={() => handleCreatePack(false)}
                   className="flex-1 bg-teal-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-teal-700 transition"
                 >
-                  Publish
+                  {editingPackId ? 'Update & Publish' : 'Publish'}
                 </button>
               </div>
             </div>
