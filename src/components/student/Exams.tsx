@@ -224,7 +224,7 @@ export default function Exams() {
               </div>
               <div className="text-right">
                 <div className="text-sm text-gray-600">Question</div>
-                <div className="text-2xl font-bold text-teal-600">
+                <div className="text-2xl font-bold text-[#eb1b23]">
                   {activeExam.currentQuestion + 1} / {totalQuestions}
                 </div>
               </div>
@@ -232,7 +232,7 @@ export default function Exams() {
 
             <div className="w-full bg-gray-200 rounded-full h-2 mb-6">
               <div
-                className="bg-teal-600 h-2 rounded-full transition-all"
+                className="bg-[#eb1b23] h-2 rounded-full transition-all"
                 style={{ width: `${(answeredCount / totalQuestions) * 100}%` }}
               />
             </div>
@@ -248,14 +248,14 @@ export default function Exams() {
                   onClick={() => selectAnswer(activeExam.currentQuestion, idx)}
                   className={`w-full text-left p-4 rounded-lg border-2 transition ${
                     activeExam.answers[activeExam.currentQuestion] === idx
-                      ? 'border-teal-600 bg-teal-50'
+                      ? 'border-[#eb1b23] bg-red-50'
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
                   <div className="flex items-center space-x-3">
                     <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
                       activeExam.answers[activeExam.currentQuestion] === idx
-                        ? 'border-teal-600 bg-teal-600'
+                        ? 'border-[#eb1b23] bg-[#eb1b23]'
                         : 'border-gray-300'
                     }`}>
                       {activeExam.answers[activeExam.currentQuestion] === idx && (
@@ -281,7 +281,7 @@ export default function Exams() {
             {activeExam.currentQuestion < totalQuestions - 1 ? (
               <button
                 onClick={() => setActiveExam({ ...activeExam, currentQuestion: activeExam.currentQuestion + 1 })}
-                className="px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition"
+                className="px-6 py-3 bg-[#eb1b23] text-white rounded-lg hover:bg-red-700 transition"
               >
                 Next Question
               </button>
@@ -302,7 +302,7 @@ export default function Exams() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#eb1b23]"></div>
       </div>
     );
   }
@@ -320,7 +320,7 @@ export default function Exams() {
             onClick={() => setView('upcoming')}
             className={`flex-1 px-6 py-4 font-medium transition ${
               view === 'upcoming'
-                ? 'text-teal-600 border-b-2 border-teal-600'
+                ? 'text-[#eb1b23] border-b-2 border-[#eb1b23]'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
@@ -330,7 +330,7 @@ export default function Exams() {
             onClick={() => setView('results')}
             className={`flex-1 px-6 py-4 font-medium transition ${
               view === 'results'
-                ? 'text-teal-600 border-b-2 border-teal-600'
+                ? 'text-[#eb1b23] border-b-2 border-[#eb1b23]'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
@@ -396,7 +396,7 @@ export default function Exams() {
                     {isActive && (
                       <button
                         onClick={() => startExam(exam)}
-                        className="flex items-center space-x-2 px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition ml-4"
+                        className="flex items-center space-x-2 px-6 py-3 bg-[#eb1b23] text-white rounded-lg hover:bg-red-700 transition ml-4"
                       >
                         <PlayCircle className="w-5 h-5" />
                         <span>Start Exam</span>
@@ -450,7 +450,7 @@ export default function Exams() {
                       </div>
                       <div className="bg-gray-50 rounded-lg p-4">
                         <div className="text-sm text-gray-600 mb-1">Rank</div>
-                        <div className="text-2xl font-bold text-teal-600">
+                        <div className="text-2xl font-bold text-[#eb1b23]">
                           #{result.rank}
                         </div>
                       </div>

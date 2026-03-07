@@ -158,7 +158,7 @@ export default function StudyPacks() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#eb1b23]"></div>
       </div>
     );
   }
@@ -280,7 +280,7 @@ export default function StudyPacks() {
                 {/* Content - YouTube Style */}
                 <div className="space-y-2">
                   {/* Title */}
-                  <h3 className="text-sm font-bold text-gray-900 line-clamp-2 group-hover:text-teal-600 transition-colors">
+                  <h3 className="text-sm font-bold text-gray-900 line-clamp-2 group-hover:text-[#eb1b23] transition-colors">
                     {pack.title}
                   </h3>
 

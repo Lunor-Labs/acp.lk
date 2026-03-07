@@ -58,7 +58,7 @@ const Hero: React.FC<HeroProps> = ({ onLoginRequest }) => {
             <div className="flex flex-row gap-2 mb-1.5">
               <button
                 onClick={onLoginRequest}
-                className="bg-[#eb1b23] hover:bg-red-700 text-white font-bold px-3 py-1.5 rounded-full shadow-lg text-[10px] transition-all flex items-center justify-center gap-1.5 group"
+                className="bg-[#eb1b23] hover:bg-red-700 text-white font-bold px-3 py-1.5 rounded-full shadow-lg text-[10px] transition-all duration-300 hover:scale-105 hover:shadow-xl flex items-center justify-center gap-1.5 group"
               >
                 Student Portal
                 <div className="bg-white rounded-full p-0.5 group-hover:translate-x-1 transition-transform">
@@ -69,7 +69,7 @@ const Hero: React.FC<HeroProps> = ({ onLoginRequest }) => {
               </button>
               <a
                 href="#contact"
-                className="bg-white hover:bg-gray-100 text-black font-bold px-3 py-1.5 rounded-full shadow-lg text-[10px] transition-all text-center flex items-center justify-center"
+                className="bg-white hover:bg-gray-100 text-black font-bold px-3 py-1.5 rounded-full shadow-lg text-[10px] transition-all duration-300 hover:scale-105 hover:shadow-xl text-center flex items-center justify-center"
               >
                 Contact Us
               </a>
@@ -119,7 +119,7 @@ const Hero: React.FC<HeroProps> = ({ onLoginRequest }) => {
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 w-full max-w-xl">
               <button
                 onClick={onLoginRequest}
-                className="bg-[#eb1b23] hover:bg-red-700 text-white font-bold px-8 md:px-10 py-3 md:py-4 rounded-full shadow-lg text-lg md:text-xl transition-all w-full sm:w-auto flex items-center justify-center gap-3 group"
+                className="bg-[#eb1b23] hover:bg-red-700 text-white font-bold px-8 md:px-10 py-3 md:py-4 rounded-full shadow-lg text-lg md:text-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl w-full sm:w-auto flex items-center justify-center gap-3 group"
               >
                 Student Portal
                 <div className="bg-white rounded-full p-1 group-hover:translate-x-1 transition-transform">
@@ -130,7 +130,7 @@ const Hero: React.FC<HeroProps> = ({ onLoginRequest }) => {
               </button>
               <a
                 href="#contact"
-                className="bg-white hover:bg-gray-100 text-black font-bold px-8 md:px-10 py-3 md:py-4 rounded-full shadow-lg text-lg md:text-xl transition-all text-center w-full sm:w-auto flex items-center justify-center"
+                className="bg-white hover:bg-gray-100 text-black font-bold px-8 md:px-10 py-3 md:py-4 rounded-full shadow-lg text-lg md:text-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl text-center w-full sm:w-auto flex items-center justify-center"
               >
                 Contact Us
               </a>

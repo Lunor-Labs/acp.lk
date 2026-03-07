@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { LayoutDashboard, Users, BookOpen, FileText, Package, LogOut, GraduationCap, TrendingUp, DollarSign, UserPlus, User, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Package, LogOut, GraduationCap, TrendingUp, DollarSign, UserPlus, User, Menu, X } from 'lucide-react';
 import MyClasses from './MyClasses';
 import Exams from './Exams';
 import StudyPacks from './StudyPacks';
@@ -156,24 +156,24 @@ export default function TeacherDashboard() {
 
       <aside className={`
         fixed lg:static inset-y-0 left-0 z-50
-        w-64 bg-gradient-to-b from-teal-600 to-teal-700 text-white flex flex-col
+        w-64 bg-slate-900 text-white flex flex-col
         transform transition-transform duration-300 ease-in-out
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         <div className="p-6 flex-1 flex flex-col relative">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center space-x-3">
-              <div className="bg-white p-2 rounded-lg">
-                <GraduationCap className="w-6 h-6 text-teal-600" />
+              <div className="bg-[#eb1b23] p-2 rounded-lg shadow-lg shadow-red-500/30">
+                <GraduationCap className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold">EduPortal</h1>
-                <p className="text-xs text-teal-100">Academy</p>
+                <h1 className="text-xl font-bold">ACP</h1>
+                <p className="text-xs text-slate-400">Teacher Portal</p>
               </div>
             </div>
             <button
               onClick={() => setIsMobileMenuOpen(false)}
-              className="lg:hidden text-white hover:bg-teal-500 p-2 rounded-lg"
+              className="lg:hidden text-white hover:bg-slate-800 p-2 rounded-lg transition"
             >
               <X className="w-6 h-6" />
             </button>
@@ -185,9 +185,9 @@ export default function TeacherDashboard() {
                 setActiveTab('dashboard');
                 setIsMobileMenuOpen(false);
               }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${activeTab === 'dashboard'
-                  ? 'bg-white text-teal-700 shadow-lg'
-                  : 'text-white hover:bg-teal-500'
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'dashboard'
+                  ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-500/30'
+                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                 }`}
             >
               <LayoutDashboard className="w-5 h-5" />
@@ -199,9 +199,9 @@ export default function TeacherDashboard() {
                 setActiveTab('classes');
                 setIsMobileMenuOpen(false);
               }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${activeTab === 'classes'
-                  ? 'bg-white text-teal-700 shadow-lg'
-                  : 'text-white hover:bg-teal-500'
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'classes'
+                  ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-500/30'
+                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                 }`}
             >
               <GraduationCap className="w-5 h-5" />
@@ -213,9 +213,9 @@ export default function TeacherDashboard() {
                 setActiveTab('exams');
                 setIsMobileMenuOpen(false);
               }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${activeTab === 'exams'
-                  ? 'bg-white text-teal-700 shadow-lg'
-                  : 'text-white hover:bg-teal-500'
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'exams'
+                  ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-500/30'
+                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                 }`}
             >
               <FileText className="w-5 h-5" />
@@ -227,9 +227,9 @@ export default function TeacherDashboard() {
                 setActiveTab('study-packs');
                 setIsMobileMenuOpen(false);
               }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${activeTab === 'study-packs'
-                  ? 'bg-white text-teal-700 shadow-lg'
-                  : 'text-white hover:bg-teal-500'
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'study-packs'
+                  ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-500/30'
+                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                 }`}
             >
               <Package className="w-5 h-5" />
@@ -237,20 +237,20 @@ export default function TeacherDashboard() {
             </button>
           </nav>
 
-          <div className="mt-auto pt-4 border-t border-teal-500">
+          <div className="mt-auto pt-4 border-t border-slate-700">
             <div className="px-4 py-4 mb-2">
               <div className="flex items-center space-x-3 mb-3">
-                <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center overflow-hidden">
+                <div className="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center overflow-hidden border-2 border-slate-600">
                   {profile?.avatar_url ? (
                     <img src={profile.avatar_url} alt={profile.full_name} className="w-full h-full object-cover" />
                   ) : (
-                    <User className="w-6 h-6 text-teal-600" />
+                    <User className="w-6 h-6 text-slate-300" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-white truncate">{profile?.full_name}</p>
-                  <p className="text-xs text-teal-100">
-                    {profile?.teacher_number ? `Teacher #${profile.teacher_number}` : 'Teacher'}
+                  <p className="text-xs text-slate-400">
+                    Teacher
                   </p>
                 </div>
               </div>
@@ -258,7 +258,7 @@ export default function TeacherDashboard() {
 
             <button
               onClick={signOut}
-              className="w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-xl text-white hover:bg-teal-500 transition mx-auto"
+              className="w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition-all duration-200 mx-auto"
             >
               <LogOut className="w-5 h-5" />
               <span className="font-medium">Log Out</span>
@@ -288,49 +288,101 @@ export default function TeacherDashboard() {
 
             {loading ? (
               <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#eb1b23]"></div>
               </div>
             ) : (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                  <div className="bg-white rounded-xl shadow-sm p-6 border-l-4 border-teal-600">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-medium text-gray-600">Total Students</h3>
-                      <Users className="w-8 h-8 text-teal-600" />
+                  {/* Total Students Card */}
+                  <div className="relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 overflow-hidden group">
+                    <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-red-500 via-red-600 to-red-700"></div>
+                    <div className="p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="p-3 bg-gradient-to-br from-red-50 to-red-100 rounded-xl shadow-sm group-hover:scale-110 transition-transform duration-300">
+                          <Users className="w-7 h-7 text-[#eb1b23]" />
+                        </div>
+                        <div className="flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
+                          <TrendingUp className="w-3 h-3" />
+                          <span>+12%</span>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-3xl font-bold text-slate-900 tracking-tight">{stats.totalStudents}</p>
+                        <p className="text-sm text-slate-500 font-medium">Total Students</p>
+                      </div>
+                      <div className="mt-4 pt-4 border-t border-slate-100">
+                        <p className="text-xs text-slate-400">Active enrollments across all classes</p>
+                      </div>
                     </div>
-                    <p className="text-3xl font-bold text-gray-900">{stats.totalStudents}</p>
-                    <p className="text-xs text-gray-500 mt-2">Active enrollments</p>
                   </div>
 
-                  <div className="bg-white rounded-xl shadow-sm p-6 border-l-4 border-green-600">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-medium text-gray-600">New Students</h3>
-                      <UserPlus className="w-8 h-8 text-green-600" />
+                  {/* New Students Card */}
+                  <div className="relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 overflow-hidden group">
+                    <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-600"></div>
+                    <div className="p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="p-3 bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl shadow-sm group-hover:scale-110 transition-transform duration-300">
+                          <UserPlus className="w-7 h-7 text-emerald-600" />
+                        </div>
+                        <div className="flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
+                          <TrendingUp className="w-3 h-3" />
+                          <span>+8%</span>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-3xl font-bold text-slate-900 tracking-tight">{stats.newStudents}</p>
+                        <p className="text-sm text-slate-500 font-medium">New Students</p>
+                      </div>
+                      <div className="mt-4 pt-4 border-t border-slate-100">
+                        <p className="text-xs text-slate-400">Joined in the last 30 days</p>
+                      </div>
                     </div>
-                    <p className="text-3xl font-bold text-gray-900">{stats.newStudents}</p>
-                    <p className="text-xs text-gray-500 mt-2">Last 30 days</p>
                   </div>
 
-                  <div className="bg-white rounded-xl shadow-sm p-6 border-l-4 border-blue-600">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-medium text-gray-600">Total Fee Collection</h3>
-                      <DollarSign className="w-8 h-8 text-blue-600" />
+                  {/* Total Fee Collection Card */}
+                  <div className="relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 overflow-hidden group">
+                    <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600"></div>
+                    <div className="p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="p-3 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-sm group-hover:scale-110 transition-transform duration-300">
+                          <DollarSign className="w-7 h-7 text-blue-600" />
+                        </div>
+                        <div className="flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
+                          <TrendingUp className="w-3 h-3" />
+                          <span>+24%</span>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-3xl font-bold text-slate-900 tracking-tight">LKR {(stats.totalFeeCollection / 1000).toFixed(1)}K</p>
+                        <p className="text-sm text-slate-500 font-medium">Total Revenue</p>
+                      </div>
+                      <div className="mt-4 pt-4 border-t border-slate-100">
+                        <p className="text-xs text-slate-400">All time fee collection</p>
+                      </div>
                     </div>
-                    <p className="text-3xl font-bold text-gray-900">
-                      ${stats.totalFeeCollection.toLocaleString()}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-2">All time</p>
                   </div>
 
-                  <div className="bg-white rounded-xl shadow-sm p-6 border-l-4 border-amber-600">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-medium text-gray-600">Monthly Fee Collection</h3>
-                      <TrendingUp className="w-8 h-8 text-amber-600" />
+                  {/* Monthly Fee Collection Card */}
+                  <div className="relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 overflow-hidden group">
+                    <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600"></div>
+                    <div className="p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="p-3 bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl shadow-sm group-hover:scale-110 transition-transform duration-300">
+                          <TrendingUp className="w-7 h-7 text-amber-600" />
+                        </div>
+                        <div className="flex items-center gap-1 text-xs font-medium text-rose-600 bg-rose-50 px-2 py-1 rounded-full">
+                          <TrendingUp className="w-3 h-3 rotate-180" />
+                          <span>-5%</span>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-3xl font-bold text-slate-900 tracking-tight">LKR {(stats.monthlyFeeCollection / 1000).toFixed(1)}K</p>
+                        <p className="text-sm text-slate-500 font-medium">This Month</p>
+                      </div>
+                      <div className="mt-4 pt-4 border-t border-slate-100">
+                        <p className="text-xs text-slate-400">Current month collection</p>
+                      </div>
                     </div>
-                    <p className="text-3xl font-bold text-gray-900">
-                      ${stats.monthlyFeeCollection.toLocaleString()}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-2">Current month</p>
                   </div>
                 </div>
 
@@ -387,10 +439,20 @@ function StudentGrowthChart({ data }: { data: StudentGrowthData[] }) {
       >
         <defs>
           <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#14b8a6" />
-            <stop offset="100%" stopColor="#0d9488" />
+            <stop offset="0%" stopColor="#eb1b23" />
+            <stop offset="100%" stopColor="#ef4444" />
+          </linearGradient>
+          <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#eb1b23" stopOpacity="0.2" />
+            <stop offset="100%" stopColor="#eb1b23" stopOpacity="0" />
           </linearGradient>
         </defs>
+
+        {/* Area fill under the line */}
+        <path
+          d={`${pathData} L ${points[points.length - 1].x},${chartHeight - padding.bottom} L ${points[0].x},${chartHeight - padding.bottom} Z`}
+          fill="url(#areaGradient)"
+        />
 
         {[0, 1, 2, 3, 4].map((i) => {
           const y = padding.top + (i / 4) * innerHeight;
@@ -432,7 +494,7 @@ function StudentGrowthChart({ data }: { data: StudentGrowthData[] }) {
               cx={point.x}
               cy={point.y}
               r="5"
-              fill="#14b8a6"
+              fill="#eb1b23"
               stroke="white"
               strokeWidth="2"
             />

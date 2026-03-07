@@ -188,12 +188,12 @@ export default function StudyPacks() {
   }
 
   function getSubjectColor(subject: string): string {
-    const subjectLower = subject.toLowerCase();
-    if (subjectLower.includes('physics')) return 'bg-purple-100';
-    if (subjectLower.includes('chemistry')) return 'bg-green-100';
-    if (subjectLower.includes('maths') || subjectLower.includes('math')) return 'bg-gray-100';
-    return 'bg-teal-100';
-  }
+  const subjectLower = subject.toLowerCase();
+  if (subjectLower.includes('physics')) return 'bg-purple-50';
+  if (subjectLower.includes('chemistry')) return 'bg-emerald-50';
+  if (subjectLower.includes('maths') || subjectLower.includes('math')) return 'bg-gray-50';
+  return 'bg-red-50';
+}
 
   function getSubjectIcon(subject: string): JSX.Element {
     const subjectLower = subject.toLowerCase();
@@ -252,7 +252,7 @@ export default function StudyPacks() {
 
             {loading ? (
               <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#eb1b23]"></div>
               </div>
             ) : filteredPacks.length === 0 ? (
               <div className="text-center py-12">
@@ -342,20 +342,20 @@ export default function StudyPacks() {
         </div>
 
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-xl shadow-sm p-6 sticky top-6">
+          <div className="bg-white rounded-xl shadow-sm p-6 sticky top-6 border-t-4 border-[#eb1b23]">
             <div className="flex items-center space-x-2 mb-6">
-              <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center">
-                <Package className="w-4 h-4 text-teal-600" />
+              <div className="w-8 h-8 bg-red-50 rounded-full flex items-center justify-center">
+                <Package className="w-4 h-4 text-[#eb1b23]" />
               </div>
               <div className="flex-1 flex justify-between items-start">
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900">{editingPackId ? 'Edit Study Pack' : 'Create New Pack'}</h3>
-                  <p className="text-xs text-gray-500">{editingPackId ? 'Update pack details' : 'Bundle videos for sale'}</p>
+                  <h3 className="text-lg font-bold text-slate-900">{editingPackId ? 'Edit Study Pack' : 'Create New Pack'}</h3>
+                  <p className="text-xs text-slate-500">{editingPackId ? 'Update pack details' : 'Bundle videos for sale'}</p>
                 </div>
                 {editingPackId && (
                   <button
                     onClick={resetForm}
-                    className="text-xs font-medium text-teal-600 hover:text-teal-800 bg-teal-50 px-2 py-1 rounded transition"
+                    className="text-xs font-medium text-[#eb1b23] hover:text-red-700 bg-red-50 px-2 py-1 rounded transition"
                   >
                     Cancel Edit
                   </button>
@@ -373,7 +373,7 @@ export default function StudyPacks() {
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   placeholder="e.g. Mechanics Full Revision"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#eb1b23] focus:border-transparent"
                 />
               </div>
 
@@ -400,7 +400,7 @@ export default function StudyPacks() {
                     onChange={(e) => setFormData({ ...formData, price: e.target.value, is_free: false })}
                     placeholder="0.00"
                     disabled={formData.is_free}
-                    className="w-full border border-gray-300 rounded-lg pl-8 pr-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-transparent disabled:bg-gray-100"
+                    className="w-full border border-gray-300 rounded-lg pl-8 pr-3 py-2 focus:ring-2 focus:ring-[#eb1b23] focus:border-transparent disabled:bg-gray-100"
                   />
                 </div>
                 <label className="flex items-center mt-2">
@@ -410,7 +410,7 @@ export default function StudyPacks() {
                     onChange={(e) =>
                       setFormData({ ...formData, is_free: e.target.checked, price: '' })
                     }
-                    className="rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                    className="rounded border-gray-300 text-[#eb1b23] focus:ring-[#eb1b23]"
                   />
                   <span className="ml-2 text-sm text-gray-600">Make this pack free</span>
                 </label>
@@ -425,7 +425,7 @@ export default function StudyPacks() {
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="What will students learn?"
                   rows={3}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#eb1b23] focus:border-transparent resize-none"
                 />
               </div>
 
@@ -437,18 +437,18 @@ export default function StudyPacks() {
                   {videos.map((video) => (
                     <div
                       key={video.id}
-                      className="p-4 bg-gray-50 rounded-lg space-y-3"
+                      className="p-4 bg-slate-50 rounded-lg space-y-3"
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2 flex-1">
-                          <div className="w-8 h-8 bg-teal-100 rounded flex items-center justify-center flex-shrink-0">
-                            <Video className="w-4 h-4 text-teal-600" />
+                          <div className="w-8 h-8 bg-red-50 rounded flex items-center justify-center flex-shrink-0">
+                            <Video className="w-4 h-4 text-[#eb1b23]" />
                           </div>
                           <input
                             type="text"
                             value={video.title}
                             onChange={(e) => updateVideo(video.id, 'title', e.target.value)}
-                            className="w-full text-sm font-medium text-gray-900 bg-transparent border-b border-transparent focus:border-teal-500 focus:ring-0 p-0"
+                            className="w-full text-sm font-medium text-gray-900 bg-transparent border-b border-transparent focus:border-[#eb1b23] focus:ring-0 p-0"
                             placeholder="Video title"
                           />
                         </div>
@@ -474,7 +474,7 @@ export default function StudyPacks() {
                             type="text"
                             value={video.youtube_url || ''}
                             onChange={(e) => updateVideo(video.id, 'youtube_url', e.target.value)}
-                            className="flex-1 text-xs border border-gray-300 rounded px-2 py-1.5 focus:ring-1 focus:ring-teal-500 focus:border-transparent"
+                            className="flex-1 text-xs border border-gray-300 rounded px-2 py-1.5 focus:ring-1 focus:ring-[#eb1b23] focus:border-transparent"
                             placeholder="https://www.youtube.com/watch?v=..."
                           />
                         </div>
@@ -489,7 +489,7 @@ export default function StudyPacks() {
                             type="text"
                             value={video.duration}
                             onChange={(e) => updateVideo(video.id, 'duration', e.target.value)}
-                            className="w-full text-xs border border-gray-300 rounded px-2 py-1.5 focus:ring-1 focus:ring-teal-500 focus:border-transparent"
+                            className="w-full text-xs border border-gray-300 rounded px-2 py-1.5 focus:ring-1 focus:ring-[#eb1b23] focus:border-transparent"
                             placeholder="e.g. 45 mins"
                           />
                         </div>
@@ -501,7 +501,7 @@ export default function StudyPacks() {
                             type="text"
                             value={video.size}
                             onChange={(e) => updateVideo(video.id, 'size', e.target.value)}
-                            className="w-full text-xs border border-gray-300 rounded px-2 py-1.5 focus:ring-1 focus:ring-teal-500 focus:border-transparent"
+                            className="w-full text-xs border border-gray-300 rounded px-2 py-1.5 focus:ring-1 focus:ring-[#eb1b23] focus:border-transparent"
                             placeholder="e.g. 1080p"
                           />
                         </div>
@@ -511,7 +511,7 @@ export default function StudyPacks() {
 
                   <button
                     onClick={addVideo}
-                    className="w-full border-2 border-dashed border-teal-300 text-teal-600 px-4 py-3 rounded-lg font-medium hover:bg-teal-50 transition flex items-center justify-center space-x-2"
+                    className="w-full border-2 border-dashed border-red-300 text-[#eb1b23] px-4 py-3 rounded-lg font-medium hover:bg-red-50 transition-all duration-200 flex items-center justify-center space-x-2"
                   >
                     <Upload className="w-4 h-4" />
                     <span>Upload Video Lesson</span>
@@ -531,7 +531,7 @@ export default function StudyPacks() {
                 </button>
                 <button
                   onClick={() => handleCreatePack(false)}
-                  className="flex-1 bg-teal-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-teal-700 transition"
+                  className="flex-1 bg-[#eb1b23] text-white px-4 py-3 rounded-lg font-medium hover:bg-red-700 transition-all duration-200 hover:shadow-lg"
                 >
                   {editingPackId ? 'Update & Publish' : 'Publish'}
                 </button>

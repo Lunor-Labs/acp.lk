@@ -66,7 +66,11 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'shadow-2xl' : ''} bg-[#eb1b23] w-full`}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+        isScrolled 
+          ? 'bg-[#eb1b23]/95 backdrop-blur-md shadow-2xl' 
+          : 'bg-gradient-to-b from-black/40 to-transparent'
+      } w-full`}
     >
       <div className="max-w-screen-2xl mx-auto w-full">
         <div className="flex items-center justify-between h-12 lg:h-12 px-4 lg:px-0 relative">
@@ -136,7 +140,7 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
         </div>
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden border-t border-white/20 bg-[#eb1b23] shadow-xl">
+          <div className={`lg:hidden border-t border-white/20 shadow-xl ${isScrolled ? 'bg-[#eb1b23]' : 'bg-black/80 backdrop-blur-md'}`}>
             <div className="flex flex-col">
               {navLinks.map((link) => (
                 <button
