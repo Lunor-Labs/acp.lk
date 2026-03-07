@@ -47,11 +47,11 @@ const getClassIcon = (subject: string) => {
 
 const getClassColor = (index: number) => {
   const colors = [
-    { bg: 'bg-purple-100', icon: 'text-purple-600', badge: 'bg-purple-50 text-purple-700' },
-    { bg: 'bg-blue-100', icon: 'text-blue-600', badge: 'bg-blue-50 text-blue-700' },
-    { bg: 'bg-gray-100', icon: 'text-gray-600', badge: 'bg-gray-50 text-gray-700' },
-    { bg: 'bg-teal-100', icon: 'text-teal-600', badge: 'bg-teal-50 text-teal-700' },
-    { bg: 'bg-orange-100', icon: 'text-orange-600', badge: 'bg-orange-50 text-orange-700' },
+    { bg: 'bg-red-50', icon: 'text-[#eb1b23]', badge: 'bg-red-100 text-red-700' },
+    { bg: 'bg-blue-50', icon: 'text-blue-600', badge: 'bg-blue-100 text-blue-700' },
+    { bg: 'bg-emerald-50', icon: 'text-emerald-600', badge: 'bg-emerald-100 text-emerald-700' },
+    { bg: 'bg-amber-50', icon: 'text-amber-600', badge: 'bg-amber-100 text-amber-700' },
+    { bg: 'bg-purple-50', icon: 'text-purple-600', badge: 'bg-purple-100 text-purple-700' },
   ];
   return colors[index % colors.length];
 };
@@ -212,7 +212,7 @@ export default function MyClasses() {
                     placeholder="Search class..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent w-64"
+                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#eb1b23] focus:border-transparent w-64"
                   />
                 </div>
               </div>
@@ -220,7 +220,7 @@ export default function MyClasses() {
 
             {loading ? (
               <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#eb1b23]"></div>
               </div>
             ) : filteredClasses.length === 0 ? (
               <div className="text-center py-12">
@@ -289,20 +289,20 @@ export default function MyClasses() {
         </div>
 
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-xl shadow-sm p-6 sticky top-6">
+          <div className="bg-white rounded-xl shadow-sm p-6 sticky top-6 border-t-4 border-[#eb1b23]">
             <div className="flex items-center space-x-2 mb-6">
-              <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center">
-                <Plus className="w-4 h-4 text-teal-600" />
+              <div className="w-8 h-8 bg-red-50 rounded-full flex items-center justify-center">
+                <Plus className="w-4 h-4 text-[#eb1b23]" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-gray-900">Create New Class</h3>
-                <p className="text-xs text-gray-500">Setup a new course for students</p>
+                <h3 className="text-lg font-bold text-slate-900">Create New Class</h3>
+                <p className="text-xs text-slate-500">Setup a new course for students</p>
               </div>
             </div>
 
             <form onSubmit={handleCreateClass} className="space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto pr-2">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
                   Class Name
                 </label>
                 <input
@@ -310,7 +310,7 @@ export default function MyClasses() {
                   required
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#eb1b23] focus:border-transparent text-sm"
                   placeholder="e.g. 2027 Biology Theory"
                 />
               </div>
@@ -324,7 +324,7 @@ export default function MyClasses() {
                   required
                   value={formData.subject}
                   onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#eb1b23] focus:border-transparent text-sm"
                   placeholder="e.g. Biology"
                 />
               </div>
@@ -350,7 +350,7 @@ export default function MyClasses() {
                   type="text"
                   value={formData.schedule}
                   onChange={(e) => setFormData({ ...formData, schedule: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#eb1b23] focus:border-transparent text-sm"
                   placeholder="e.g. Mon, Wed 6:00 PM"
                 />
               </div>
@@ -367,7 +367,7 @@ export default function MyClasses() {
                     type="url"
                     value={formData.zoom_link}
                     onChange={(e) => setFormData({ ...formData, zoom_link: e.target.value })}
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#eb1b23] focus:border-transparent text-sm"
                     placeholder="https://zoom.us/j/..."
                   />
                 </div>
@@ -377,11 +377,11 @@ export default function MyClasses() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Course Materials (PDF/Zip)
                 </label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-teal-400 transition">
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#eb1b23] transition-all duration-200 hover:bg-red-50">
                   <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                   <button
                     type="button"
-                    className="text-teal-600 text-sm font-medium hover:underline"
+                    className="text-[#eb1b23] text-sm font-medium hover:underline"
                   >
                     click to upload
                   </button>
@@ -395,7 +395,7 @@ export default function MyClasses() {
                     type="checkbox"
                     checked={formData.is_free}
                     onChange={(e) => setFormData({ ...formData, is_free: e.target.checked })}
-                    className="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
+                    className="w-4 h-4 text-[#eb1b23] border-gray-300 rounded focus:ring-[#eb1b23]"
                   />
                   <span className="text-sm text-gray-700">Free Class</span>
                 </label>
@@ -410,7 +410,7 @@ export default function MyClasses() {
                       min="0"
                       value={formData.price}
                       onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#eb1b23] focus:border-transparent text-sm"
                       placeholder="0"
                     />
                   </div>
@@ -428,7 +428,7 @@ export default function MyClasses() {
 
               <button
                 type="submit"
-                className="w-full bg-teal-600 text-white py-3 rounded-lg hover:bg-teal-700 transition flex items-center justify-center space-x-2 font-medium"
+                className="w-full bg-[#eb1b23] text-white py-3 rounded-lg hover:bg-red-700 transition-all duration-200 hover:shadow-lg flex items-center justify-center space-x-2 font-medium"
               >
                 <Check className="w-5 h-5" />
                 <span>Publish Class</span>

@@ -353,7 +353,7 @@ export default function MyClasses() {
 
         {loading ? (
           <div className="flex items-center justify-center h-96">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-teal-600 border-t-transparent"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#eb1b23] border-t-transparent"></div>
           </div>
         ) : filteredClasses.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-sm p-16 text-center border border-gray-100">
@@ -396,7 +396,7 @@ export default function MyClasses() {
                     )}
                   </div>
 
-                  <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-teal-600 transition">
+                  <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-[#eb1b23] transition">
                     {cls.title}
                   </h3>
 
@@ -432,7 +432,7 @@ export default function MyClasses() {
                       <button
                         onClick={() => handlePayment(cls)}
                         disabled={processingPayment === cls.id}
-                        className="w-full px-4 py-3 bg-gradient-to-r from-teal-600 to-green-600 text-white font-semibold rounded-xl hover:from-teal-700 hover:to-green-700 transition-all duration-300 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        className="w-full px-4 py-3 bg-gradient-to-r from-[#eb1b23] to-red-600 text-white font-semibold rounded-xl hover:from-red-700 hover:to-red-700 transition-all duration-300 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                       >
                         {processingPayment === cls.id ? (
                           <>
@@ -504,7 +504,7 @@ function MaterialsModal({ classItem, onClose }: { classItem: Class; onClose: () 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
-        <div className="bg-gradient-to-r from-teal-600 to-green-600 p-6 flex items-center justify-between">
+        <div className="bg-gradient-to-r from-[#eb1b23] to-red-600 p-6 flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold text-white mb-1">{classItem.title}</h2>
             <p className="text-teal-50">Course Materials</p>
@@ -528,7 +528,7 @@ function MaterialsModal({ classItem, onClose }: { classItem: Class; onClose: () 
               {Object.entries(groupedMaterials).map(([week, weekMaterials]) => (
                 <div key={week} className="bg-gray-50 rounded-xl p-5 border border-gray-200">
                   <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-teal-600" />
+                    <Calendar className="w-5 h-5 text-[#eb1b23]" />
                     {week}
                   </h3>
                   <div className="space-y-3">
@@ -548,7 +548,7 @@ function MaterialsModal({ classItem, onClose }: { classItem: Class; onClose: () 
                             </div>
                           )}
                           <div>
-                            <p className="font-semibold text-gray-900 group-hover:text-teal-600 transition">
+                            <p className="font-semibold text-gray-900 group-hover:text-[#eb1b23] transition">
                               {material.topic}
                             </p>
                             <p className="text-sm text-gray-500 capitalize">{material.type}</p>
@@ -558,7 +558,7 @@ function MaterialsModal({ classItem, onClose }: { classItem: Class; onClose: () 
                           href={material.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition font-medium"
+                          className="flex items-center gap-2 px-4 py-2 bg-[#eb1b23] text-white rounded-lg hover:bg-red-700 transition font-medium"
                         >
                           {material.type === 'pdf' ? (
                             <>

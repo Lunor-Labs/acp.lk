@@ -259,7 +259,7 @@ export default function Exams() {
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#eb1b23] focus:border-transparent"
                 >
                   <option value="all">All Status</option>
                   <option value="scheduled">Scheduled</option>
@@ -271,7 +271,7 @@ export default function Exams() {
 
             {loading ? (
               <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#eb1b23]"></div>
               </div>
             ) : filteredExams.length === 0 ? (
               <div className="text-center py-12">
@@ -349,14 +349,14 @@ export default function Exams() {
         </div>
 
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-xl shadow-sm p-6 sticky top-6">
+          <div className="bg-white rounded-xl shadow-sm p-6 border-t-4 border-[#eb1b23]">
             <div className="flex items-center space-x-2 mb-6">
-              <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center">
-                <Plus className="w-4 h-4 text-teal-600" />
+              <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                <Plus className="w-4 h-4 text-red-600" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-gray-900">Create New Exam</h3>
-                <p className="text-xs text-gray-500">Setup Area Details & Questions</p>
+                <h3 className="text-lg font-bold text-slate-900">Create New Exam</h3>
+                <p className="text-xs text-slate-500">Setup Area Details & Questions</p>
               </div>
             </div>
 
@@ -375,7 +375,7 @@ export default function Exams() {
                       subject: selectedClass?.subject || '',
                     });
                   }}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#eb1b23] focus:border-transparent"
                 >
                   <option value="">Select a class</option>
                   {classes.map((cls) => (
@@ -395,7 +395,7 @@ export default function Exams() {
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   placeholder="e.g. Weekly Theory Test 05"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#eb1b23] focus:border-transparent"
                 />
               </div>
 
@@ -408,7 +408,7 @@ export default function Exams() {
                     type="date"
                     value={formData.exam_date}
                     onChange={(e) => setFormData({ ...formData, exam_date: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#eb1b23] focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -419,7 +419,7 @@ export default function Exams() {
                     type="time"
                     value={formData.exam_time}
                     onChange={(e) => setFormData({ ...formData, exam_time: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#eb1b23] focus:border-transparent"
                   />
                 </div>
               </div>
@@ -432,7 +432,7 @@ export default function Exams() {
                   type="number"
                   value={formData.duration_minutes}
                   onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) || 60 })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#eb1b23] focus:border-transparent"
                 />
               </div>
 
@@ -450,7 +450,7 @@ export default function Exams() {
                     value={question.question_text}
                     onChange={(e) => updateQuestion(question.id, 'question_text', e.target.value)}
                     placeholder="Enter your question here..."
-                    className="w-full border-0 border-b border-gray-200 px-0 py-2 focus:ring-0 focus:border-teal-500 text-sm"
+                    className="w-full border-0 border-b border-gray-200 px-0 py-2 focus:ring-0 focus:border-[#eb1b23] text-sm"
                   />
 
                   <div className="space-y-2">
@@ -461,14 +461,14 @@ export default function Exams() {
                           name={`correct-${question.id}`}
                           checked={question.correct_answer === String.fromCharCode(65 + optIndex)}
                           onChange={() => updateQuestion(question.id, 'correct_answer', String.fromCharCode(65 + optIndex))}
-                          className="text-teal-600 focus:ring-teal-500"
+                          className="text-[#eb1b23] focus:ring-[#eb1b23]"
                         />
                         <input
                           type="text"
                           value={option}
                           onChange={(e) => updateQuestionOption(question.id, optIndex, e.target.value)}
                           placeholder={`Option ${String.fromCharCode(65 + optIndex)}`}
-                          className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                          className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#eb1b23] focus:border-transparent"
                         />
                       </div>
                     ))}
@@ -481,7 +481,7 @@ export default function Exams() {
 
               <button
                 onClick={addQuestion}
-                className="w-full border-2 border-dashed border-teal-300 text-teal-600 px-4 py-3 rounded-lg font-medium hover:bg-teal-50 transition flex items-center justify-center space-x-2"
+                className="w-full border-2 border-dashed border-red-300 text-[#eb1b23] px-4 py-3 rounded-lg font-medium hover:bg-red-50 transition-all duration-200 flex items-center justify-center space-x-2"
               >
                 <Plus className="w-5 h-5" />
                 <span>Add Another Question</span>
@@ -489,7 +489,7 @@ export default function Exams() {
 
               <button
                 onClick={handleCreateExam}
-                className="w-full bg-teal-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-teal-700 transition"
+                className="w-full bg-[#eb1b23] text-white px-6 py-3 rounded-lg font-medium hover:bg-red-700 transition-all duration-200 hover:shadow-lg"
               >
                 Publish Exam
               </button>
