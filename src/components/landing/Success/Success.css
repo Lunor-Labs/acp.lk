@@ -229,7 +229,7 @@
   font-size: 0.7rem;
   font-weight: 600;
   color: #888;
-  text-transform: uppercase;
+  /* text-transform: uppercase; */
   letter-spacing: 0.3px;
   margin-bottom: 0.1rem;
 }
@@ -279,4 +279,39 @@
   .success-nav-button {
     transition: none !important;
   }
+}
+
+/* ========================================
+   LOADING / ERROR / EMPTY STATES
+   ======================================== */
+
+.success-loading-message,
+.success-error-message,
+.success-empty-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  text-align: center;
+  min-height: 250px;
+}
+
+.success-loading-message {
+  color: #555;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.success-error-message {
+  background-color: rgba(209, 41, 26, 0.05);
+  border: 1px solid rgba(209, 41, 26, 0.2);
+  color: #d1291a;
+  font-size: 1rem;
+  border-radius: 0.75rem;
+}
+
+.success-empty-message {
+  color: #888;
+  font-size: 1rem;
+  font-weight: 500;
 }
