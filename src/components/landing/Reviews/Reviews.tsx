@@ -1,43 +1,64 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Review } from '../../../types/landing';
 import testimonialBg from '../../../assets/testimonial-bg.webp';
+import { classReviewRepository } from '../../../repositories/ClassReviewRepository';
+
+const STATIC_REVIEWS: Review[] = [
+  {
+    id: 1,
+    text: 'සර් උගන්වන ඉංග්‍රීසි පාඩම්වලින් කියලා හැම විෂයක පොඩිම පොඩිම ප්‍රශ්න වුනත් අදාළව සර් නිතිතම තමයි හොඳම විදිහ',
+    name: 'Amara Fernando',
+    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+    rating: 5,
+  },
+  {
+    id: 2,
+    text: 'සර් උගන්වපු විදිහට, අභ්‍යාශයට කියලා ඉතාමොන්න කියලා පාඩම් එපා එපා මං සෙන්සුස් පුළුවන් කෙනාට දෙන්න පුළුවන් විදිහට සර්ලා තේරුම් කරදෙනව තාම කියනො',
+    name: 'Kavindu Silva',
+    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+    rating: 5,
+  },
+  {
+    id: 3,
+    text: 'සර් නිසා තමයි මම අද විශයාව පෙරළවීම අතෙ සපය සර් නිතිතම පාඩම් වලින් හොඳොම සීමාව පරතෙහසත් ගොඩක් තිකිලා හොඳවුවා',
+    name: 'Nisha Perera',
+    image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
+    rating: 5,
+  },
+  {
+    id: 4,
+    text: 'සර් උගන්වන ඉංග්‍රීසි පාඩම්වලින් කියලා හැම විෂයක පොඩිම පොඩිම ප්‍රශ්න වුනත් අදාළව සර් නිතිතම තමයි හොඳම විදිහ',
+    name: 'Roshan Gunasekara',
+    image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+    rating: 4,
+  }
+];
 
 const Reviews: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [offset, setOffset] = useState(0); // percentage translateX for desktop row
   const [enableTransition, setEnableTransition] = useState(false);
+  const [reviews, setReviews] = useState<Review[]>(STATIC_REVIEWS);
 
-  const reviews: Review[] = [
-    {
-      id: 1,
-      text: 'සර් උගන්වන ඉංග්‍රීසි පාඩම්වලින් කියලා හැම විෂයක පොඩිම පොඩිම ප්‍රශ්න වුනත් අදාළව සර් නිතිතම තමයි හොඳම විදිහ',
-      name: 'Amara Fernando',
-      image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-      rating: 5,
-    },
-    {
-      id: 2,
-      text: 'සර් උගන්වපු විදිහට, අභ්‍යාශයට කියලා ඉතාමොන්න කියලා පාඩම් එපා එපා මං සෙන්සුස් පුළුවන් කෙනාට දෙන්න පුළුවන් විදිහට සර්ලා තේරුම් කරදෙනව තාම කියනො',
-      name: 'Kavindu Silva',
-      image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-      rating: 5,
-    },
-    {
-      id: 3,
-      text: 'සර් නිසා තමයි මම අද විශයාව පෙරළවීම අතෙ සපය සර් නිතිතම පාඩම් වලින් හොඳොම සීමාව පරතෙහසත් ගොඩක් තිකිලා හොඳවුවා',
-      name: 'Nisha Perera',
-      image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
-      rating: 5,
-    },
-    {
-      id: 4,
-      text: 'සර් උගන්වන ඉංග්‍රීසි පාඩම්වලින් කියලා හැම විෂයක පොඩිම පොඩිම ප්‍රශ්න වුනත් අදාළව සර් නිතිතම තමයි හොඳම විදිහ',
-      name: 'Roshan Gunasekara',
-      image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-      rating: 4,
-    }
-  ];
+  useEffect(() => {
+    classReviewRepository.getVisibleReviews().then((dbReviews) => {
+      if (dbReviews.length > 0) {
+        setReviews(
+          dbReviews.map((r, idx) => ({
+            id: idx + 1,
+            text: r.review_text,
+            name: r.student_name,
+            image: r.student_image_url ||
+              'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+            rating: r.rating,
+          }))
+        );
+      }
+    }).catch(() => {
+      // Keep static reviews on error
+    });
+  }, []);
 
   const currentReview = reviews[currentIndex];
   const prevReview =

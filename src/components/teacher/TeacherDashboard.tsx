@@ -1,10 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { LayoutDashboard, Users, FileText, Package, LogOut, GraduationCap, TrendingUp, DollarSign, UserPlus, User, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Package, LogOut, GraduationCap, TrendingUp, DollarSign, UserPlus, User, Menu, X, Image, MessageSquare, Trophy } from 'lucide-react';
 import MyClasses from './MyClasses';
 import Exams from './Exams';
 import StudyPacks from './StudyPacks';
+import GalleryManager from './GalleryManager';
+import ReviewsManager from './ReviewsManager';
+import TestResultsManager from './TestResultsManager';
 import { supabase } from '../../lib/supabase';
+import { TeacherRepository } from '../../repositories/TeacherRepository';
+
+const teacherRepository = new TeacherRepository();
 
 interface DashboardStats {
   totalStudents: number;
@@ -22,6 +28,7 @@ export default function TeacherDashboard() {
   const { profile, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState('classes');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [teacherId, setTeacherId] = useState<string | null>(null);
   const [stats, setStats] = useState<DashboardStats>({
     totalStudents: 0,
     newStudents: 0,
@@ -30,6 +37,15 @@ export default function TeacherDashboard() {
   });
   const [growthData, setGrowthData] = useState<StudentGrowthData[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (profile?.id) {
+      // Resolve the teacher record once and store its ID
+      teacherRepository.findByProfileId(profile.id).then((teacher) => {
+        if (teacher) setTeacherId(teacher.id);
+      });
+    }
+  }, [profile?.id]);
 
   useEffect(() => {
     if (activeTab === 'dashboard' && profile?.id) {
@@ -186,8 +202,8 @@ export default function TeacherDashboard() {
                 setIsMobileMenuOpen(false);
               }}
               className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'dashboard'
-                  ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-500/30'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-500/30'
+                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                 }`}
             >
               <LayoutDashboard className="w-5 h-5" />
@@ -200,8 +216,8 @@ export default function TeacherDashboard() {
                 setIsMobileMenuOpen(false);
               }}
               className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'classes'
-                  ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-500/30'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-500/30'
+                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                 }`}
             >
               <GraduationCap className="w-5 h-5" />
@@ -214,8 +230,8 @@ export default function TeacherDashboard() {
                 setIsMobileMenuOpen(false);
               }}
               className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'exams'
-                  ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-500/30'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-500/30'
+                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                 }`}
             >
               <FileText className="w-5 h-5" />
@@ -228,12 +244,58 @@ export default function TeacherDashboard() {
                 setIsMobileMenuOpen(false);
               }}
               className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'study-packs'
-                  ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-500/30'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-500/30'
+                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                 }`}
             >
               <Package className="w-5 h-5" />
               <span className="font-medium">Study Packs</span>
+            </button>
+
+            <div className="pt-2 border-t border-slate-700/60 mt-2">
+              <p className="text-xs text-slate-500 px-4 py-1 font-medium uppercase tracking-widest">Landing Page</p>
+            </div>
+
+            <button
+              onClick={() => {
+                setActiveTab('gallery');
+                setIsMobileMenuOpen(false);
+              }}
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'gallery'
+                ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-500/30'
+                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                }`}
+            >
+              <Image className="w-5 h-5" />
+              <span className="font-medium">Gallery</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveTab('reviews');
+                setIsMobileMenuOpen(false);
+              }}
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'reviews'
+                ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-500/30'
+                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                }`}
+            >
+              <MessageSquare className="w-5 h-5" />
+              <span className="font-medium">Reviews</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveTab('test-results');
+                setIsMobileMenuOpen(false);
+              }}
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'test-results'
+                ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-500/30'
+                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                }`}
+            >
+              <Trophy className="w-5 h-5" />
+              <span className="font-medium">Test Results</span>
             </button>
           </nav>
 
@@ -282,6 +344,24 @@ export default function TeacherDashboard() {
           <Exams />
         ) : activeTab === 'study-packs' ? (
           <StudyPacks />
+        ) : activeTab === 'gallery' ? (
+          teacherId ? <GalleryManager teacherId={teacherId} /> : (
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#eb1b23]" />
+            </div>
+          )
+        ) : activeTab === 'reviews' ? (
+          teacherId ? <ReviewsManager teacherId={teacherId} /> : (
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#eb1b23]" />
+            </div>
+          )
+        ) : activeTab === 'test-results' ? (
+          teacherId ? <TestResultsManager teacherId={teacherId} /> : (
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#eb1b23]" />
+            </div>
+          )
         ) : activeTab === 'dashboard' ? (
           <div className="p-4 sm:p-6 lg:p-8">
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">Dashboard</h2>
