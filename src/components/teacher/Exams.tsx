@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { ExamRepository, ClassRepository, TeacherRepository, PdfPaperRepository } from '../../repositories';
-import { Plus, Calendar, Clock, Users, MoreVertical, Upload, X } from 'lucide-react';
+import { Plus, Calendar, Clock, Users, Upload, X, FileText, ChevronRight } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface Exam {
@@ -38,12 +38,44 @@ interface PdfAnswer {
   correct_answer: number;
 }
 
+interface ManualAnswer {
+  question_no: number;
+  correct_answer: string; // A, B, C, D
+}
+
+interface ManualQuestion {
+  id: string;
+  question_number: number;
+  question_text: string;
+  options: string[];
+  correct_answer: string;
+  marks: number;
+}
+
+interface ExamDetail {
+  id: string;
+  title: string;
+  subject: string;
+  pdfPath: string | null;
+  markedAnswers: (PdfAnswer | ManualAnswer)[];
+  manualQuestions: ManualQuestion[];
+  isPdfExam: boolean;
+}
+
 export default function Exams() {
   const { profile } = useAuth();
   const [exams, setExams] = useState<Exam[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('all');
+  
+  // State for exam detail modal
+  const [selectedExamDetail, setSelectedExamDetail] = useState<ExamDetail | null>(null);
+  const [loadingExamDetail, setLoadingExamDetail] = useState(false);
+  const [markedAnswers, setMarkedAnswers] = useState<(PdfAnswer | ManualAnswer)[]>([]);
+  const [manualQuestions, setManualQuestions] = useState<ManualQuestion[]>([]);
+  const [editedAnswers, setEditedAnswers] = useState<Record<string, string | number>>({});
+  const [isSaving, setIsSaving] = useState(false);
 
   const examRepo = new ExamRepository();
   const classRepo = new ClassRepository();
@@ -132,6 +164,163 @@ export default function Exams() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleExamCardClick(exam: Exam) {
+    try {
+      setLoadingExamDetail(true);
+      
+      // Step 1: Check if exam_id exists in pdf_exams table
+      const { data: pdfAnswersData, error: pdfError } = await supabase
+        .from('pdf_exams')
+        .select('*')
+        .eq('exam_id', exam.id)
+        .order('question_no', { ascending: true });
+
+      console.log('PDF Answers Data:', pdfAnswersData, 'Error:', pdfError);
+
+      // If exam exists in pdf_exams, it's a PDF exam
+      if (pdfAnswersData && pdfAnswersData.length > 0) {
+        const pdfPath = pdfAnswersData[0]?.pdf_path || null;
+        
+        let pdfUrl = null;
+        if (pdfPath) {
+          // Remove 'acp/' prefix to get the correct path within the bucket
+          const storagePath = pdfPath.startsWith('acp/') ? pdfPath.slice(4) : pdfPath;
+          const { data } = supabase.storage.from('acp').getPublicUrl(storagePath);
+          pdfUrl = data?.publicUrl || null;
+          console.log('PDF Path from DB:', pdfPath, 'Storage Path:', storagePath, 'Public URL:', pdfUrl);
+        }
+        
+        const formattedAnswers: PdfAnswer[] = pdfAnswersData.map(a => ({
+          question_no: a.question_no,
+          correct_answer: a.correct_answer,
+        }));
+        
+        setMarkedAnswers(formattedAnswers);
+        setManualQuestions([]);
+        setEditedAnswers({});
+        
+        setSelectedExamDetail({
+          id: exam.id,
+          title: exam.title,
+          subject: exam.subject,
+          pdfPath: pdfUrl,
+          markedAnswers: formattedAnswers,
+          manualQuestions: [],
+          isPdfExam: true,
+        });
+        setLoadingExamDetail(false);
+        return;
+      }
+
+      // Step 2: Otherwise, it's a manual exam - fetch exam_questions
+      const { data: examQuestions, error: qError } = await supabase
+        .from('exam_questions')
+        .select('*')
+        .eq('exam_id', exam.id)
+        .order('question_number', { ascending: true });
+
+      console.log('Exam Questions Data:', examQuestions, 'Error:', qError);
+
+      const formattedQuestions: ManualQuestion[] = (examQuestions || []).map(q => ({
+        id: q.id,
+        question_number: q.question_number,
+        question_text: q.question_text,
+        options: q.options || [],
+        correct_answer: q.correct_answer,
+        marks: q.marks,
+      }));
+      
+      // Create answer sheet for manual exam
+      const manualAnswers = formattedQuestions.map(q => ({
+        question_no: q.question_number,
+        correct_answer: q.correct_answer, // A, B, C, D as string
+      }));
+      
+      setManualQuestions(formattedQuestions);
+      setMarkedAnswers(manualAnswers);
+      setEditedAnswers({});
+      
+      setSelectedExamDetail({
+        id: exam.id,
+        title: exam.title,
+        subject: exam.subject,
+        pdfPath: null,
+        markedAnswers: manualAnswers,
+        manualQuestions: formattedQuestions,
+        isPdfExam: false,
+      });
+    } catch (error) {
+      console.error('Error loading exam details:', error);
+      alert('Failed to load exam details');
+    } finally {
+      setLoadingExamDetail(false);
+    }
+  }
+
+  async function handleSaveAnswerChanges() {
+    if (!selectedExamDetail) return;
+    
+    try {
+      const changes = Object.entries(editedAnswers);
+      if (changes.length === 0) {
+        alert('No changes made to save');
+        return;
+      }
+
+      setIsSaving(true);
+
+      if (selectedExamDetail.isPdfExam) {
+        // Save PDF exam answers - batch update all changed answers at once
+        const answersToUpdate = changes.map(([questionNo, newAnswer]) => ({
+          question_no: Number(questionNo),
+          correct_answer: Number(newAnswer),
+        }));
+
+        await pdfPaperRepo.updateMultipleAnswers(selectedExamDetail.id, answersToUpdate);
+
+        // Update local state with new answers
+        const updatedAnswers = markedAnswers.map(answer => ({
+          question_no: answer.question_no,
+          correct_answer: editedAnswers[answer.question_no] ?? answer.correct_answer,
+        }));
+
+        setMarkedAnswers(updatedAnswers as PdfAnswer[]);
+      } else {
+        // Save manual exam answers - use question_number as the key
+        for (const [questionNumber, newAnswer] of changes) {
+          const question = manualQuestions.find(q => q.question_number === Number(questionNumber));
+          if (question) {
+            await supabase
+              .from('exam_questions')
+              .update({ correct_answer: newAnswer })
+              .eq('id', question.id);
+          }
+        }
+
+        // Update local questions state
+        const updatedQuestions = manualQuestions.map(q =>
+          editedAnswers[q.question_number] ? { ...q, correct_answer: editedAnswers[q.question_number] as string } : q
+        );
+        setManualQuestions(updatedQuestions);
+      }
+
+      setEditedAnswers({});
+      alert('Answer sheet updated successfully!');
+    } catch (error) {
+      console.error('Error saving answer changes:', error);
+      alert('Failed to save changes');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  function updateAnswerEdit(identifier: string | number, answer: string | number) {
+    setEditedAnswers(prev => ({
+      ...prev,
+      [identifier]: answer
+    }));
   }
 
   async function handleCreateExam() {
@@ -409,58 +598,59 @@ export default function Exams() {
                   return (
                     <div
                       key={exam.id}
-                      className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition"
+                      onClick={() => handleExamCardClick(exam)}
+                      className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition cursor-pointer hover:border-[#eb1b23] hover:bg-red-50/20"
                     >
-                      <div className="flex items-start space-x-4">
-                        <div className={`w-16 h-16 rounded-xl flex items-center justify-center ${exam.subject.toLowerCase().includes('physics') ? 'bg-red-100' :
+                      <div className="flex flex-col sm:flex-row items-start gap-4">
+                        <div className={`w-12 h-12 sm:w-16 sm:h-16 flex-shrink-0 rounded-xl flex items-center justify-center ${exam.subject.toLowerCase().includes('physics') ? 'bg-red-100' :
                           exam.subject.toLowerCase().includes('chemistry') ? 'bg-blue-100' :
                             exam.subject.toLowerCase().includes('maths') ? 'bg-purple-100' :
                               'bg-teal-100'
                           }`}>
-                          <span className="text-2xl font-bold">
+                          <span className="text-xl sm:text-2xl font-bold">
                             {exam.subject.substring(0, 2).toUpperCase()}
                           </span>
                         </div>
 
-                        <div className="flex-1">
-                          <div className="flex items-start justify-between mb-2">
-                            <div>
-                              <div className="flex items-center space-x-2 mb-1">
-                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${exam.subject.toLowerCase().includes('physics') ? 'bg-red-100 text-red-700' :
+                        <div className="flex-1 w-full">
+                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
+                            <div className="flex-1">
+                              <div className="flex flex-wrap items-center gap-2 mb-1">
+                                <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium ${exam.subject.toLowerCase().includes('physics') ? 'bg-red-100 text-red-700' :
                                   exam.subject.toLowerCase().includes('chemistry') ? 'bg-blue-100 text-blue-700' :
                                     exam.subject.toLowerCase().includes('maths') ? 'bg-purple-100 text-purple-700' :
                                       'bg-teal-100 text-teal-700'
                                   }`}>
                                   {exam.subject.toUpperCase()}
                                 </span>
-                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${status.color}`}>
+                                <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium ${status.color}`}>
                                   {status.label}
                                 </span>
                               </div>
-                              <h4 className="text-lg font-bold text-gray-900">{exam.title}</h4>
-                              <p className="text-sm text-gray-600 mt-1">{exam.description}</p>
+                              <h4 className="text-base sm:text-lg font-bold text-gray-900">{exam.title}</h4>
+                              <p className="text-xs sm:text-sm text-gray-600 mt-1 line-clamp-2">{exam.description}</p>
                             </div>
-                            <button className="text-gray-400 hover:text-gray-600">
-                              <MoreVertical className="w-5 h-5" />
-                            </button>
+                            <div className="flex items-center space-x-2 flex-shrink-0">
+                              <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-[#eb1b23]" />
+                            </div>
                           </div>
 
-                          <div className="flex items-center space-x-6 text-sm text-gray-600 mt-3">
-                            <div className="flex items-center space-x-1">
-                              <Calendar className="w-4 h-4" />
-                              <span>{new Date(exam.start_time).toLocaleDateString()}</span>
+                          <div className="grid grid-cols-2 sm:flex sm:items-center sm:gap-6 gap-2 text-xs sm:text-sm text-gray-600 mt-3">
+                            <div className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                              <span className="truncate">{new Date(exam.start_time).toLocaleDateString()}</span>
                             </div>
-                            <div className="flex items-center space-x-1">
-                              <Clock className="w-4 h-4" />
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
                               <span>{new Date(exam.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                             </div>
-                            <div className="flex items-center space-x-1">
-                              <Users className="w-4 h-4" />
-                              <span>{exam.submission_count} Submitted</span>
+                            <div className="flex items-center gap-1">
+                              <Users className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                              <span className="truncate">{exam.submission_count} Submitted</span>
                             </div>
-                            <div className="flex items-center space-x-1">
-                              <Clock className="w-4 h-4" />
-                              <span>{exam.duration_minutes} mins</span>
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                              <span>{exam.duration_minutes}m</span>
                             </div>
                           </div>
                         </div>
@@ -620,6 +810,7 @@ export default function Exams() {
                           setShowPdfAnswerSheet(false);
                           setPdfFile(null);
                         }}
+                        title="Close answer sheet"
                         className="text-gray-400 hover:text-gray-600"
                       >
                         <X className="w-5 h-5" />
@@ -727,6 +918,242 @@ export default function Exams() {
           </div>
         </div>
       </div>
+
+      {/* Exam Detail Modal */}
+      {selectedExamDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+            {loadingExamDetail ? (
+              <div className="flex items-center justify-center h-96">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#eb1b23]"></div>
+              </div>
+            ) : (
+              <>
+                {/* Header */}
+                <div className="sticky top-0 bg-gradient-to-r from-[#eb1b23] to-red-700 text-white p-6 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold">{selectedExamDetail.title}</h2>
+                    <p className="text-red-100 text-sm mt-1">{selectedExamDetail.subject}</p>
+                  </div>
+                  <button
+                    onClick={() => setSelectedExamDetail(null)}
+                    title="Close exam details"
+                    className="text-white hover:bg-red-600 rounded-lg p-2 transition"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+
+                <div className="overflow-y-auto flex-1 p-6">
+                  {selectedExamDetail.isPdfExam ? (
+                    <>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* PDF Viewer */}
+                      <div className="border-2 border-gray-200 rounded-xl overflow-hidden bg-gray-50">
+                        <div className="bg-gray-100 px-4 py-3 border-b flex items-center space-x-2">
+                          <FileText className="w-5 h-5 text-[#eb1b23]" />
+                          <span className="font-semibold text-gray-700">Exam Paper</span>
+                        </div>
+                        {selectedExamDetail.pdfPath ? (
+                          <iframe
+                            src={selectedExamDetail.pdfPath}
+                            className="w-full h-[500px]"
+                            title="Exam PDF"
+                          />
+                        ) : (
+                          <div className="h-[500px] flex items-center justify-center text-gray-500">
+                            <p>PDF not available</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Answer Sheet */}
+                      <div className="border-2 border-gray-200 rounded-xl overflow-hidden flex flex-col">
+                        <div className="bg-gray-100 px-4 py-3 border-b flex items-center space-x-2">
+                          <FileText className="w-5 h-5 text-[#eb1b23]" />
+                          <span className="font-semibold text-gray-700">Marked Answer Sheet</span>
+                        </div>
+                        
+                        <div className="p-4 space-y-2">
+                          {markedAnswers.map((answer) => (
+                            <div
+                              key={answer.question_no}
+                              className="bg-white border border-gray-200 rounded-lg p-3 hover:border-[#eb1b23] transition"
+                            >
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="font-semibold text-gray-700">
+                                  Q{answer.question_no}
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  {answer.correct_answer === 0 ? 'Not marked' : `Answer: ${answer.correct_answer}`}
+                                </span>
+                              </div>
+                              
+                              <div className="flex gap-1 flex-wrap">
+                                {[1, 2, 3, 4, 5].map((option) => (
+                                  <button
+                                    key={option}
+                                    onClick={() => updateAnswerEdit(answer.question_no, option)}
+                                    className={`px-3 py-1 rounded text-sm font-semibold transition ${
+                                      editedAnswers[answer.question_no] === option ||
+                                      (editedAnswers[answer.question_no] === undefined &&
+                                        answer.correct_answer === option)
+                                        ? 'bg-[#eb1b23] text-white'
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    }`}
+                                  >
+                                    {option}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 border-t pt-4">
+                      <button
+                        onClick={handleSaveAnswerChanges}
+                        disabled={isSaving || Object.keys(editedAnswers).length === 0}
+                        title="Save changes to answer sheet"
+                        className="w-full bg-[#eb1b23] text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                      >
+                        {isSaving ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            <span>Saving...</span>
+                          </>
+                        ) : (
+                          <span>Update Answers</span>
+                        )}
+                      </button>
+                    </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Questions/Instructions */}
+                      <div className="border-2 border-gray-200 rounded-xl overflow-hidden bg-gray-50">
+                        <div className="bg-gray-100 px-4 py-3 border-b flex items-center space-x-2">
+                          <FileText className="w-5 h-5 text-[#eb1b23]" />
+                          <span className="font-semibold text-gray-700">Questions</span>
+                        </div>
+                        <div className="p-4 space-y-4">
+                          {manualQuestions.length > 0 ? (
+                            manualQuestions.map((question) => (
+                              <div key={question.id} className="bg-white border border-gray-200 rounded-lg p-4">
+                                <div className="flex items-start justify-between mb-3">
+                                  <span className="font-bold text-gray-900">Q{question.question_number}</span>
+                                  <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded">
+                                    {question.marks} mark{question.marks > 1 ? 's' : ''}
+                                  </span>
+                                </div>
+                                
+                                <p className="text-sm font-medium text-gray-800 mb-3">{question.question_text}</p>
+                                
+                                <div className="space-y-2">
+                                  {question.options.map((option, optIndex) => {
+                                    const optionLabel = String.fromCharCode(65 + optIndex);
+                                    const isCorrect = question.correct_answer === optionLabel;
+                                    return (
+                                      <div
+                                        key={optIndex}
+                                        className={`p-2 rounded text-sm border ${
+                                          isCorrect
+                                            ? 'border-green-500 bg-green-50'
+                                            : 'border-gray-200 bg-gray-50'
+                                        }`}
+                                      >
+                                        <span className="font-semibold text-gray-700">{optionLabel})</span>
+                                        <span className="text-gray-700 ml-2">{option}</span>
+                                        {isCorrect && <span className="ml-2 text-xs text-green-700">✓ Correct</span>}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-gray-500 text-center py-8">No questions found</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Answer Sheet */}
+                      <div className="border-2 border-gray-200 rounded-xl overflow-hidden">
+                        <div className="bg-gray-100 px-4 py-3 border-b flex items-center space-x-2">
+                          <FileText className="w-5 h-5 text-[#eb1b23]" />
+                          <span className="font-semibold text-gray-700">Marked Answer Sheet</span>
+                        </div>
+                        
+                        <div className="p-4 space-y-3">
+                          {manualQuestions.map((question) => (
+                            <div
+                              key={question.id}
+                              className="bg-white border border-gray-200 rounded-lg p-3 hover:border-[#eb1b23] transition"
+                            >
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="font-semibold text-gray-700">Q{question.question_number}</span>
+                                <span className="text-xs text-gray-500">
+                                  Current: {editedAnswers[question.question_number] === undefined ? question.correct_answer : editedAnswers[question.question_number]}
+                                </span>
+                              </div>
+                              
+                              <div className="flex gap-1 flex-wrap">
+                                {question.options.map((_, optIndex) => {
+                                  const optLabel = String.fromCharCode(65 + optIndex);
+                                  const isSelected =
+                                    editedAnswers[question.question_number] === optLabel ||
+                                    (editedAnswers[question.question_number] === undefined && question.correct_answer === optLabel);
+                                  
+                                  return (
+                                    <button
+                                      key={optIndex}
+                                      onClick={() => updateAnswerEdit(question.question_number, optLabel)}
+                                      title={`Option ${optLabel}`}
+                                      className={`w-10 h-10 rounded font-bold text-sm transition ${
+                                        isSelected
+                                          ? 'bg-[#eb1b23] text-white'
+                                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                      }`}
+                                    >
+                                      {optLabel}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 border-t pt-4">
+                      <button
+                        onClick={handleSaveAnswerChanges}
+                        disabled={isSaving || Object.keys(editedAnswers).length === 0}
+                        title="Save changes to answer sheet"
+                        className="w-full bg-[#eb1b23] text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                      >
+                        {isSaving ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            <span>Saving...</span>
+                          </>
+                        ) : (
+                          <span>Update Answers</span>
+                        )}
+                      </button>
+                    </div>
+                    </>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

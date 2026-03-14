@@ -107,11 +107,51 @@ export class PdfPaperRepository extends BaseRepository<PdfPaper> {
             .eq('exam_id', examId)
             .eq('question_no', questionNo)
             .select()
-            .single()
-            .execute();
+            .single();
 
         if (error) throw error;
         if (!data) throw new Error('Failed to update answer');
         return data;
+    }
+
+    /**
+     * Update multiple answers at once for a specific exam
+     * This is more efficient than calling updateAnswer multiple times
+     */
+    async updateMultipleAnswers(
+        examId: string,
+        answers: Array<{ question_no: number; correct_answer: number }>
+    ): Promise<PdfPaper[]> {
+        if (answers.length === 0) {
+            return [];
+        }
+
+        try {
+            const updatedPapers: PdfPaper[] = [];
+
+            // Update each answer and collect the results
+            for (const answer of answers) {
+                const { data, error } = await db.from<PdfPaper>(this.tableName)
+                    .update({ correct_answer: answer.correct_answer })
+                    .eq('exam_id', examId)
+                    .eq('question_no', answer.question_no)
+                    .select()
+                    .single();
+
+                if (error) {
+                    console.error(`Failed to update question ${answer.question_no}:`, error);
+                    throw error;
+                }
+
+                if (data) {
+                    updatedPapers.push(data);
+                }
+            }
+
+            return updatedPapers;
+        } catch (error) {
+            console.error('Error updating multiple answers:', error);
+            throw error;
+        }
     }
 }
