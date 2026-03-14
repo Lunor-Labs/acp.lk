@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { ExamRepository, ClassRepository, TeacherRepository } from '../../repositories';
-import { Plus, Calendar, Clock, Users, MoreVertical, CheckCircle, Circle } from 'lucide-react';
+import { ExamRepository, ClassRepository, TeacherRepository, PdfPaperRepository } from '../../repositories';
+import { Plus, Calendar, Clock, Users, MoreVertical, Upload, X } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 
 interface Exam {
   id: string;
@@ -32,6 +33,11 @@ interface Question {
   marks: number;
 }
 
+interface PdfAnswer {
+  question_no: number;
+  correct_answer: number;
+}
+
 export default function Exams() {
   const { profile } = useAuth();
   const [exams, setExams] = useState<Exam[]>([]);
@@ -42,6 +48,7 @@ export default function Exams() {
   const examRepo = new ExamRepository();
   const classRepo = new ClassRepository();
   const teacherRepo = new TeacherRepository();
+  const pdfPaperRepo = new PdfPaperRepository();
 
   const [formData, setFormData] = useState({
     class_id: '',
@@ -51,7 +58,18 @@ export default function Exams() {
     exam_date: '',
     exam_time: '',
     duration_minutes: 60,
+    exam_type: 'manual', // 'manual' or 'pdf'
   });
+
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [pdfAnswers, setPdfAnswers] = useState<PdfAnswer[]>(
+    Array.from({ length: 50 }, (_, i) => ({
+      question_no: i + 1,
+      correct_answer: 0, // 0 means not selected, 1-5 for actual answers
+    }))
+  );
+  const [pdfUploading, setPdfUploading] = useState(false);
+  const [showPdfAnswerSheet, setShowPdfAnswerSheet] = useState(false);
 
   const [questions, setQuestions] = useState<Question[]>([
     {
@@ -180,6 +198,7 @@ export default function Exams() {
       exam_date: '',
       exam_time: '',
       duration_minutes: 60,
+      exam_type: 'manual',
     });
     setQuestions([
       {
@@ -190,6 +209,14 @@ export default function Exams() {
         marks: 1,
       },
     ]);
+    setPdfFile(null);
+    setPdfAnswers(
+      Array.from({ length: 50 }, (_, i) => ({
+        question_no: i + 1,
+        correct_answer: 0,
+      }))
+    );
+    setShowPdfAnswerSheet(false);
   }
 
   function addQuestion() {
@@ -219,6 +246,104 @@ export default function Exams() {
         q.id === id
           ? { ...q, options: q.options.map((opt, i) => (i === optionIndex ? value : opt)) }
           : q
+      )
+    );
+  }
+
+  async function handlePdfFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        alert('Please select a PDF file');
+        return;
+      }
+      setPdfFile(file);
+      setShowPdfAnswerSheet(true);
+    }
+  }
+
+  async function handlePdfAnswerSheetSubmit() {
+    try {
+      if (!pdfFile) {
+        alert('Please select a PDF file');
+        return;
+      }
+
+      // Validate all answers are selected (1-5)
+      const allAnswered = pdfAnswers.every(answer => answer.correct_answer > 0);
+      if (!allAnswered) {
+        alert('Please mark correct answers for all 50 questions');
+        return;
+      }
+
+      setPdfUploading(true);
+
+      const teacher = await teacherRepo.findByProfileId(profile?.id!);
+      if (!teacher) {
+        alert('Teacher profile not found');
+        return;
+      }
+
+      if (!formData.class_id || !formData.title || !formData.exam_date || !formData.exam_time) {
+        alert('Please fill in all required fields');
+        return;
+      }
+
+      // Create exam first with type indicator
+      const startTime = new Date(`${formData.exam_date}T${formData.exam_time}`);
+      const endTime = new Date(startTime.getTime() + formData.duration_minutes * 60000);
+
+      const exam = await examRepo.create({
+        teacher_id: teacher.id,
+        class_id: formData.class_id,
+        title: formData.title,
+        description: formData.description,
+        subject: formData.subject,
+        start_time: startTime.toISOString(),
+        end_time: endTime.toISOString(),
+        duration_minutes: formData.duration_minutes,
+        total_marks: 50, // 50 questions
+      });
+
+      // Upload PDF to storage
+      const fileName = `${exam.id}-${Date.now()}.pdf`;
+      const filePath = `acp/pdf/papers/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('acp')
+        .upload(`pdf/papers/${fileName}`, pdfFile, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+
+      if (uploadError) {
+        console.error('PDF upload error:', uploadError);
+        // Delete the exam if PDF upload fails
+        await examRepo.delete(exam.id);
+        alert('Failed to upload PDF. Please try again.');
+        return;
+      }
+
+      // Save PDF answers to database
+      await pdfPaperRepo.createPdfAnswers(exam.id, filePath, pdfAnswers);
+
+      alert('PDF Paper exam created successfully!');
+      resetForm();
+      fetchExams();
+    } catch (error) {
+      console.error('Error creating PDF exam:', error);
+      alert('Failed to create PDF exam. Please try again.');
+    } finally {
+      setPdfUploading(false);
+    }
+  }
+
+  function updatePdfAnswer(questionNo: number, answerValue: number) {
+    setPdfAnswers(
+      pdfAnswers.map(answer =>
+        answer.question_no === questionNo
+          ? { ...answer, correct_answer: answerValue }
+          : answer
       )
     );
   }
@@ -435,8 +560,111 @@ export default function Exams() {
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#eb1b23] focus:border-transparent"
                 />
               </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Exam Creation Type
+                </label>
+                <select
+                  value={formData.exam_type}
+                  onChange={(e) => {
+                    setFormData({ ...formData, exam_type: e.target.value });
+                    if (e.target.value === 'pdf') {
+                      setShowPdfAnswerSheet(false);
+                      setPdfFile(null);
+                    }
+                  }}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#eb1b23] focus:border-transparent"
+                >
+                  <option value="manual">Manual (Text Questions)</option>
+                  <option value="pdf">PDF Paper Upload</option>
+                </select>
+              </div>
 
-              {questions.map((question, qIndex) => (
+              {formData.exam_type === 'pdf' && !showPdfAnswerSheet ? (
+                <div className="border-2 border-dashed border-[#eb1b23] rounded-lg p-6 text-center">
+                  <Upload className="w-8 h-8 text-[#eb1b23] mx-auto mb-3" />
+                  <label className="cursor-pointer">
+                    <p className="text-sm font-medium text-gray-700 mb-1">
+                      Upload PDF Paper
+                    </p>
+                    <p className="text-xs text-gray-500 mb-4">
+                      Click to select or drag & drop a PDF file
+                    </p>
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      onChange={handlePdfFileSelect}
+                      className="hidden"
+                    />
+                    <span className="inline-block bg-[#eb1b23] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition">
+                      Select PDF
+                    </span>
+                  </label>
+                  {pdfFile && (
+                    <p className="text-xs text-green-600 mt-3">
+                      ✓ {pdfFile.name}
+                    </p>
+                  )}
+                </div>
+              ) : null}
+
+              {formData.exam_type === 'pdf' && showPdfAnswerSheet ? (
+                <div className="fixed inset-0 z-50 flex items-center justify-center">
+                  <div className="absolute inset-0 bg-black opacity-30" onClick={() => { setShowPdfAnswerSheet(false); setPdfFile(null); }}></div>
+                  <div className="relative bg-white rounded-xl shadow-lg w-[90vw] max-w-3xl p-6 overflow-y-auto max-h-[90vh]">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-semibold text-gray-900">MCQ Answer Sheet (50 Questions)</h4>
+                      <button
+                        onClick={() => {
+                          setShowPdfAnswerSheet(false);
+                          setPdfFile(null);
+                        }}
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    <div className="space-y-2">
+                      {pdfAnswers.map((answer) => (
+                        <div key={answer.question_no} className="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200">
+                          <span className="text-sm font-medium text-gray-700">
+                            Q{answer.question_no}
+                          </span>
+                          <div className="flex gap-2">
+                            {[1, 2, 3, 4, 5].map((option) => (
+                              <button
+                                key={option}
+                                onClick={() => updatePdfAnswer(answer.question_no, option)}
+                                className={`w-8 h-8 rounded font-semibold text-sm transition ${
+                                  answer.correct_answer === option
+                                    ? 'bg-[#eb1b23] text-white'
+                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                }`}
+                              >
+                                {option}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={handlePdfAnswerSheetSubmit}
+                      disabled={pdfUploading}
+                      className="w-full bg-[#eb1b23] text-white px-6 py-3 rounded-lg font-medium hover:bg-red-700 transition-all duration-200 hover:shadow-lg mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {pdfUploading ? 'Uploading & Saving...' : 'Save PDF Paper & Answers'}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+
+              {formData.exam_type === 'manual' ? (
+                <>
+                  {questions.map((question, qIndex) => (
                 <div key={question.id} className="border border-gray-200 rounded-lg p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-semibold text-gray-900">
@@ -493,6 +721,8 @@ export default function Exams() {
               >
                 Publish Exam
               </button>
+                </>
+              ) : null}
             </div>
           </div>
         </div>
