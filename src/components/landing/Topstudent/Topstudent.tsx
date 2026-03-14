@@ -3,53 +3,83 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import studentImage from '../../../assets/student1.webp';
 
 import type { TopStudent } from '../../../types/landing';
+import { testResultRepository } from '../../../repositories/TestResultRepository';
 
-
-
+// Static fallback data when DB has no results yet
+const STATIC_STUDENTS: TopStudent[] = [
+  // 2026 A/L Physics (10 students)
+  { rank: 1, name: 'Sashini Imesha', school: 'Bandaranayaka College Veyangoda', marks: 95, image: studentImage, year: '2026 A/L Physics' },
+  { rank: 2, name: 'Yasith Banula', school: 'Sri Sumangala Maha Vidyalaya', marks: 93, image: studentImage, year: '2026 A/L Physics' },
+  { rank: 3, name: 'Dinithi Perera', school: 'Musaeus College Colombo', marks: 91, image: studentImage, year: '2026 A/L Physics' },
+  { rank: 4, name: 'Kasun Madushanka', school: 'Royal College Colombo', marks: 89, image: studentImage, year: '2026 A/L Physics' },
+  { rank: 5, name: 'Nethmi Hansika', school: 'Visakha Vidyalaya Colombo', marks: 87, image: studentImage, year: '2026 A/L Physics' },
+  { rank: 6, name: 'Pasindu Ranasinghe', school: 'Ananda College Colombo', marks: 85, image: studentImage, year: '2026 A/L Physics' },
+  { rank: 7, name: 'Tharindu Dilshan', school: 'Mahanama College Colombo', marks: 83, image: studentImage, year: '2026 A/L Physics' },
+  { rank: 8, name: 'Harini Rathnayake', school: 'Girls High School Kandy', marks: 81, image: studentImage, year: '2026 A/L Physics' },
+  { rank: 9, name: 'Sewmini Fernando', school: 'Holy Family Convent Colombo', marks: 79, image: studentImage, year: '2026 A/L Physics' },
+  { rank: 10, name: 'Supun Jayawardena', school: 'Dharmaraja College Kandy', marks: 77, image: studentImage, year: '2026 A/L Physics' },
+  // 2025 A/L Physics
+  { rank: 1, name: 'Yasith Banula', school: 'Sri Sumangala Maha Vidyalaya', marks: 92, image: studentImage, year: '2025 A/L Physics' },
+  { rank: 2, name: 'Sashini Imesha', school: 'Bandaranayaka College Veyangoda', marks: 90, image: studentImage, year: '2025 A/L Physics' },
+  { rank: 3, name: 'Dinithi Perera', school: 'Musaeus College Colombo', marks: 88, image: studentImage, year: '2025 A/L Physics' },
+  { rank: 4, name: 'Kasun Madushanka', school: 'Royal College Colombo', marks: 86, image: studentImage, year: '2025 A/L Physics' },
+  { rank: 5, name: 'Nethmi Hansika', school: 'Visakha Vidyalaya Colombo', marks: 84, image: studentImage, year: '2025 A/L Physics' },
+  { rank: 6, name: 'Pasindu Ranasinghe', school: 'Ananda College Colombo', marks: 82, image: studentImage, year: '2025 A/L Physics' },
+  { rank: 7, name: 'Tharindu Dilshan', school: 'Mahanama College Colombo', marks: 80, image: studentImage, year: '2025 A/L Physics' },
+  { rank: 8, name: 'Harini Rathnayake', school: 'Girls High School Kandy', marks: 78, image: studentImage, year: '2025 A/L Physics' },
+  { rank: 9, name: 'Sewmini Fernando', school: 'Holy Family Convent Colombo', marks: 76, image: studentImage, year: '2025 A/L Physics' },
+  { rank: 10, name: 'Supun Jayawardena', school: 'Dharmaraja College Kandy', marks: 74, image: studentImage, year: '2025 A/L Physics' },
+  // 2024 A/L Physics
+  { rank: 1, name: 'Yasith Banula', school: 'Sri Sumangala Maha Vidyalaya', marks: 90, image: studentImage, year: '2024 A/L Physics' },
+  { rank: 2, name: 'Sashini Imesha', school: 'Bandaranayaka College Veyangoda', marks: 88, image: studentImage, year: '2024 A/L Physics' },
+  { rank: 3, name: 'Dinithi Perera', school: 'Musaeus College Colombo', marks: 86, image: studentImage, year: '2024 A/L Physics' },
+  { rank: 4, name: 'Kasun Madushanka', school: 'Royal College Colombo', marks: 84, image: studentImage, year: '2024 A/L Physics' },
+  { rank: 5, name: 'Nethmi Hansika', school: 'Visakha Vidyalaya Colombo', marks: 82, image: studentImage, year: '2024 A/L Physics' },
+  { rank: 6, name: 'Pasindu Ranasinghe', school: 'Ananda College Colombo', marks: 80, image: studentImage, year: '2024 A/L Physics' },
+  { rank: 7, name: 'Tharindu Dilshan', school: 'Mahanama College Colombo', marks: 78, image: studentImage, year: '2024 A/L Physics' },
+  { rank: 8, name: 'Harini Rathnayake', school: 'Girls High School Kandy', marks: 76, image: studentImage, year: '2024 A/L Physics' },
+  { rank: 9, name: 'Sewmini Fernando', school: 'Holy Family Convent Colombo', marks: 74, image: studentImage, year: '2024 A/L Physics' },
+  { rank: 10, name: 'Supun Jayawardena', school: 'Dharmaraja College Kandy', marks: 72, image: studentImage, year: '2024 A/L Physics' },
+];
+const STATIC_FILTERS = ['2026 A/L Physics', '2025 A/L Physics', '2024 A/L Physics'];
 const Topstudent: React.FC = () => {
 
-  const [activeFilter, setActiveFilter] = useState('2026 A/L Physics');
+  const [activeFilter, setActiveFilter] = useState('');
+  const [allStudents, setAllStudents] = useState<TopStudent[]>(STATIC_STUDENTS);
+  const [filters, setFilters] = useState<string[]>(STATIC_FILTERS);
 
-  // base data with year attribute used for filtering tabs
-  const allStudents: TopStudent[] = [
-    // 2026 A/L Physics (10 students)
-    { rank: 1, name: 'Sashini Imesha', school: 'Bandaranayaka College Veyangoda', marks: 95, image: studentImage, year: '2026 A/L Physics' },
-    { rank: 2, name: 'Yasith Banula', school: 'Sri Sumangala Maha Vidyalaya', marks: 93, image: studentImage, year: '2026 A/L Physics' },
-    { rank: 3, name: 'Dinithi Perera', school: 'Musaeus College Colombo', marks: 91, image: studentImage, year: '2026 A/L Physics' },
-    { rank: 4, name: 'Kasun Madushanka', school: 'Royal College Colombo', marks: 89, image: studentImage, year: '2026 A/L Physics' },
-    { rank: 5, name: 'Nethmi Hansika', school: 'Visakha Vidyalaya Colombo', marks: 87, image: studentImage, year: '2026 A/L Physics' },
-    { rank: 6, name: 'Pasindu Ranasinghe', school: 'Ananda College Colombo', marks: 85, image: studentImage, year: '2026 A/L Physics' },
-    { rank: 7, name: 'Tharindu Dilshan', school: 'Mahanama College Colombo', marks: 83, image: studentImage, year: '2026 A/L Physics' },
-    { rank: 8, name: 'Harini Rathnayake', school: 'Girls High School Kandy', marks: 81, image: studentImage, year: '2026 A/L Physics' },
-    { rank: 9, name: 'Sewmini Fernando', school: 'Holy Family Convent Colombo', marks: 79, image: studentImage, year: '2026 A/L Physics' },
-    { rank: 10, name: 'Supun Jayawardena', school: 'Dharmaraja College Kandy', marks: 77, image: studentImage, year: '2026 A/L Physics' },
+  // Load data from DB; fall back to static data if DB is empty
+  useEffect(() => {
+    testResultRepository.getYearLabels().then(async (labels) => {
+      if (labels.length === 0) {
+        setFilters(STATIC_FILTERS);
+        setAllStudents(STATIC_STUDENTS);
+        setActiveFilter(STATIC_FILTERS[0]);
+        return;
+      }
+      // Load top10 per label and merge into allStudents array
+      const all: TopStudent[] = [];
+      for (const label of labels) {
+        const top10 = await testResultRepository.getTop10ByYearLabel(label);
+        top10.forEach((s) => all.push({ ...s, image: s.image || studentImage }));
+      }
+      setAllStudents(all);
+      setFilters(labels);
+      setActiveFilter(labels[0]);
+    }).catch(() => {
+      // Keep static data on error
+      setFilters(STATIC_FILTERS);
+      setAllStudents(STATIC_STUDENTS);
+      setActiveFilter(STATIC_FILTERS[0]);
+    });
+  }, []);
 
-    // 2025 A/L Physics (10 students)
-    { rank: 1, name: 'Yasith Banula', school: 'Sri Sumangala Maha Vidyalaya', marks: 92, image: studentImage, year: '2025 A/L Physics' },
-    { rank: 2, name: 'Sashini Imesha', school: 'Bandaranayaka College Veyangoda', marks: 90, image: studentImage, year: '2025 A/L Physics' },
-    { rank: 3, name: 'Dinithi Perera', school: 'Musaeus College Colombo', marks: 88, image: studentImage, year: '2025 A/L Physics' },
-    { rank: 4, name: 'Kasun Madushanka', school: 'Royal College Colombo', marks: 86, image: studentImage, year: '2025 A/L Physics' },
-    { rank: 5, name: 'Nethmi Hansika', school: 'Visakha Vidyalaya Colombo', marks: 84, image: studentImage, year: '2025 A/L Physics' },
-    { rank: 6, name: 'Pasindu Ranasinghe', school: 'Ananda College Colombo', marks: 82, image: studentImage, year: '2025 A/L Physics' },
-    { rank: 7, name: 'Tharindu Dilshan', school: 'Mahanama College Colombo', marks: 80, image: studentImage, year: '2025 A/L Physics' },
-    { rank: 8, name: 'Harini Rathnayake', school: 'Girls High School Kandy', marks: 78, image: studentImage, year: '2025 A/L Physics' },
-    { rank: 9, name: 'Sewmini Fernando', school: 'Holy Family Convent Colombo', marks: 76, image: studentImage, year: '2025 A/L Physics' },
-    { rank: 10, name: 'Supun Jayawardena', school: 'Dharmaraja College Kandy', marks: 74, image: studentImage, year: '2025 A/L Physics' },
-
-    // 2024 A/L Physics (10 students)
-    { rank: 1, name: 'Yasith Banula', school: 'Sri Sumangala Maha Vidyalaya', marks: 90, image: studentImage, year: '2024 A/L Physics' },
-    { rank: 2, name: 'Sashini Imesha', school: 'Bandaranayaka College Veyangoda', marks: 88, image: studentImage, year: '2024 A/L Physics' },
-    { rank: 3, name: 'Dinithi Perera', school: 'Musaeus College Colombo', marks: 86, image: studentImage, year: '2024 A/L Physics' },
-    { rank: 4, name: 'Kasun Madushanka', school: 'Royal College Colombo', marks: 84, image: studentImage, year: '2024 A/L Physics' },
-    { rank: 5, name: 'Nethmi Hansika', school: 'Visakha Vidyalaya Colombo', marks: 82, image: studentImage, year: '2024 A/L Physics' },
-    { rank: 6, name: 'Pasindu Ranasinghe', school: 'Ananda College Colombo', marks: 80, image: studentImage, year: '2024 A/L Physics' },
-    { rank: 7, name: 'Tharindu Dilshan', school: 'Mahanama College Colombo', marks: 78, image: studentImage, year: '2024 A/L Physics' },
-    { rank: 8, name: 'Harini Rathnayake', school: 'Girls High School Kandy', marks: 76, image: studentImage, year: '2024 A/L Physics' },
-    { rank: 9, name: 'Sewmini Fernando', school: 'Holy Family Convent Colombo', marks: 74, image: studentImage, year: '2024 A/L Physics' },
-    { rank: 10, name: 'Supun Jayawardena', school: 'Dharmaraja College Kandy', marks: 72, image: studentImage, year: '2024 A/L Physics' },
-  ];
-
-  const filters = ['2026 A/L Physics', '2025 A/L Physics', '2024 A/L Physics'];
+  // When filters are ready, ensure activeFilter is set
+  useEffect(() => {
+    if (!activeFilter && filters.length > 0) {
+      setActiveFilter(filters[0]);
+    }
+  }, [filters]);
 
   const carouselRef = useRef<HTMLDivElement | null>(null);
   const currentIndexRef = useRef<number>(0); // normalized index: 0 to len-1

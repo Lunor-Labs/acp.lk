@@ -1,12 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { galleryRepository } from '../../../repositories/GalleryRepository';
+
+// Fallback local assets
 import bgImage from '../../../assets/Bg.webp';
 import bg2 from '../../../assets/bg2.webp';
 import bg3 from '../../../assets/bg3.webp';
 import bg4 from '../../../assets/bg4.webp';
 
+const FALLBACK_IMAGES = [bgImage, bg2, bg3, bg4];
+
 const Gallery: React.FC = () => {
-  const galleryImages = [bgImage, bg2, bg3, bg4];
+  const [galleryImages, setGalleryImages] = useState<string[]>(FALLBACK_IMAGES);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadGallery();
+  }, []);
+
+  async function loadGallery() {
+    try {
+      const images = await galleryRepository.getActiveImages();
+      if (images.length > 0) {
+        setGalleryImages(images.map((img) => img.resolvedUrl).filter(Boolean));
+      }
+      // If DB has no images, keep fallback local assets
+    } catch {
+      // Silently fall back to static assets
+    } finally {
+      setLoading(false);
+    }
+  }
 
   // Duplicate images for seamless infinite loop
   const allImages = [...galleryImages, ...galleryImages];
@@ -35,18 +59,24 @@ const Gallery: React.FC = () => {
           }}
         />
 
-        {/* Images */}
-        <div className="flex w-max animate-scroll-horizontal hover:[animation-play-state:paused] will-change-transform">
-          {allImages.map((image, index) => (
-            <div
-              key={index}
-              className="w-[100vw] md:w-[50vw] lg:w-[25vw] h-[300px] md:h-[400px] lg:h-[500px] bg-cover bg-center bg-no-repeat"
-              style={{
-                backgroundImage: `url(${image})`
-              }}
-            />
-          ))}
-        </div>
+        {loading ? (
+          <div className="flex justify-center py-20">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#9E111A]" />
+          </div>
+        ) : (
+          /* Images */
+          <div className="flex w-max animate-scroll-horizontal hover:[animation-play-state:paused] will-change-transform">
+            {allImages.map((image, index) => (
+              <div
+                key={index}
+                className="w-[100vw] md:w-[50vw] lg:w-[25vw] h-[300px] md:h-[400px] lg:h-[500px] bg-cover bg-center bg-no-repeat"
+                style={{
+                  backgroundImage: `url(${image})`
+                }}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Bottom Curve */}
         <div
@@ -57,19 +87,21 @@ const Gallery: React.FC = () => {
         />
 
         {/* Slider Dots */}
-        <div className="flex justify-center items-center gap-3 mt-12 relative z-20">
-          {galleryImages.map((_, index) => (
-            <span
-              key={index}
-              onClick={() => setActiveIndex(index)}
-              className="w-3 h-3 rounded-full border cursor-pointer transition-all duration-300"
-              style={{
-                backgroundColor: activeIndex === index ? "#9E111A" : "#FFFFFF",
-                borderColor: "#9E111A"
-              }}
-            />
-          ))}
-        </div>
+        {!loading && (
+          <div className="flex justify-center items-center gap-3 mt-12 relative z-20">
+            {galleryImages.map((_, index) => (
+              <span
+                key={index}
+                onClick={() => setActiveIndex(index)}
+                className="w-3 h-3 rounded-full border cursor-pointer transition-all duration-300"
+                style={{
+                  backgroundColor: activeIndex === index ? "#9E111A" : "#FFFFFF",
+                  borderColor: "#9E111A"
+                }}
+              />
+            ))}
+          </div>
+        )}
 
       </div>
 
