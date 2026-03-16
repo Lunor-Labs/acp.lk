@@ -79,7 +79,7 @@ export default {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'fade-in': 'fadeIn 0.6s ease-out forwards',
         'slide-up': 'slideUp 0.6s ease-out forwards',
-        'scroll-horizontal': 'scroll-horizontal 30s linear infinite',
+        'scroll-horizontal': 'scroll-horizontal 100s linear infinite',
       },
     },
   },
