@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import heroDesktop1 from '../../../assets/hero1.webp';
-import heroDesktop2 from '../../../assets/Hero-2-.webp';
-import heroDesktop3 from '../../../assets/Hero-3-.webp';
+import heroDesktop2 from '../../../assets/hero2.webp';
+import heroDesktop3 from '../../../assets/hero3.webp';
 import heroMobile1 from '../../../assets/mobile-header-1.webp';
 import heroMobile2 from '../../../assets/mobile-header-2.webp';
 import heroMobile3 from '../../../assets/mobile-header-3.webp';
