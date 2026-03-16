@@ -3,7 +3,9 @@ import ChannelCard from './ChannelCard';
 import "./Channels.css";
 
 // Import images for Vite bundling
-import newTutionTelegramImg from '../../../assets/new-tution-telegram.webp';
+import twenty26theory from '../../../assets/2026theory.webp';
+import twenty27theory from '../../../assets/2027theory.webp';
+import twenty28theory from '../../../assets/2028theory.webp';
 import telegramIconImg from '../../../assets/telegram_imag-removebg-preview.webp';
 
 const Channels: React.FC = () => {
@@ -13,21 +15,21 @@ const Channels: React.FC = () => {
       category: 'THEORY',
       buttonText: 'Join Now',
       joinLink: '#',
-      image: newTutionTelegramImg
+      image: twenty26theory
     },
     {
       year: '2027',
       category: 'THEORY',
       buttonText: 'Join Now',
       joinLink: '#',
-      image: newTutionTelegramImg
+      image: twenty27theory
     },
     {
       year: '2028',
       category: 'THEORY',
       buttonText: 'Join Now',
       joinLink: '#',
-      image: newTutionTelegramImg
+      image: twenty28theory
     }
   ];
 

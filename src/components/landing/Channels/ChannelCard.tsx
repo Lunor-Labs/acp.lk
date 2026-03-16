@@ -1,25 +1,16 @@
 import type { TelegramChannel } from '../../../types/landing';
 
-interface ChannelCardProps extends TelegramChannel {}
+type ChannelCardProps = Pick<TelegramChannel, 'image'>;
 
-const ChannelCard: React.FC<ChannelCardProps> = ({
-  year,
-  category,
-  image
-}) => {
+const ChannelCard: React.FC<ChannelCardProps> = ({ image }) => {
   return (
     <div className="channel-card-container" data-card>
       <img 
         src={image} 
-        alt={`${year} ${category} Channel`}
+        alt="Telegram Channel"
         className="channel-card-image"
         loading="lazy"
       />
-      
-      <div className="channel-card-content">
-        <div className="channel-card-year">{year}</div>
-        <div className="channel-card-category">{category}</div>
-      </div>
     </div>
   );
 };
