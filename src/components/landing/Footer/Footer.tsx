@@ -118,7 +118,7 @@ const Footer: React.FC = () => {
               <div className="flex items-center gap-2 text-xs text-slate-400 pt-3 border-t border-slate-600">
                 <span>Powered by</span>
                 <a 
-                  href="https://lunorlabs.com" 
+                  href="https://www.lunorlabs.com" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-[#eb1b23] hover:text-red-400 font-semibold flex items-center gap-1 transition-colors"
