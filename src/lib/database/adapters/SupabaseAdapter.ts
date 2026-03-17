@@ -156,6 +156,23 @@ export class SupabaseAdapter implements IDatabase {
                 callback(event, session as AuthSession | null);
             });
             return { unsubscribe: () => data.subscription.unsubscribe() };
+        },
+
+        sendOtp: async (email: string) => {
+            const { error } = await this.client.auth.signInWithOtp({ email });
+            return { error: error as Error | null };
+        },
+
+        verifyOtp: async (email: string, token: string) => {
+            const { data, error } = await this.client.auth.verifyOtp({
+                email,
+                token,
+                type: 'email'
+            });
+            return {
+                user: data.user as AuthUser | null,
+                error: error as Error | null
+            };
         }
     };
 }

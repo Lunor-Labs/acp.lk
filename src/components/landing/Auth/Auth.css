@@ -367,6 +367,74 @@
   color: #b9151b;
 }
 
+/* ─── OTP Styles ─────────────────────────────────────────────────────────── */
+.otp-info-box {
+  background: #f0f9ff;
+  border: 1px solid #e0f2fe;
+  color: #0369a1;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.otp-sent-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  padding: 14px 16px;
+  border-radius: 12px;
+  margin-bottom: 4px;
+}
+
+.otp-sent-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.otp-sent-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #15803d;
+  margin-bottom: 2px;
+}
+
+.otp-sent-email {
+  font-size: 13px;
+  color: #166534;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  word-break: break-all;
+}
+
+.otp-input {
+  padding: 16px;
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+  color: #1e293b;
+  background: white;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 12px;
+  text-align: center;
+  width: 100%;
+  transition: all 0.2s;
+}
+
+.otp-input:focus {
+  outline: none;
+  border-color: #eb1b23;
+  box-shadow: 0 0 0 3px rgba(235, 27, 35, 0.1);
+}
+
+.otp-input::placeholder {
+  letter-spacing: 8px;
+  color: #cbd5e1;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .auth-page {
