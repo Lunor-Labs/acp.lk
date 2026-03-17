@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth, CENTER_LABELS } from '../../../contexts/AuthContext';
+import { useAuth, CENTER_LABELS, PendingRegisterData } from '../../../contexts/AuthContext';
 import { ClassCenter } from '../../../repositories';
 import { Copy, CheckCircle } from 'lucide-react';
 
@@ -11,21 +11,30 @@ interface Props {
 const AL_YEARS = [2026, 2027, 2028];
 const CENTERS: ClassCenter[] = ['online', 'riochem', 'vision'];
 
+type Step = 'form' | 'otp' | 'done';
+
 const RegisterForm: React.FC<Props> = ({ onSwitchToLogin, onRegisterSuccess }) => {
+  // ─── Form fields ─────────────────────────────────────────────────────────
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [alYear, setAlYear] = useState<number>(2026);
   const [center, setCenter] = useState<ClassCenter>('online');
+
+  // ─── OTP step ────────────────────────────────────────────────────────────
+  const [otp, setOtp] = useState('');
+  const [pendingData, setPendingData] = useState<PendingRegisterData | null>(null);
+
+  // ─── UI state ────────────────────────────────────────────────────────────
+  const [step, setStep] = useState<Step>('form');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [generatedStudentId, setGeneratedStudentId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const { signUp } = useAuth();
+  const { requestSignUpOtp, verifySignUpOtp } = useAuth();
 
+  // ─── Step 1: Send OTP ─────────────────────────────────────────────────
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -33,42 +42,51 @@ const RegisterForm: React.FC<Props> = ({ onSwitchToLogin, onRegisterSuccess }) =
       setError('Please enter your first and last name');
       return;
     }
-
-    if (!email || !password) {
-      setError('Please enter email and password');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+    if (!email) {
+      setError('Please enter your email address');
       return;
     }
 
     setLoading(true);
     setError(null);
     try {
-      const fullName = `${firstName} ${lastName}`;
-      const result = await signUp(
-        email,
-        password,
-        fullName,
-        'student', // Role is now defaulted to student
+      await requestSignUpOtp(email.trim());
+      const pending: PendingRegisterData = {
+        fullName: `${firstName} ${lastName}`,
+        role: 'student',
         alYear,
-        center
-      );
+        center,
+      };
+      setPendingData(pending);
+      setStep('otp');
+    } catch (err: any) {
+      setError(err.message || 'Failed to send verification code. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  // ─── Step 2: Verify OTP ───────────────────────────────────────────────
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otp.trim() || otp.trim().length < 8) {
+      setError('Please enter the 8-digit code from your email');
+      return;
+    }
+    if (!pendingData) return;
+
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await verifySignUpOtp(email.trim(), otp.trim(), pendingData);
       if (result.studentId) {
         setGeneratedStudentId(result.studentId);
+        setStep('done');
       } else {
         onRegisterSuccess?.();
       }
     } catch (err: any) {
-      setError(err.message || 'Registration failed. Email may already be registered.');
+      setError(err.message || 'Invalid or expired code. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -82,7 +100,8 @@ const RegisterForm: React.FC<Props> = ({ onSwitchToLogin, onRegisterSuccess }) =
     }
   };
 
-  if (generatedStudentId) {
+  // ─── Done screen ──────────────────────────────────────────────────────
+  if (step === 'done' && generatedStudentId) {
     return (
       <div className="text-center">
         <div className="flex justify-center mb-4">
@@ -93,7 +112,7 @@ const RegisterForm: React.FC<Props> = ({ onSwitchToLogin, onRegisterSuccess }) =
 
         <h3 className="text-xl font-bold text-gray-800 mb-2">Account Created!</h3>
         <p className="text-sm text-gray-600 mb-4">
-          Check your email to confirm your account. Your Student ID has been sent there too.
+          You're now logged in. Save your Student ID — you'll need it to log in next time.
         </p>
 
         <div className="id-display-card">
@@ -108,19 +127,78 @@ const RegisterForm: React.FC<Props> = ({ onSwitchToLogin, onRegisterSuccess }) =
         </div>
 
         <div className="warning-box">
-          <strong>Important:</strong> Save this ID. You will need it to log in every time. Your password can be reset via email, but your ID cannot.
+          <strong>Important:</strong> Save this ID. You will need it every time you log in. There is no password — just enter your ID and you'll receive a code by email.
         </div>
 
-        <button
-          onClick={onSwitchToLogin}
-          className="btn-submit w-full"
-        >
+        <button onClick={onSwitchToLogin} className="btn-submit w-full">
           Go to Login
         </button>
       </div>
     );
   }
 
+  // ─── OTP step ─────────────────────────────────────────────────────────
+  if (step === 'otp') {
+    return (
+      <div>
+        <form onSubmit={handleVerifyOtp} className="auth-form">
+          <div className="otp-sent-banner">
+            <span className="otp-sent-icon">📬</span>
+            <div>
+              <div className="otp-sent-title">Verify your email</div>
+              <div className="otp-sent-email">{email}</div>
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label>8-Digit OTP Code</label>
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={8}
+              value={otp}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+              placeholder="• • • • • • • •"
+              className="otp-input"
+              required
+              disabled={loading}
+              autoFocus
+              autoComplete="one-time-code"
+            />
+            <div className="text-xs text-gray-500 mt-1 ml-1">
+              Enter the 8-digit code sent to your email
+            </div>
+          </div>
+
+          {error && <div className="auth-error">{error}</div>}
+
+          <button className="btn-submit" type="submit" disabled={loading}>
+            {loading ? 'Creating account...' : 'Verify & Create Account'}
+          </button>
+
+          <button
+            type="button"
+            className="btn-link text-center w-full mt-2"
+            onClick={() => {
+              setStep('form');
+              setOtp('');
+              setError(null);
+            }}
+            disabled={loading}
+          >
+            ← Edit my details
+          </button>
+        </form>
+
+        <div className="auth-footer">
+          <span>Already have an account? <button className="link" onClick={onSwitchToLogin}>Login</button></span>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Main form ────────────────────────────────────────────────────────
   return (
     <div>
       <form onSubmit={handleRegister} className="auth-form">
@@ -159,31 +237,6 @@ const RegisterForm: React.FC<Props> = ({ onSwitchToLogin, onRegisterSuccess }) =
           />
         </div>
 
-        <div className="form-row">
-          <div className="form-group flex-1">
-            <label>Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Min 6 characters"
-              required
-              disabled={loading}
-            />
-          </div>
-          <div className="form-group flex-1">
-            <label>Confirm Password</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm password"
-              required
-              disabled={loading}
-            />
-          </div>
-        </div>
-
         <div className="form-group">
           <label>A/L Year</label>
           <select
@@ -214,17 +267,13 @@ const RegisterForm: React.FC<Props> = ({ onSwitchToLogin, onRegisterSuccess }) =
         </div>
 
         <div className="info-box">
-          📋 A unique Student ID will be generated after registration.
+          📧 A verification code will be sent to your email — no password needed!
         </div>
 
         {error && <div className="auth-error">{error}</div>}
 
-        <button
-          className="btn-submit"
-          type="submit"
-          disabled={loading}
-        >
-          {loading ? 'Registering...' : 'Register'}
+        <button className="btn-submit" type="submit" disabled={loading}>
+          {loading ? 'Sending code...' : 'Send Verification Code'}
         </button>
       </form>
 

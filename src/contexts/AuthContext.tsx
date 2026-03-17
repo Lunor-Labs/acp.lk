@@ -9,22 +9,44 @@ export const CENTER_LABELS: Record<ClassCenter, string> = {
   vision: 'Vision',
 };
 
+// ─── Pending registration data (held in memory between OTP steps) ─────────
+export interface PendingRegisterData {
+  fullName: string;
+  role: string;
+  alYear?: number;
+  center?: ClassCenter;
+}
+
 // ─── Context types ────────────────────────────────────────────────────────────
 interface AuthContextType {
   user: any | null;
   profile: Profile | null;
   loading: boolean;
-  signIn: (identifier: string, password: string) => Promise<void>;
-  signUp: (
+  /**
+   * Login step 1: accepts Student ID (7 digits) or email.
+   * Looks up the email for Student IDs, then sends a 6-digit OTP.
+   * Returns the resolved email so the UI can display it.
+   */
+  requestLoginOtp: (identifier: string) => Promise<{ email: string }>;
+  /**
+   * Login step 2: verifies the OTP and establishes a session.
+   */
+  verifyLoginOtp: (email: string, token: string) => Promise<void>;
+  /**
+   * Register step 1: sends an OTP to the provided email.
+   * No password required — the OTP acts as the verification.
+   */
+  requestSignUpOtp: (email: string) => Promise<void>;
+  /**
+   * Register step 2: verifies the OTP, then creates the profile record
+   * (and teacher row if applicable). Returns the generated Student ID for students.
+   */
+  verifySignUpOtp: (
     email: string,
-    password: string,
-    fullName: string,
-    role: string,
-    alYear?: number,
-    center?: ClassCenter
+    token: string,
+    data: PendingRegisterData
   ) => Promise<{ studentId?: string }>;
   signOut: () => Promise<void>;
-  forgotPassword: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -71,107 +93,114 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // ─── signIn ──────────────────────────────────────────────────────────────
-  /**
-   * Signs in using either:
-   *   - A Student ID (e.g. 26-0-00001) -> looks up email via ProfileRepository
-   *   - An email address (teachers / admins)
-   */
-  async function signIn(identifier: string, password: string) {
+  // ─── requestLoginOtp ────────────────────────────────────────────────────
+  async function requestLoginOtp(identifier: string): Promise<{ email: string }> {
     const studentIdPattern = /^\d{7}$/;
     let email = identifier.trim();
 
     if (studentIdPattern.test(email)) {
-      // Look up profile by student_id to get email
-      const profile = await profileRepo.findByStudentId(email);
-
-      if (!profile) {
+      // Resolve Student ID → email
+      const found = await profileRepo.findByStudentId(email);
+      if (!found) {
         throw new Error('Student ID not found. Please check your ID and try again.');
       }
-      email = profile.email;
+      email = found.email;
     }
 
-    const { error } = await db.auth.signIn(email, password);
+    const { error } = await db.auth.sendOtp(email);
+    if (error) throw error;
+    return { email };
+  }
+
+  // ─── verifyLoginOtp ─────────────────────────────────────────────────────
+  async function verifyLoginOtp(email: string, token: string): Promise<void> {
+    const { error } = await db.auth.verifyOtp(email, token);
     if (error) throw error;
   }
 
-  // ─── signUp ──────────────────────────────────────────────────────────────
-  async function signUp(
+  // ─── requestSignUpOtp ───────────────────────────────────────────────────
+  async function requestSignUpOtp(email: string): Promise<void> {
+    const { error } = await db.auth.sendOtp(email);
+    if (error) throw error;
+  }
+
+  // ─── verifySignUpOtp ────────────────────────────────────────────────────
+  async function verifySignUpOtp(
     email: string,
-    password: string,
-    fullName: string,
-    role: string,
-    alYear?: number,
-    center?: ClassCenter
+    token: string,
+    data: PendingRegisterData
   ): Promise<{ studentId?: string }> {
-    try {
-      let studentId: string | undefined;
+    const { fullName, role, alYear, center } = data;
 
-      // Generate student ID before signup so it can go into Supabase metadata
-      if (role === 'student' && alYear && center) {
-        studentId = await profileRepo.generateStudentId(alYear, center);
-      }
-
-      const { user: newUser, error } = await db.auth.signUp(email, password, {
-        full_name: fullName,
-        role,
-        ...(studentId ? { student_id: studentId } : {}),
-      });
-
-      if (error) {
-        console.error('Signup auth error:', error);
-        throw error;
-      }
-
-      if (newUser) {
-        await profileRepo.create({
-          id: newUser.id,
-          email,
-          full_name: fullName,
-          role: role as 'admin' | 'teacher' | 'student',
-          is_active: true,
-          student_id: studentId,
-          al_year: alYear,
-          center: center,
-        });
-
-        if (role === 'teacher') {
-          const { error: teacherError } = await db.from('teachers')
-            .insert({
-              profile_id: newUser.id,
-              subjects: [],
-              visible_on_landing: true,
-            })
-            .execute();
-
-          if (teacherError) {
-            console.error('Teacher profile creation error:', teacherError);
-            throw new Error(`Failed to create teacher profile: ${teacherError.message}`);
-          }
-        }
-      }
-
-      return { studentId };
-    } catch (error) {
-      console.error('SignUp error:', error);
-      throw error;
-    }
-  }
-
-  // ─── forgotPassword ───────────────────────────────────────────────────────
-  async function forgotPassword(email: string) {
-    const { error } = await db.auth.resetPassword(email);
+    // Verify OTP → creates Supabase auth user (or signs in existing)
+    const { user: newUser, error } = await db.auth.verifyOtp(email, token);
     if (error) throw error;
+
+    if (!newUser) throw new Error('Verification succeeded but no user was returned.');
+
+    // Check if a profile already exists (in case of re-registration attempt)
+    let existingProfile: Profile | null = null;
+    try {
+      existingProfile = await profileRepo.findById(newUser.id);
+    } catch {
+      // not found — proceed to create
+    }
+
+    if (existingProfile) {
+      // Profile already exists — return the existing student ID
+      return { studentId: existingProfile.student_id };
+    }
+
+    // Generate student ID (students only)
+    let studentId: string | undefined;
+    if (role === 'student' && alYear && center) {
+      studentId = await profileRepo.generateStudentId(alYear, center);
+    }
+
+    // Create the profile record
+    await profileRepo.create({
+      id: newUser.id,
+      email,
+      full_name: fullName,
+      role: role as 'admin' | 'teacher' | 'student',
+      is_active: true,
+      student_id: studentId,
+      al_year: alYear,
+      center: center,
+    });
+
+    // Create teacher row if applicable
+    if (role === 'teacher') {
+      const { error: teacherError } = await db.from('teachers')
+        .insert({
+          profile_id: newUser.id,
+          subjects: [],
+          visible_on_landing: true,
+        })
+        .execute();
+
+      if (teacherError) {
+        console.error('Teacher profile creation error:', teacherError);
+        throw new Error(`Failed to create teacher profile: ${teacherError.message}`);
+      }
+    }
+
+    return { studentId };
   }
 
-  // ─── signOut ──────────────────────────────────────────────────────────────
+  // ─── signOut ─────────────────────────────────────────────────────────────
   async function signOut() {
     const { error } = await db.auth.signOut();
     if (error) throw error;
   }
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signIn, signUp, signOut, forgotPassword }}>
+    <AuthContext.Provider value={{
+      user, profile, loading,
+      requestLoginOtp, verifyLoginOtp,
+      requestSignUpOtp, verifySignUpOtp,
+      signOut,
+    }}>
       {children}
     </AuthContext.Provider>
   );
