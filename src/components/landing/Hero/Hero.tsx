@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import heroDesktop1 from '../../../assets/hero1.webp';
 import heroDesktop2 from '../../../assets/hero2.webp';
 import heroDesktop3 from '../../../assets/hero3.webp';
-import heroMobile1 from '../../../assets/mobile-header-1.webp';
-import heroMobile2 from '../../../assets/mobile-header-2.webp';
-import heroMobile3 from '../../../assets/mobile-header-3.webp';
+import heroMobile1 from '../../../assets/mobhero1.png';
+import heroMobile2 from '../../../assets/mobhero2.png';
+import heroMobile3 from '../../../assets/mobhero3.png';
 
 interface HeroProps {
   onLoginRequest?: () => void;
@@ -28,13 +28,13 @@ const Hero: React.FC<HeroProps> = ({ onLoginRequest }) => {
 
   return (
     <>
-      {/* ── Mobile Hero (< md): landscape slider with overlay ── */}
+      {/* ── Mobile Hero (< md): portrait slider with overlay ── */}
       <section
         className="relative md:hidden w-full overflow-hidden bg-dark"
         id="home"
       >
-        {/* 16:9 container matching mobile images */}
-        <div className="relative w-full aspect-[16/9]">
+        {/* 9:16 container matching mobile images */}
+        <div className="relative w-full aspect-[9/16]">
           {slides.map((slide, index) => (
             <div
               key={index}
@@ -44,7 +44,7 @@ const Hero: React.FC<HeroProps> = ({ onLoginRequest }) => {
               <img
                 src={slide.mobile}
                 alt={`Hero Slide ${index + 1}`}
-                className="w-full h-full object-cover object-left"
+                className="w-full h-full object-cover object-center"
               />
             </div>
           ))}
@@ -53,12 +53,12 @@ const Hero: React.FC<HeroProps> = ({ onLoginRequest }) => {
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent z-[1]" />
 
           {/* Bottom overlay: buttons + dots */}
-          <div className="absolute bottom-0 left-0 right-0 z-10 px-3 pb-1.5">
+          <div className="absolute bottom-0 left-0 right-0 z-10 px-3 pb-3 flex flex-col items-center gap-3">
             {/* Buttons row */}
-            <div className="flex flex-row gap-2 mb-1.5">
+            <div className="flex flex-row gap-2 justify-center w-full">
               <button
                 onClick={onLoginRequest}
-                className="bg-[#eb1b23] hover:bg-red-700 text-white font-bold px-3 py-1.5 rounded-full shadow-lg text-[10px] transition-all duration-300 hover:scale-105 hover:shadow-xl flex items-center justify-center gap-1.5 group"
+                className="bg-[#eb1b23] hover:bg-red-700 text-white font-bold px-4 py-2 rounded-full shadow-lg text-[11px] transition-all duration-300 hover:scale-105 hover:shadow-xl flex items-center justify-center gap-1.5 group whitespace-nowrap"
               >
                 Student Portal
                 <div className="bg-white rounded-full p-0.5 group-hover:translate-x-1 transition-transform">
@@ -69,7 +69,7 @@ const Hero: React.FC<HeroProps> = ({ onLoginRequest }) => {
               </button>
               <a
                 href="#contact"
-                className="bg-white hover:bg-gray-100 text-black font-bold px-3 py-1.5 rounded-full shadow-lg text-[10px] transition-all duration-300 hover:scale-105 hover:shadow-xl text-center flex items-center justify-center"
+                className="bg-white hover:bg-gray-100 text-black font-bold px-4 py-2 rounded-full shadow-lg text-[11px] transition-all duration-300 hover:scale-105 hover:shadow-xl text-center flex items-center justify-center whitespace-nowrap"
               >
                 Contact Us
               </a>
