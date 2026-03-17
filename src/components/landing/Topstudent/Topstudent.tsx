@@ -285,20 +285,21 @@ const Topstudent: React.FC = () => {
 
         <div className="text-center mb-16">
 
-          <h2 className="landing-title text-white px-4 sm:px-0 text-2xl sm:text-4xl md:text-5xl max-w-full">
-            <span className="text-red-600">Paper</span> Class <span className="text-red-600">Top 10</span> Student List
+          <h2 className="landing-title text-white px-4 sm:px-0 text-3xl sm:text-4xl md:text-5xl max-w-full font-black mb-8">
+            <span className="text-[#eb1b23]">Paper</span> Class <span className="text-[#eb1b23]">Top 10</span> Student List
           </h2>
 
           {/* Filter Buttons */}
 
-          <div className="flex mt-8 bg-white max-w-2xl mx-auto border border-gray-200">
+          <div className="flex flex-wrap justify-center gap-4 mt-8 max-w-4xl mx-auto px-4">
             {filters.map((filter) => (
               <button
                 key={filter}
-                className={`flex-1 px-2 sm:px-4 md:px-6 py-2 text-xs sm:text-sm md:text-base font-bold whitespace-nowrap transition-all duration-300 ${activeFilter === filter
-                  ? 'bg-red-600 text-white shadow-lg shadow-red-600/20'
-                  : 'bg-white text-black hover:bg-gray-100'
-                  }`}
+                className={`px-6 sm:px-8 py-3 text-sm sm:text-base font-bold whitespace-nowrap rounded-full transition-all duration-300 ${
+                  activeFilter === filter
+                    ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-600/50 border border-[#eb1b23] scale-105'
+                    : 'bg-slate-800/50 text-slate-300 hover:bg-slate-700/50 border border-slate-700 hover:border-slate-600'
+                }`}
                 onClick={() => setActiveFilter(filter)}
               >
                 {filter}
@@ -317,30 +318,30 @@ const Topstudent: React.FC = () => {
       <div className="w-full" style={{ backgroundColor: '#000000' }}>
 
         {/* Desktop: CSS-based continuous scroll like Gallery */}
-        <div className="hidden lg:block relative w-full overflow-hidden" style={{ backgroundColor: '#3a3a3a' }}>
-          <div className="flex w-max animate-scroll-horizontal hover:[animation-play-state:paused] will-change-transform py-10 gap-10">
+        <div className="hidden lg:block relative w-full overflow-hidden" style={{ backgroundColor: '#1a1a1a' }}>
+          <div className="flex w-max animate-scroll-horizontal hover:[animation-play-state:paused] will-change-transform py-10 gap-10 px-10">
             {marqueeStudents.map((student, idx) => (
               <div
                 key={idx + '-' + student.rank}
-                className="flex-shrink-0 w-56 h-56 landing-card flex flex-col items-center gap-4 relative pt-16 pb-8 bg-white rounded-3xl shadow-lg"
+                className="flex-shrink-0 w-56 h-64 landing-card flex flex-col items-center gap-4 relative pt-20 pb-8 bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl shadow-lg border border-slate-700/50"
               >
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/3 w-16 h-16 rounded-full flex items-center justify-center font-black text-2xl shadow-xl" style={{ backgroundColor: '#ebe6e6', color: '#ffffff' }}>
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full flex items-center justify-center shadow-2xl border-4 border-[#eb1b23] shadow-red-600/50 bg-slate-900" style={{ boxShadow: '0 0 30px rgba(235, 27, 35, 0.4)' }}>
                   <img
                     src={student.image || studentImage}
                     alt={student.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover rounded-full"
                   />
                 </div>
 
-                <div className="text-center px-4">
-                  <p className="text-3xl font-extrabold mb-1" style={{ color: '#d12121' }}>
+                <div className="text-center px-4 flex-1 flex flex-col justify-center">
+                  <p className="text-3xl font-extrabold mb-1" style={{ color: '#eb1b23' }}>
                     {student.marks}%
                   </p>
-                  <p className="text-lg font-bold mb-1" style={{ color: '#d12121' }}>
+                  <p className="text-sm font-semibold mb-2 text-slate-400">
                     Rank {student.rank.toString().padStart(2, '0')}
                   </p>
-                  <h4 className="font-extrabold text-black text-lg mb-1 whitespace-nowrap truncate">{student.name}</h4>
-                  <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1 text-gray/100">{student.school}</p>
+                  <h4 className="font-extrabold text-white text-base mb-1 whitespace-nowrap truncate">{student.name}</h4>
+                  <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">{student.school}</p>
                 </div>
               </div>
             ))}
@@ -348,13 +349,13 @@ const Topstudent: React.FC = () => {
         </div>
 
         {/* Mobile & tablet: keep existing swipeable carousel */}
-        <div className="lg:hidden relative w-full flex items-center overflow-hidden" style={{ backgroundColor: '#3a3a3a' }}>
+        <div className="lg:hidden relative w-full flex items-center overflow-hidden" style={{ backgroundColor: '#1a1a1a' }}>
 
           {/* Mobile chevron (overlay) */}
           <button
             type="button"
             onClick={handlePrev}
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-8 h-8 rounded-full border border-red-600 text-red-600 bg-black/40"
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-10 h-10 rounded-full border-2 border-[#eb1b23] text-[#eb1b23] bg-black/60 hover:bg-[#eb1b23] hover:text-white transition-all duration-300"
             aria-label="Previous student mobile"
           >
             &#8249;
@@ -399,25 +400,25 @@ const Topstudent: React.FC = () => {
             {displayStudents.map((student, idx) => (
               <div
                 key={idx + '-' + student.rank}
-                className="flex-shrink-0 w-64 h-64 landing-card flex flex-col items-center gap-4 relative pt-16 pb-8 bg-white rounded-3xl shadow-lg snap-center"
+                className="flex-shrink-0 w-64 h-80 landing-card flex flex-col items-center gap-4 relative pt-20 pb-8 bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl shadow-lg border border-slate-700/50 snap-center"
               >
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/3 w-16 h-16 rounded-full flex items-center justify-center font-black text-2xl shadow-xl" style={{ backgroundColor: '#ebe6e6', color: '#ffffff' }}>
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full flex items-center justify-center shadow-2xl border-4 border-[#eb1b23] bg-slate-900" style={{ boxShadow: '0 0 30px rgba(235, 27, 35, 0.4)' }}>
                   <img
                     src={student.image || studentImage}
                     alt={student.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover rounded-full"
                   />
                 </div>
 
-                <div className="text-center px-4">
-                  <p className="text-3xl font-extrabold mb-1" style={{ color: '#d12121' }}>
+                <div className="text-center px-4 flex-1 flex flex-col justify-center">
+                  <p className="text-3xl font-extrabold mb-1" style={{ color: '#eb1b23' }}>
                     {student.marks}%
                   </p>
-                  <p className="text-lg font-bold mb-2" style={{ color: '#d12121' }}>
+                  <p className="text-sm font-semibold mb-2 text-slate-400">
                     Rank {student.rank.toString().padStart(2, '0')}
                   </p>
-                  <h4 className="font-extrabold text-black text-lg mb-1 whitespace-nowrap truncate">{student.name}</h4>
-                  <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1 text-gray/100">{student.school}</p>
+                  <h4 className="font-extrabold text-white text-base mb-1 whitespace-nowrap truncate">{student.name}</h4>
+                  <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">{student.school}</p>
                 </div>
               </div>
             ))}
@@ -427,7 +428,7 @@ const Topstudent: React.FC = () => {
           <button
             type="button"
             onClick={handleNext}
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-8 h-8 rounded-full border border-red-600 text-red-600 bg-black/40"
+            className="absolute right-4 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-10 h-10 rounded-full border-2 border-[#eb1b23] text-[#eb1b23] bg-black/60 hover:bg-[#eb1b23] hover:text-white transition-all duration-300"
             aria-label="Next student mobile"
           >
             &#8250;
