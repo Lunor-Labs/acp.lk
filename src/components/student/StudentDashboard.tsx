@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { LayoutDashboard, BookOpen, FileText, Package, LogOut, GraduationCap, User, Menu, X, TrendingUp, Clock } from 'lucide-react';
+import { LayoutDashboard, BookOpen, FileText, Package, LogOut, GraduationCap, User, Menu, X, TrendingUp, Clock, Search } from 'lucide-react';
 import { db } from '../../lib/database';
 import { ExamRepository } from '../../repositories';
 import MyClasses from './MyClasses';
+import BrowseClasses from './BrowseClasses';
 import StudyPacks from './StudyPacks';
 import Exams from './Exams';
 
@@ -194,6 +195,20 @@ export default function StudentDashboard() {
 
             <button
               onClick={() => {
+                setActiveTab('browse');
+                setIsMobileMenuOpen(false);
+              }}
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'browse'
+                ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-500/30'
+                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                }`}
+            >
+              <Search className="w-5 h-5" />
+              <span className="font-medium">Browse Classes</span>
+            </button>
+
+            <button
+              onClick={() => {
                 setActiveTab('exams');
                 setIsMobileMenuOpen(false);
               }}
@@ -246,6 +261,8 @@ export default function StudentDashboard() {
         </div>
         {activeTab === 'classes' ? (
           <MyClasses />
+        ) : activeTab === 'browse' ? (
+          <BrowseClasses />
         ) : activeTab === 'studypacks' ? (
           <StudyPacks />
         ) : activeTab === 'exams' ? (
