@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import heroDesktop1 from '../../../assets/hero1.webp';
 import heroDesktop2 from '../../../assets/hero2.webp';
 import heroDesktop3 from '../../../assets/hero3.webp';
-import heroMobile1 from '../../../assets/mobhero1.png';
-import heroMobile2 from '../../../assets/mobhero2.png';
-import heroMobile3 from '../../../assets/mobhero3.png';
+import heroMobile1 from '../../../assets/mobhero1.webp';
+import heroMobile2 from '../../../assets/mobhero2.webp';
+import heroMobile3 from '../../../assets/mobhero3.webp';
 
 interface HeroProps {
   onLoginRequest?: () => void;
