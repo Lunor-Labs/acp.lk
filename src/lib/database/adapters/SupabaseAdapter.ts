@@ -158,8 +158,11 @@ export class SupabaseAdapter implements IDatabase {
             return { unsubscribe: () => data.subscription.unsubscribe() };
         },
 
-        sendOtp: async (email: string) => {
-            const { error } = await this.client.auth.signInWithOtp({ email });
+        sendOtp: async (email: string, metadata?: Record<string, string>) => {
+            const { error } = await this.client.auth.signInWithOtp({
+                email,
+                options: metadata ? { data: metadata } : undefined,
+            });
             return { error: error as Error | null };
         },
 
@@ -173,6 +176,11 @@ export class SupabaseAdapter implements IDatabase {
                 user: data.user as AuthUser | null,
                 error: error as Error | null
             };
+        },
+
+        updatePassword: async (password: string) => {
+            const { error } = await this.client.auth.updateUser({ password });
+            return { error: error as Error | null };
         }
     };
 }

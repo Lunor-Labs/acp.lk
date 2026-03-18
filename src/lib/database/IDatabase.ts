@@ -49,9 +49,11 @@ export interface IDatabase {
         resetPassword(email: string): Promise<{ error: Error | null }>;
         getSession(): Promise<{ session: AuthSession | null; error: Error | null }>;
         onAuthStateChange(callback: (event: string, session: AuthSession | null) => void): { unsubscribe: () => void };
-        /** Send a 6-digit OTP to the given email (creates user if new) */
-        sendOtp(email: string): Promise<{ error: Error | null }>;
+        /** Send an OTP to the given email (creates user if new). Optional metadata is passed to the email template. */
+        sendOtp(email: string, metadata?: Record<string, string>): Promise<{ error: Error | null }>;
         /** Verify the OTP token for the given email */
         verifyOtp(email: string, token: string): Promise<{ user: AuthUser | null; error: Error | null }>;
+        /** Update the currently signed-in user's password */
+        updatePassword(password: string): Promise<{ error: Error | null }>;
     };
 }
