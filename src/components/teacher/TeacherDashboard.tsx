@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { LayoutDashboard, Users, FileText, Package, LogOut, GraduationCap, TrendingUp, DollarSign, UserPlus, User, Menu, X, Image, MessageSquare, Trophy } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Package, LogOut, GraduationCap, TrendingUp, DollarSign, UserPlus, User, Menu, X, Image, MessageSquare, Trophy, Star } from 'lucide-react';
 import MyClasses from './MyClasses';
 import Exams from './Exams';
 import StudyPacks from './StudyPacks';
 import GalleryManager from './GalleryManager';
 import ReviewsManager from './ReviewsManager';
 import TestResultsManager from './TestResultsManager';
+import SuccessManager from './SuccessManager';
 import { supabase } from '../../lib/supabase';
 import { TeacherRepository } from '../../repositories/TeacherRepository';
 
@@ -297,6 +298,20 @@ export default function TeacherDashboard() {
               <Trophy className="w-5 h-5" />
               <span className="font-medium">Test Results</span>
             </button>
+
+            <button
+              onClick={() => {
+                setActiveTab('success');
+                setIsMobileMenuOpen(false);
+              }}
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'success'
+                ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-500/30'
+                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                }`}
+            >
+              <Star className="w-5 h-5" />
+              <span className="font-medium">Success</span>
+            </button>
           </nav>
 
           <div className="mt-auto pt-4 border-t border-slate-700">
@@ -358,6 +373,12 @@ export default function TeacherDashboard() {
           )
         ) : activeTab === 'test-results' ? (
           teacherId ? <TestResultsManager teacherId={teacherId} /> : (
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#eb1b23]" />
+            </div>
+          )
+        ) : activeTab === 'success' ? (
+          teacherId ? <SuccessManager teacherId={teacherId} /> : (
             <div className="flex items-center justify-center h-64">
               <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#eb1b23]" />
             </div>

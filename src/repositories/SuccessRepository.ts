@@ -1,95 +1,167 @@
 import { BaseRepository } from './BaseRepository';
 import { supabase } from '../lib/supabase';
 
-interface SuccessStudent {
-  id: string;
-  full_name: string;
-  index_no: string;
-  faculty: string;
-  university: string;
-  results: string;
-  image_path: string;
+export interface SuccessStudent {
+  id: bigint | string;
+  full_name: string | null;
+  index_no: bigint | null;
+  results: string | null;
+  faculty: string | null;
+  university: string | null;
+  image_path: string | null;
   created_at?: string;
-  updated_at?: string;
+}
+
+export interface SuccessStudentWithUrl extends SuccessStudent {
+  resolvedUrl: string;
 }
 
 /**
  * Success Repository
  * 
- * Handles fetching successful student data and their images from storage
+ * Handles CRUD operations for successful student data with image management
  */
 export class SuccessRepository extends BaseRepository<SuccessStudent> {
-  private readonly STORAGE_BUCKET = 'acp'; // The actual bucket name
-  private readonly STORAGE_PATH = 'images/success'; // Folder path inside the bucket
+  private readonly STORAGE_BUCKET = 'acp';
+  private readonly STORAGE_FOLDER = 'images/success';
 
   constructor() {
-    super('success'); // Assuming your table name is 'success'
+    super('success');
   }
 
   /**
-   * Get all successful students with formatted image URLs
+   * Get all success students with resolved image URLs
+   */
+  async getAllWithUrls(): Promise<SuccessStudentWithUrl[]> {
+    const { data, error } = await supabase
+      .from('success')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    const students = data || [];
+
+    return students.map((student) => ({
+      ...student,
+      resolvedUrl: student.image_path ? this.getPublicUrl(student.image_path) : '',
+    }));
+  }
+
+  /**
+   * Get all successful students with formatted image URLs (for landing page)
    */
   async getSuccessStudents(): Promise<FormattedSuccessStudent[]> {
     try {
-      const students = await this.findAll();
+      const students = await this.getAllWithUrls();
 
-      // Resolve image URLs (may require async probing)
-      const formatted = await Promise.all(
-        students.map(async (student) => ({
-          id: student.id,
-          name: student.full_name,
-          subtitle: String(student.index_no ?? ''),
-          faculty: student.faculty,
-          university: student.university,
-          grade: student.results,
-          image: await this.getImageUrl(student.image_path)
-        }))
-      );
-
-      return formatted;
+      return students.map((student) => ({
+        id: String(student.id),
+        name: student.full_name || 'Unknown',
+        subtitle: String(student.index_no ?? ''),
+        faculty: student.faculty || '',
+        university: student.university || '',
+        grade: student.results || 'AAA',
+        image: student.resolvedUrl,
+      }));
     } catch (error) {
       throw error;
     }
   }
 
   /**
-   * Get public URL for an image from Supabase storage
-   * @param imagePath - Filename of the image (e.g., "student1.png")
-   * @returns Public URL for the image
+   * Upload an image file to Supabase Storage and create a DB record
    */
-  private async getImageUrl(imagePath: string): Promise<string> {
-    if (!imagePath) return '';
+  async uploadSuccess(
+    file: File,
+    fullName: string,
+    indexNo: string,
+    results: string,
+    faculty: string,
+    university: string
+  ): Promise<SuccessStudentWithUrl> {
+    const ext = file.name.split('.').pop();
+    const fileName = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const storagePath = `${this.STORAGE_FOLDER}/${fileName}`;
 
-    const candidates = [
-      `${this.STORAGE_PATH}/${imagePath}`,
-      imagePath,
-      `images/${imagePath}`
-    ];
+    // Upload to storage
+    const { error: uploadError } = await supabase.storage
+      .from(this.STORAGE_BUCKET)
+      .upload(storagePath, file, { upsert: false });
 
-    for (const candidate of candidates) {
-      try {
-        const { data } = supabase.storage.from(this.STORAGE_BUCKET).getPublicUrl(candidate);
-        const url = data?.publicUrl;
-        if (!url) continue;
+    if (uploadError) throw uploadError;
 
-        // Probe the URL to ensure it returns a successful response.
-        try {
-          const res = await fetch(url, { method: 'HEAD' });
-          if (res.ok) {
-            return url;
-          }
-        } catch (probeErr) {
-          // Network/CORS may block HEAD; still return the URL as a best-effort fallback
-          return url;
-        }
-      } catch (err) {
-        // console.warn('⚠️ Error building public url for', candidate, err);
-        continue;
-      }
+    // Save to DB
+    const { data, error } = await supabase
+      .from('success')
+      .insert({
+        full_name: fullName,
+        index_no: parseInt(indexNo) || null,
+        results: results || 'AAA',
+        faculty: faculty,
+        university: university,
+        image_path: fileName,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    if (!data) throw new Error('Failed to create success record');
+
+    return {
+      ...data,
+      resolvedUrl: this.getPublicUrl(fileName),
+    };
+  }
+
+  /**
+   * Update a success student record
+   */
+  async updateSuccess(
+    id: string | bigint,
+    updates: Partial<Omit<SuccessStudent, 'id' | 'created_at'>>
+  ): Promise<SuccessStudent> {
+    const { data, error } = await supabase
+      .from('success')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    if (!data) throw new Error('Failed to update success record');
+    return data;
+  }
+
+  /**
+   * Delete a success student record and its image
+   */
+  async deleteSuccess(id: string | bigint, imagePath: string): Promise<void> {
+    // Delete from storage if image exists
+    if (imagePath) {
+      const storagePath = `${this.STORAGE_FOLDER}/${imagePath}`;
+      await supabase.storage.from(this.STORAGE_BUCKET).remove([storagePath]);
     }
 
-    // console.warn('⚠️ No valid public URL found for imagePath:', imagePath);
-    return '';
+    // Delete from DB
+    const { error } = await supabase
+      .from('success')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+  }
+
+  /**
+   * Get public URL for an image from Supabase storage
+   */
+  private getPublicUrl(imagePath: string): string {
+    if (!imagePath) return '';
+
+    const { data } = supabase.storage
+      .from(this.STORAGE_BUCKET)
+      .getPublicUrl(`${this.STORAGE_FOLDER}/${imagePath}`);
+
+    return data?.publicUrl || '';
   }
 }
 
