@@ -3,6 +3,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import './Auth.css';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
+import ForgotPasswordForm from './ForgotPasswordForm';
 import studentBg from '../../../assets/register/student-bg.webp';
 import acpLogo from '../../../assets/acp-logo.webp';
 
@@ -11,7 +12,7 @@ interface AuthPanelProps {
 }
 
 const AuthPanel: React.FC<AuthPanelProps> = ({ defaultMode = 'login' }) => {
-  const [mode, setMode] = useState<'login' | 'register'>(defaultMode);
+  const [mode, setMode] = useState<'login' | 'register' | 'forgot-password'>(defaultMode);
   const { loading: authLoading } = useAuth();
 
   const handleLoginSuccess = () => {
@@ -79,6 +80,7 @@ const AuthPanel: React.FC<AuthPanelProps> = ({ defaultMode = 'login' }) => {
                 {mode === 'login' && (
                   <LoginForm
                     onSwitchToRegister={() => setMode('register')}
+                    onForgotPassword={() => setMode('forgot-password')}
                     onLoginSuccess={handleLoginSuccess}
                   />
                 )}
@@ -87,6 +89,9 @@ const AuthPanel: React.FC<AuthPanelProps> = ({ defaultMode = 'login' }) => {
                     onSwitchToLogin={() => setMode('login')}
                     onRegisterSuccess={handleRegisterSuccess}
                   />
+                )}
+                {mode === 'forgot-password' && (
+                  <ForgotPasswordForm onBack={() => setMode('login')} />
                 )}
               </>
             )}

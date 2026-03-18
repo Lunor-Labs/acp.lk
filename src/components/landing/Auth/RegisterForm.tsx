@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth, CENTER_LABELS, PendingRegisterData } from '../../../contexts/AuthContext';
 import { ClassCenter } from '../../../repositories';
-import { Copy, CheckCircle } from 'lucide-react';
+import { Copy, CheckCircle, Eye, EyeOff } from 'lucide-react';
 
 interface Props {
   onSwitchToLogin: () => void;
@@ -18,18 +18,22 @@ const RegisterForm: React.FC<Props> = ({ onSwitchToLogin, onRegisterSuccess }) =
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPw, setConfirmPw] = useState('');
+  const [showPw, setShowPw] = useState(false);
   const [alYear, setAlYear] = useState<number>(2026);
   const [center, setCenter] = useState<ClassCenter>('online');
 
   // ─── OTP step ────────────────────────────────────────────────────────────
   const [otp, setOtp] = useState('');
   const [pendingData, setPendingData] = useState<PendingRegisterData | null>(null);
+  const [previewStudentId, setPreviewStudentId] = useState<string>('');
 
   // ─── UI state ────────────────────────────────────────────────────────────
   const [step, setStep] = useState<Step>('form');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [generatedStudentId, setGeneratedStudentId] = useState<string | null>(null);
+  const [finalStudentId, setFinalStudentId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   const { requestSignUpOtp, verifySignUpOtp } = useAuth();
@@ -46,18 +50,30 @@ const RegisterForm: React.FC<Props> = ({ onSwitchToLogin, onRegisterSuccess }) =
       setError('Please enter your email address');
       return;
     }
+    if (!password || password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+    if (password !== confirmPw) {
+      setError('Passwords do not match');
+      return;
+    }
 
     setLoading(true);
     setError(null);
     try {
-      await requestSignUpOtp(email.trim());
-      const pending: PendingRegisterData = {
+      const pending: Omit<PendingRegisterData, 'studentId'> = {
         fullName: `${firstName} ${lastName}`,
         role: 'student',
         alYear,
         center,
+        password,
       };
-      setPendingData(pending);
+
+      const { studentId } = await requestSignUpOtp(email.trim(), pending);
+      setPreviewStudentId(studentId);
+
+      setPendingData({ ...pending, studentId });
       setStep('otp');
     } catch (err: any) {
       setError(err.message || 'Failed to send verification code. Please try again.');
@@ -69,8 +85,8 @@ const RegisterForm: React.FC<Props> = ({ onSwitchToLogin, onRegisterSuccess }) =
   // ─── Step 2: Verify OTP ───────────────────────────────────────────────
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!otp.trim() || otp.trim().length < 8) {
-      setError('Please enter the 8-digit code from your email');
+    if (!otp.trim() || otp.trim().length < 6) {
+      setError('Please enter the verification code from your email');
       return;
     }
     if (!pendingData) return;
@@ -79,12 +95,8 @@ const RegisterForm: React.FC<Props> = ({ onSwitchToLogin, onRegisterSuccess }) =
     setError(null);
     try {
       const result = await verifySignUpOtp(email.trim(), otp.trim(), pendingData);
-      if (result.studentId) {
-        setGeneratedStudentId(result.studentId);
-        setStep('done');
-      } else {
-        onRegisterSuccess?.();
-      }
+      setFinalStudentId(result.studentId);
+      setStep('done');
     } catch (err: any) {
       setError(err.message || 'Invalid or expired code. Please try again.');
     } finally {
@@ -93,15 +105,15 @@ const RegisterForm: React.FC<Props> = ({ onSwitchToLogin, onRegisterSuccess }) =
   };
 
   const handleCopy = () => {
-    if (generatedStudentId) {
-      navigator.clipboard.writeText(generatedStudentId);
+    if (finalStudentId) {
+      navigator.clipboard.writeText(finalStudentId);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
   };
 
   // ─── Done screen ──────────────────────────────────────────────────────
-  if (step === 'done' && generatedStudentId) {
+  if (step === 'done' && finalStudentId) {
     return (
       <div className="text-center">
         <div className="flex justify-center mb-4">
@@ -112,13 +124,13 @@ const RegisterForm: React.FC<Props> = ({ onSwitchToLogin, onRegisterSuccess }) =
 
         <h3 className="text-xl font-bold text-gray-800 mb-2">Account Created!</h3>
         <p className="text-sm text-gray-600 mb-4">
-          You're now logged in. Save your Student ID — you'll need it to log in next time.
+          You're all set! Save your Student ID — you'll use it together with your password to log in.
         </p>
 
         <div className="id-display-card">
           <p className="id-label">YOUR STUDENT ID</p>
           <div className="id-value-container">
-            <span className="id-value">{generatedStudentId}</span>
+            <span className="id-value">{finalStudentId}</span>
             <button type="button" onClick={handleCopy} className="copy-btn" title="Copy to clipboard">
               <Copy className="w-5 h-5" />
             </button>
@@ -127,7 +139,7 @@ const RegisterForm: React.FC<Props> = ({ onSwitchToLogin, onRegisterSuccess }) =
         </div>
 
         <div className="warning-box">
-          <strong>Important:</strong> Save this ID. You will need it every time you log in. There is no password — just enter your ID and you'll receive a code by email.
+          <strong>Important:</strong> Save your Student ID — you will need it along with your password every time you log in.
         </div>
 
         <button onClick={onSwitchToLogin} className="btn-submit w-full">
@@ -145,13 +157,20 @@ const RegisterForm: React.FC<Props> = ({ onSwitchToLogin, onRegisterSuccess }) =
           <div className="otp-sent-banner">
             <span className="otp-sent-icon">📬</span>
             <div>
-              <div className="otp-sent-title">Verify your email</div>
+              <div className="otp-sent-title">Check your email</div>
               <div className="otp-sent-email">{email}</div>
             </div>
           </div>
 
+          {/* Show the pre-generated student ID */}
+          {previewStudentId && (
+            <div className="info-box" style={{ textAlign: 'center' }}>
+              🎓 Your Student ID is <strong style={{ fontFamily: 'monospace', fontSize: '1.05em', letterSpacing: '2px' }}>{previewStudentId}</strong> — also shown in the email.
+            </div>
+          )}
+
           <div className="form-group">
-            <label>8-Digit OTP Code</label>
+            <label>Verification Code</label>
             <input
               type="text"
               inputMode="numeric"
@@ -167,14 +186,14 @@ const RegisterForm: React.FC<Props> = ({ onSwitchToLogin, onRegisterSuccess }) =
               autoComplete="one-time-code"
             />
             <div className="text-xs text-gray-500 mt-1 ml-1">
-              Enter the 8-digit code sent to your email
+              Enter the code sent to your email
             </div>
           </div>
 
           {error && <div className="auth-error">{error}</div>}
 
           <button className="btn-submit" type="submit" disabled={loading}>
-            {loading ? 'Creating account...' : 'Verify & Create Account'}
+            {loading ? 'Creating account…' : 'Verify & Create Account'}
           </button>
 
           <button
@@ -237,6 +256,57 @@ const RegisterForm: React.FC<Props> = ({ onSwitchToLogin, onRegisterSuccess }) =
           />
         </div>
 
+        {/* ── Password ── */}
+        <div className="form-group">
+          <label>Password</label>
+          <div style={{ position: 'relative' }}>
+            <input
+              type={showPw ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="At least 6 characters"
+              required
+              disabled={loading}
+              autoComplete="new-password"
+              style={{ paddingRight: '44px' }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPw(v => !v)}
+              disabled={loading}
+              style={{
+                position: 'absolute',
+                right: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none',
+                border: 'none',
+                color: '#94a3b8',
+                cursor: 'pointer',
+                padding: '4px',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+              tabIndex={-1}
+            >
+              {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label>Confirm Password</label>
+          <input
+            type={showPw ? 'text' : 'password'}
+            value={confirmPw}
+            onChange={(e) => setConfirmPw(e.target.value)}
+            placeholder="Re-enter your password"
+            required
+            disabled={loading}
+            autoComplete="new-password"
+          />
+        </div>
+
         <div className="form-group">
           <label>A/L Year</label>
           <select
@@ -267,13 +337,13 @@ const RegisterForm: React.FC<Props> = ({ onSwitchToLogin, onRegisterSuccess }) =
         </div>
 
         <div className="info-box">
-          📧 A verification code will be sent to your email — no password needed!
+          📧 A verification code will be sent to your email. Your Student ID will be included in the email too!
         </div>
 
         {error && <div className="auth-error">{error}</div>}
 
         <button className="btn-submit" type="submit" disabled={loading}>
-          {loading ? 'Sending code...' : 'Send Verification Code'}
+          {loading ? 'Sending code…' : 'Send Verification Code'}
         </button>
       </form>
 
