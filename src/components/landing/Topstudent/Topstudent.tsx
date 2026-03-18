@@ -348,61 +348,15 @@ const Topstudent: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile & tablet: keep existing swipeable carousel */}
-        <div className="lg:hidden relative w-full flex items-center overflow-hidden" style={{ backgroundColor: '#1a1a1a' }}>
-
-          {/* Mobile chevron (overlay) */}
-          <button
-            type="button"
-            onClick={handlePrev}
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-10 h-10 rounded-full border-2 border-[#eb1b23] text-[#eb1b23] bg-black/60 hover:bg-[#eb1b23] hover:text-white transition-all duration-300"
-            aria-label="Previous student mobile"
-          >
-            &#8249;
-          </button>
-
-          {/* Carousel track */}
-          {/* hide native scrollbar across browsers */}
-          <style>{`.no-scrollbar::-webkit-scrollbar { display: none; }
-              .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }`}</style>
-          <div
-            ref={carouselRef}
-            className="overflow-x-auto no-scrollbar w-full py-10 snap-x snap-mandatory flex gap-10"
-            style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}
-            onTouchStart={(e) => {
-              if (!isAnimatingRef.current) {
-                touchStartXRef.current = e.touches[0].clientX;
-              }
-            }}
-            onTouchEnd={(e) => {
-              if (isAnimatingRef.current) {
-                touchStartXRef.current = null;
-                return;
-              }
-
-              const startX = touchStartXRef.current;
-              if (startX === null) return;
-
-              const endX = e.changedTouches[0].clientX;
-              const diff = startX - endX;
-
-              if (Math.abs(diff) > 50) {
-                if (diff > 0) {
-                  handleNext();
-                } else {
-                  handlePrev();
-                }
-              }
-
-              touchStartXRef.current = null;
-            }}
-          >
-            {displayStudents.map((student, idx) => (
+        {/* Mobile & tablet: same CSS marquee as desktop */}
+        <div className="lg:hidden relative w-full overflow-hidden" style={{ backgroundColor: '#1a1a1a' }}>
+          <div className="flex w-max animate-scroll-horizontal will-change-transform py-10 gap-10 px-10">
+            {marqueeStudents.map((student, idx) => (
               <div
-                key={idx + '-' + student.rank}
-                className="flex-shrink-0 w-64 h-80 landing-card flex flex-col items-center gap-4 relative pt-20 pb-8 bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl shadow-lg border border-slate-700/50 snap-center"
+                key={'mobile-' + idx + '-' + student.rank}
+                className="flex-shrink-0 w-56 h-64 landing-card flex flex-col items-center gap-4 relative pt-20 pb-8 bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl shadow-lg border border-slate-700/50"
               >
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full flex items-center justify-center shadow-2xl border-4 border-[#eb1b23] bg-slate-900" style={{ boxShadow: '0 0 30px rgba(235, 27, 35, 0.4)' }}>
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full flex items-center justify-center shadow-2xl border-4 border-[#eb1b23] shadow-red-600/50 bg-slate-900" style={{ boxShadow: '0 0 30px rgba(235, 27, 35, 0.4)' }}>
                   <img
                     src={student.image || studentImage}
                     alt={student.name}
@@ -423,16 +377,6 @@ const Topstudent: React.FC = () => {
               </div>
             ))}
           </div>
-
-          {/* Right chevron - mobile overlay */}
-          <button
-            type="button"
-            onClick={handleNext}
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-10 h-10 rounded-full border-2 border-[#eb1b23] text-[#eb1b23] bg-black/60 hover:bg-[#eb1b23] hover:text-white transition-all duration-300"
-            aria-label="Next student mobile"
-          >
-            &#8250;
-          </button>
         </div>
       </div>
 
