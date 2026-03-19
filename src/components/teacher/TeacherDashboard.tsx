@@ -177,12 +177,12 @@ export default function TeacherDashboard() {
       )}
 
       <aside className={`
-        fixed lg:static inset - y - 0 left - 0 z - 50
-w - 64 bg - slate - 900 text - white flex flex - col
-h - screen overflow - hidden
-        transform transition - transform duration - 300 ease -in -out
+        fixed lg:static inset-y-0 left-0 z-50
+        w-64 bg-slate-900 text-white flex flex-col
+        h-screen overflow-hidden
+        transform transition-transform duration-300 ease-in-out
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-`}>
+      `}>
         <div className="p-6 flex-1 flex flex-col relative">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center space-x-3">
@@ -208,10 +208,10 @@ h - screen overflow - hidden
                 setActiveTab('dashboard');
                 setIsMobileMenuOpen(false);
               }}
-              className={`w - full flex items - center space - x - 3 px - 4 py - 3 rounded - xl transition - all duration - 200 ${activeTab === 'dashboard'
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'dashboard'
                 ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-500/30'
                 : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                } `}
+                }`}
             >
               <LayoutDashboard className="w-5 h-5" />
               <span className="font-medium">Dashboard</span>
@@ -222,10 +222,10 @@ h - screen overflow - hidden
                 setActiveTab('classes');
                 setIsMobileMenuOpen(false);
               }}
-              className={`w - full flex items - center space - x - 3 px - 4 py - 3 rounded - xl transition - all duration - 200 ${activeTab === 'classes'
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'classes'
                 ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-500/30'
                 : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                } `}
+                }`}
             >
               <GraduationCap className="w-5 h-5" />
               <span className="font-medium">My Classes</span>
@@ -236,10 +236,10 @@ h - screen overflow - hidden
                 setActiveTab('exams');
                 setIsMobileMenuOpen(false);
               }}
-              className={`w - full flex items - center space - x - 3 px - 4 py - 3 rounded - xl transition - all duration - 200 ${activeTab === 'exams'
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'exams'
                 ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-500/30'
                 : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                } `}
+                }`}
             >
               <FileText className="w-5 h-5" />
               <span className="font-medium">Exams</span>
@@ -250,10 +250,10 @@ h - screen overflow - hidden
                 setActiveTab('study-packs');
                 setIsMobileMenuOpen(false);
               }}
-              className={`w - full flex items - center space - x - 3 px - 4 py - 3 rounded - xl transition - all duration - 200 ${activeTab === 'study-packs'
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'study-packs'
                 ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-500/30'
                 : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                } `}
+                }`}
             >
               <Package className="w-5 h-5" />
               <span className="font-medium">Study Packs</span>
@@ -268,10 +268,10 @@ h - screen overflow - hidden
                 setActiveTab('gallery');
                 setIsMobileMenuOpen(false);
               }}
-              className={`w - full flex items - center space - x - 3 px - 4 py - 3 rounded - xl transition - all duration - 200 ${activeTab === 'gallery'
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'gallery'
                 ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-500/30'
                 : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                } `}
+                }`}
             >
               <Image className="w-5 h-5" />
               <span className="font-medium">Gallery</span>
@@ -282,10 +282,10 @@ h - screen overflow - hidden
                 setActiveTab('reviews');
                 setIsMobileMenuOpen(false);
               }}
-              className={`w - full flex items - center space - x - 3 px - 4 py - 3 rounded - xl transition - all duration - 200 ${activeTab === 'reviews'
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'reviews'
                 ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-500/30'
                 : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                } `}
+                }`}
             >
               <MessageSquare className="w-5 h-5" />
               <span className="font-medium">Reviews</span>
@@ -296,10 +296,10 @@ h - screen overflow - hidden
                 setActiveTab('test-results');
                 setIsMobileMenuOpen(false);
               }}
-              className={`w - full flex items - center space - x - 3 px - 4 py - 3 rounded - xl transition - all duration - 200 ${activeTab === 'test-results'
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'test-results'
                 ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-500/30'
                 : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                } `}
+                }`}
             >
               <Trophy className="w-5 h-5" />
               <span className="font-medium">Test Results</span>
@@ -310,10 +310,10 @@ h - screen overflow - hidden
                 setActiveTab('success');
                 setIsMobileMenuOpen(false);
               }}
-              className={`w - full flex items - center space - x - 3 px - 4 py - 3 rounded - xl transition - all duration - 200 ${activeTab === 'success'
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'success'
                 ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-500/30'
                 : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                } `}
+                }`}
             >
               <Trophy className="w-5 h-5" />
               <span className="font-medium">Success</span>
