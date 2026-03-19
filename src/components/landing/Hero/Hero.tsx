@@ -6,11 +6,14 @@ import heroMobile1 from '../../../assets/mobhero1.webp';
 import heroMobile2 from '../../../assets/mobhero2.webp';
 import heroMobile3 from '../../../assets/mobhero3.webp';
 
+import { useAuth } from '../../../contexts/AuthContext';
+
 interface HeroProps {
   onLoginRequest?: () => void;
 }
 
 const Hero: React.FC<HeroProps> = ({ onLoginRequest }) => {
+  const { user } = useAuth();
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const slides = [
@@ -60,7 +63,7 @@ const Hero: React.FC<HeroProps> = ({ onLoginRequest }) => {
                 onClick={onLoginRequest}
                 className="bg-[#eb1b23] hover:bg-red-700 text-white font-bold px-4 py-2 rounded-full shadow-lg text-[11px] transition-all duration-300 hover:scale-105 hover:shadow-xl flex items-center justify-center gap-1.5 group whitespace-nowrap"
               >
-                Student Portal
+                {user ? 'Go to Portal' : 'Student Portal'}
                 <div className="bg-white rounded-full p-0.5 group-hover:translate-x-1 transition-transform">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#eb1b23" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M5 12h14M12 5l7 7-7 7" />
@@ -121,7 +124,7 @@ const Hero: React.FC<HeroProps> = ({ onLoginRequest }) => {
                 onClick={onLoginRequest}
                 className="bg-[#eb1b23] hover:bg-red-700 text-white font-bold px-8 md:px-10 py-3 md:py-4 rounded-full shadow-lg text-lg md:text-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl w-full sm:w-auto flex items-center justify-center gap-3 group"
               >
-                Student Portal
+                {user ? 'Go to Portal' : 'Student Portal'}
                 <div className="bg-white rounded-full p-1 group-hover:translate-x-1 transition-transform">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#eb1b23" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M5 12h14M12 5l7 7-7 7" />

@@ -66,11 +66,10 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        isScrolled 
-          ? 'bg-[#eb1b23]/95 backdrop-blur-md shadow-2xl' 
-          : 'bg-gradient-to-b from-black/40 to-transparent'
-      } w-full`}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${isScrolled
+        ? 'bg-[#eb1b23]/95 backdrop-blur-md shadow-2xl'
+        : 'bg-gradient-to-b from-black/40 to-transparent'
+        } w-full`}
     >
       <div className="max-w-screen-2xl mx-auto w-full">
         <div className="flex items-center justify-between h-12 lg:h-12 px-4 lg:px-0 relative">
@@ -115,25 +114,38 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
                 </button>
               ))}
             </div>
-            {/* Register button — fixed size, no flex-grow */}
-            {!user && (
+            {user ? (
               <button
                 onClick={onLoginRequest}
                 className="mx-4 bg-white text-black font-bold px-4 xl:px-6 py-1.5 rounded-full shadow-lg transition-all duration-200 hover:bg-gray-100 text-sm whitespace-nowrap flex-shrink-0"
               >
-                Register
+                Go to Portal
+              </button>
+            ) : (
+              <button
+                onClick={onLoginRequest}
+                className="mx-4 bg-white text-black font-bold px-4 xl:px-6 py-1.5 rounded-full shadow-lg transition-all duration-200 hover:bg-gray-100 text-sm whitespace-nowrap flex-shrink-0"
+              >
+                Student Portal
               </button>
             )}
           </div>
 
           {/* Mobile CTA only */}
           <div className="flex lg:hidden items-center z-10">
-            {!user && (
+            {user ? (
               <button
                 onClick={onLoginRequest}
                 className="bg-white text-black font-bold px-5 py-2 rounded-full shadow-lg transition-all duration-200 hover:bg-gray-100 text-sm whitespace-nowrap"
               >
-                Register
+                Go to Portal
+              </button>
+            ) : (
+              <button
+                onClick={onLoginRequest}
+                className="bg-white text-black font-bold px-5 py-2 rounded-full shadow-lg transition-all duration-200 hover:bg-gray-100 text-sm whitespace-nowrap"
+              >
+                Student Portal
               </button>
             )}
           </div>

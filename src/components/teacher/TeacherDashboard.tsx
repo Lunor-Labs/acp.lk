@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { LayoutDashboard, Users, FileText, Package, LogOut, GraduationCap, TrendingUp, DollarSign, UserPlus, User, Menu, X, Image, MessageSquare, Trophy, AlertTriangle } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Package, LogOut, GraduationCap, TrendingUp, DollarSign, UserPlus, User, Menu, X, Image, MessageSquare, Trophy, AlertTriangle, Home } from 'lucide-react';
 import MyClasses from './MyClasses';
 import Exams from './Exams';
 import StudyPacks from './StudyPacks';
@@ -25,7 +25,11 @@ interface StudentGrowthData {
   count: number;
 }
 
-export default function TeacherDashboard() {
+interface TeacherDashboardProps {
+  onGoToLanding?: () => void;
+}
+
+export default function TeacherDashboard({ onGoToLanding }: TeacherDashboardProps) {
   const { profile, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState('classes');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -257,6 +261,18 @@ export default function TeacherDashboard() {
             >
               <Package className="w-5 h-5" />
               <span className="font-medium">Study Packs</span>
+            </button>
+
+            <div className="pt-2 border-t border-slate-700/60 mt-2">
+              <p className="text-xs text-slate-500 px-4 py-1 font-medium uppercase tracking-widest">Public Website</p>
+            </div>
+
+            <button
+              onClick={onGoToLanding}
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-300 hover:bg-slate-800 hover:text-white`}
+            >
+              <Home className="w-5 h-5" />
+              <span className="font-medium">Go to Website</span>
             </button>
 
             <div className="pt-2 border-t border-slate-700/60 mt-2">

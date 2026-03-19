@@ -1,8 +1,12 @@
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { LayoutDashboard, Users, GraduationCap, BookOpen, LogOut, BarChart3, User, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Users, GraduationCap, BookOpen, LogOut, BarChart3, User, Menu, X, Home } from 'lucide-react';
 
-export default function AdminDashboard() {
+interface AdminDashboardProps {
+  onGoToLanding?: () => void;
+}
+
+export default function AdminDashboard({ onGoToLanding }: AdminDashboardProps) {
   const { profile, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -25,9 +29,9 @@ export default function AdminDashboard() {
         <div className="p-6 flex-1 flex flex-col relative">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center space-x-3">
-            <div className="bg-white p-2 rounded-lg">
-              <GraduationCap className="w-6 h-6 text-teal-600" />
-            </div>
+              <div className="bg-white p-2 rounded-lg">
+                <GraduationCap className="w-6 h-6 text-teal-600" />
+              </div>
               <div>
                 <h1 className="text-xl font-bold">EduPortal</h1>
                 <p className="text-xs text-teal-100">Academy</p>
@@ -41,17 +45,26 @@ export default function AdminDashboard() {
             </button>
           </div>
 
+          <div className="mb-4">
+            <button
+              onClick={onGoToLanding}
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 text-white hover:bg-teal-500`}
+            >
+              <Home className="w-5 h-5" />
+              <span className="font-medium">Go to Website</span>
+            </button>
+          </div>
+
           <nav className="space-y-1">
             <button
               onClick={() => {
                 setActiveTab('dashboard');
                 setIsMobileMenuOpen(false);
               }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${
-                activeTab === 'dashboard'
-                  ? 'bg-white text-teal-700 shadow-lg'
-                  : 'text-white hover:bg-teal-500'
-              }`}
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${activeTab === 'dashboard'
+                ? 'bg-white text-teal-700 shadow-lg'
+                : 'text-white hover:bg-teal-500'
+                }`}
             >
               <LayoutDashboard className="w-5 h-5" />
               <span className="font-medium">Dashboard</span>
@@ -62,11 +75,10 @@ export default function AdminDashboard() {
                 setActiveTab('teachers');
                 setIsMobileMenuOpen(false);
               }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${
-                activeTab === 'teachers'
-                  ? 'bg-white text-teal-700 shadow-lg'
-                  : 'text-white hover:bg-teal-500'
-              }`}
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${activeTab === 'teachers'
+                ? 'bg-white text-teal-700 shadow-lg'
+                : 'text-white hover:bg-teal-500'
+                }`}
             >
               <GraduationCap className="w-5 h-5" />
               <span className="font-medium">Teachers</span>
@@ -77,11 +89,10 @@ export default function AdminDashboard() {
                 setActiveTab('students');
                 setIsMobileMenuOpen(false);
               }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${
-                activeTab === 'students'
-                  ? 'bg-white text-teal-700 shadow-lg'
-                  : 'text-white hover:bg-teal-500'
-              }`}
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${activeTab === 'students'
+                ? 'bg-white text-teal-700 shadow-lg'
+                : 'text-white hover:bg-teal-500'
+                }`}
             >
               <Users className="w-5 h-5" />
               <span className="font-medium">Students</span>
@@ -92,11 +103,10 @@ export default function AdminDashboard() {
                 setActiveTab('classes');
                 setIsMobileMenuOpen(false);
               }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${
-                activeTab === 'classes'
-                  ? 'bg-white text-teal-700 shadow-lg'
-                  : 'text-white hover:bg-teal-500'
-              }`}
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${activeTab === 'classes'
+                ? 'bg-white text-teal-700 shadow-lg'
+                : 'text-white hover:bg-teal-500'
+                }`}
             >
               <BookOpen className="w-5 h-5" />
               <span className="font-medium">Classes</span>
@@ -107,11 +117,10 @@ export default function AdminDashboard() {
                 setActiveTab('analytics');
                 setIsMobileMenuOpen(false);
               }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${
-                activeTab === 'analytics'
-                  ? 'bg-white text-teal-700 shadow-lg'
-                  : 'text-white hover:bg-teal-500'
-              }`}
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${activeTab === 'analytics'
+                ? 'bg-white text-teal-700 shadow-lg'
+                : 'text-white hover:bg-teal-500'
+                }`}
             >
               <BarChart3 className="w-5 h-5" />
               <span className="font-medium">Analytics</span>
@@ -156,63 +165,63 @@ export default function AdminDashboard() {
           </button>
         </div>
         <div className="p-4 sm:p-6 lg:p-8">
-        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">
-          {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
-        </h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">
+            {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+          </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-xl shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Students</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">0</p>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div className="bg-white p-6 rounded-xl shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Total Students</p>
+                  <p className="text-3xl font-bold text-gray-900 mt-1">0</p>
+                </div>
+                <div className="bg-teal-100 p-3 rounded-lg">
+                  <Users className="w-6 h-6 text-teal-600" />
+                </div>
               </div>
-              <div className="bg-teal-100 p-3 rounded-lg">
-                <Users className="w-6 h-6 text-teal-600" />
+            </div>
+
+            <div className="bg-white p-6 rounded-xl shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Total Teachers</p>
+                  <p className="text-3xl font-bold text-gray-900 mt-1">0</p>
+                </div>
+                <div className="bg-green-100 p-3 rounded-lg">
+                  <GraduationCap className="w-6 h-6 text-green-600" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-xl shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Active Classes</p>
+                  <p className="text-3xl font-bold text-gray-900 mt-1">0</p>
+                </div>
+                <div className="bg-teal-100 p-3 rounded-lg">
+                  <BookOpen className="w-6 h-6 text-teal-600" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-xl shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Total Revenue</p>
+                  <p className="text-3xl font-bold text-gray-900 mt-1">LKR 0</p>
+                </div>
+                <div className="bg-green-100 p-3 rounded-lg">
+                  <span className="text-2xl">💰</span>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-xl shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Teachers</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">0</p>
-              </div>
-              <div className="bg-green-100 p-3 rounded-lg">
-                <GraduationCap className="w-6 h-6 text-green-600" />
-              </div>
-            </div>
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <p className="text-gray-600">Content for {activeTab} will appear here</p>
           </div>
-
-          <div className="bg-white p-6 rounded-xl shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Active Classes</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">0</p>
-              </div>
-              <div className="bg-teal-100 p-3 rounded-lg">
-                <BookOpen className="w-6 h-6 text-teal-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-xl shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Revenue</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">LKR 0</p>
-              </div>
-              <div className="bg-green-100 p-3 rounded-lg">
-                <span className="text-2xl">💰</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <p className="text-gray-600">Content for {activeTab} will appear here</p>
-        </div>
         </div>
       </main>
     </div>

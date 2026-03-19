@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { LayoutDashboard, BookOpen, FileText, Package, LogOut, GraduationCap, User, Menu, X, TrendingUp, Clock, Search } from 'lucide-react';
+import { LayoutDashboard, BookOpen, FileText, Package, LogOut, GraduationCap, User, Menu, X, TrendingUp, Clock, Search, Home } from 'lucide-react';
 import { db } from '../../lib/database';
 import { ExamRepository } from '../../repositories';
 import MyClasses from './MyClasses';
@@ -19,7 +19,11 @@ interface PerformanceData {
   percentage: number;
 }
 
-export default function StudentDashboard() {
+interface StudentDashboardProps {
+  onGoToLanding?: () => void;
+}
+
+export default function StudentDashboard({ onGoToLanding }: StudentDashboardProps) {
   const { profile, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -147,6 +151,16 @@ export default function StudentDashboard() {
               className="lg:hidden text-white hover:bg-slate-800 p-2 rounded-lg transition"
             >
               <X className="w-6 h-6" />
+            </button>
+          </div>
+
+          <div className="mb-4">
+            <button
+              onClick={onGoToLanding}
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-300 hover:bg-slate-800 hover:text-white`}
+            >
+              <Home className="w-5 h-5" />
+              <span className="font-medium">Go to Website</span>
             </button>
           </div>
 

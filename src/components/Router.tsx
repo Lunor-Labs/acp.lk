@@ -8,7 +8,7 @@ import LandingPage from './public/LandingPage';
 
 export default function Router() {
   const { user, profile, loading } = useAuth();
-  const [showAuth, setShowAuth] = useState<'landing' | 'login' | 'register'>('landing');
+  const [view, setView] = useState<'landing' | 'login' | 'register' | 'portal'>('landing');
 
   if (loading) {
     return (
@@ -21,31 +21,53 @@ export default function Router() {
     );
   }
 
-  if (!user || !profile) {
-    if (showAuth === 'landing') {
-      return <LandingPage onLoginRequest={() => setShowAuth('login')} />;
-    }
-
+  // Handle landing page view regardless of auth status
+  if (view === 'landing') {
     return (
-      <AuthPanel
-        defaultMode={showAuth === 'login' ? 'login' : 'register'}
+      <LandingPage
+        onLoginRequest={() => {
+          if (user && profile) {
+            setView('portal');
+          } else {
+            setView('login');
+          }
+        }}
       />
     );
   }
 
+  // Not on landing page, check if logged in
+  if (!user || !profile) {
+    return (
+      <AuthPanel
+        defaultMode={view === 'register' ? 'register' : 'login'}
+        onBackToHome={() => setView('landing')}
+      />
+    );
+  }
+
+  // Logged in and not on landing page: show appropriate dashboard
+  const handleGoToLanding = () => setView('landing');
+
   switch (profile.role) {
     case 'admin':
-      return <AdminDashboard />;
+      return <AdminDashboard onGoToLanding={handleGoToLanding} />;
     case 'teacher':
-      return <TeacherDashboard />;
+      return <TeacherDashboard onGoToLanding={handleGoToLanding} />;
     case 'student':
-      return <StudentDashboard />;
+      return <StudentDashboard onGoToLanding={handleGoToLanding} />;
     default:
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
           <div className="text-center">
             <h1 className="text-4xl font-bold text-gray-800 mb-4">Invalid Role</h1>
             <p className="text-gray-600">Your account role is not recognized.</p>
+            <button
+              onClick={handleGoToLanding}
+              className="mt-4 text-teal-600 hover:text-teal-700 font-medium"
+            >
+              Back to Landing Page
+            </button>
           </div>
         </div>
       );

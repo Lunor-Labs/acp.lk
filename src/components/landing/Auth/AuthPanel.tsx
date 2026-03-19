@@ -9,9 +9,10 @@ import acpLogo from '../../../assets/acp-logo.webp';
 
 interface AuthPanelProps {
   defaultMode?: 'login' | 'register';
+  onBackToHome?: () => void;
 }
 
-const AuthPanel: React.FC<AuthPanelProps> = ({ defaultMode = 'login' }) => {
+const AuthPanel: React.FC<AuthPanelProps> = ({ defaultMode = 'login', onBackToHome }) => {
   const [mode, setMode] = useState<'login' | 'register' | 'forgot-password'>(defaultMode);
   const { loading: authLoading } = useAuth();
 
@@ -47,7 +48,7 @@ const AuthPanel: React.FC<AuthPanelProps> = ({ defaultMode = 'login' }) => {
         <div className="auth-card">
           <div className="auth-header">
             <button
-              onClick={() => window.location.reload()}
+              onClick={onBackToHome}
               className="back-to-home"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
