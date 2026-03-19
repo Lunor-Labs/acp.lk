@@ -98,9 +98,13 @@ export default function MyClasses() {
       if (teacherData) {
         setTeacherId(teacherData.id);
         await loadClasses(teacherData.id);
+      } else {
+        // No teacher record found — stop loading so UI shows an empty state
+        setLoading(false);
       }
     } catch (error) {
       console.error('Error loading teacher data:', error);
+      setLoading(false);
     }
   };
 
@@ -220,9 +224,20 @@ export default function MyClasses() {
               <div className="flex items-center justify-center h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#eb1b23]"></div>
               </div>
+            ) : !teacherId ? (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <AlertTriangle className="w-8 h-8 text-amber-500" />
+                </div>
+                <h4 className="text-lg font-semibold text-gray-800 mb-2">Teacher profile not set up</h4>
+                <p className="text-sm text-gray-500 max-w-sm mx-auto">
+                  Your account role is set to Teacher, but no teacher record was found in the database.
+                  Please contact an administrator to complete your teacher profile setup.
+                </p>
+              </div>
             ) : filteredClasses.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-gray-500">No classes found</p>
+                <p className="text-gray-500">No classes found. Create your first class using the form →</p>
               </div>
             ) : (
               <div className="space-y-4">

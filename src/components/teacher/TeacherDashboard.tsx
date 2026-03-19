@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { LayoutDashboard, Users, FileText, Package, LogOut, GraduationCap, TrendingUp, DollarSign, UserPlus, User, Menu, X, Image, MessageSquare, Trophy, Star } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Package, LogOut, GraduationCap, TrendingUp, DollarSign, UserPlus, User, Menu, X, Image, MessageSquare, Trophy, AlertTriangle } from 'lucide-react';
 import MyClasses from './MyClasses';
 import Exams from './Exams';
 import StudyPacks from './StudyPacks';
@@ -30,6 +30,7 @@ export default function TeacherDashboard() {
   const [activeTab, setActiveTab] = useState('classes');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [teacherId, setTeacherId] = useState<string | null>(null);
+  const [teacherLoading, setTeacherLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats>({
     totalStudents: 0,
     newStudents: 0,
@@ -42,9 +43,13 @@ export default function TeacherDashboard() {
   useEffect(() => {
     if (profile?.id) {
       // Resolve the teacher record once and store its ID
-      teacherRepository.findByProfileId(profile.id).then((teacher) => {
-        if (teacher) setTeacherId(teacher.id);
-      });
+      setTeacherLoading(true);
+      teacherRepository.findByProfileId(profile.id)
+        .then((teacher) => {
+          if (teacher) setTeacherId(teacher.id);
+        })
+        .catch((err) => console.error('Error fetching teacher record:', err))
+        .finally(() => setTeacherLoading(false));
     }
   }, [profile?.id]);
 
@@ -172,12 +177,12 @@ export default function TeacherDashboard() {
       )}
 
       <aside className={`
-        fixed lg:static inset-y-0 left-0 z-50
-        w-64 bg-slate-900 text-white flex flex-col
-        h-screen overflow-hidden
-        transform transition-transform duration-300 ease-in-out
+        fixed lg:static inset - y - 0 left - 0 z - 50
+w - 64 bg - slate - 900 text - white flex flex - col
+h - screen overflow - hidden
+        transform transition - transform duration - 300 ease -in -out
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-      `}>
+`}>
         <div className="p-6 flex-1 flex flex-col relative">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center space-x-3">
@@ -203,10 +208,10 @@ export default function TeacherDashboard() {
                 setActiveTab('dashboard');
                 setIsMobileMenuOpen(false);
               }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'dashboard'
+              className={`w - full flex items - center space - x - 3 px - 4 py - 3 rounded - xl transition - all duration - 200 ${activeTab === 'dashboard'
                 ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-500/30'
                 : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                }`}
+                } `}
             >
               <LayoutDashboard className="w-5 h-5" />
               <span className="font-medium">Dashboard</span>
@@ -217,10 +222,10 @@ export default function TeacherDashboard() {
                 setActiveTab('classes');
                 setIsMobileMenuOpen(false);
               }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'classes'
+              className={`w - full flex items - center space - x - 3 px - 4 py - 3 rounded - xl transition - all duration - 200 ${activeTab === 'classes'
                 ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-500/30'
                 : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                }`}
+                } `}
             >
               <GraduationCap className="w-5 h-5" />
               <span className="font-medium">My Classes</span>
@@ -231,10 +236,10 @@ export default function TeacherDashboard() {
                 setActiveTab('exams');
                 setIsMobileMenuOpen(false);
               }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'exams'
+              className={`w - full flex items - center space - x - 3 px - 4 py - 3 rounded - xl transition - all duration - 200 ${activeTab === 'exams'
                 ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-500/30'
                 : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                }`}
+                } `}
             >
               <FileText className="w-5 h-5" />
               <span className="font-medium">Exams</span>
@@ -245,10 +250,10 @@ export default function TeacherDashboard() {
                 setActiveTab('study-packs');
                 setIsMobileMenuOpen(false);
               }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'study-packs'
+              className={`w - full flex items - center space - x - 3 px - 4 py - 3 rounded - xl transition - all duration - 200 ${activeTab === 'study-packs'
                 ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-500/30'
                 : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                }`}
+                } `}
             >
               <Package className="w-5 h-5" />
               <span className="font-medium">Study Packs</span>
@@ -263,10 +268,10 @@ export default function TeacherDashboard() {
                 setActiveTab('gallery');
                 setIsMobileMenuOpen(false);
               }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'gallery'
+              className={`w - full flex items - center space - x - 3 px - 4 py - 3 rounded - xl transition - all duration - 200 ${activeTab === 'gallery'
                 ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-500/30'
                 : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                }`}
+                } `}
             >
               <Image className="w-5 h-5" />
               <span className="font-medium">Gallery</span>
@@ -277,10 +282,10 @@ export default function TeacherDashboard() {
                 setActiveTab('reviews');
                 setIsMobileMenuOpen(false);
               }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'reviews'
+              className={`w - full flex items - center space - x - 3 px - 4 py - 3 rounded - xl transition - all duration - 200 ${activeTab === 'reviews'
                 ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-500/30'
                 : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                }`}
+                } `}
             >
               <MessageSquare className="w-5 h-5" />
               <span className="font-medium">Reviews</span>
@@ -291,10 +296,10 @@ export default function TeacherDashboard() {
                 setActiveTab('test-results');
                 setIsMobileMenuOpen(false);
               }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'test-results'
+              className={`w - full flex items - center space - x - 3 px - 4 py - 3 rounded - xl transition - all duration - 200 ${activeTab === 'test-results'
                 ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-500/30'
                 : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                }`}
+                } `}
             >
               <Trophy className="w-5 h-5" />
               <span className="font-medium">Test Results</span>
@@ -305,12 +310,12 @@ export default function TeacherDashboard() {
                 setActiveTab('success');
                 setIsMobileMenuOpen(false);
               }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'success'
+              className={`w - full flex items - center space - x - 3 px - 4 py - 3 rounded - xl transition - all duration - 200 ${activeTab === 'success'
                 ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-500/30'
                 : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                }`}
+                } `}
             >
-              <Star className="w-5 h-5" />
+              <Trophy className="w-5 h-5" />
               <span className="font-medium">Success</span>
             </button>
           </nav>
@@ -361,29 +366,29 @@ export default function TeacherDashboard() {
         ) : activeTab === 'study-packs' ? (
           <StudyPacks />
         ) : activeTab === 'gallery' ? (
-          teacherId ? <GalleryManager teacherId={teacherId} /> : (
+          teacherLoading ? (
             <div className="flex items-center justify-center h-64">
               <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#eb1b23]" />
             </div>
-          )
+          ) : teacherId ? <GalleryManager teacherId={teacherId} /> : <TeacherProfileMissing />
         ) : activeTab === 'reviews' ? (
-          teacherId ? <ReviewsManager teacherId={teacherId} /> : (
+          teacherLoading ? (
             <div className="flex items-center justify-center h-64">
               <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#eb1b23]" />
             </div>
-          )
+          ) : teacherId ? <ReviewsManager teacherId={teacherId} /> : <TeacherProfileMissing />
         ) : activeTab === 'test-results' ? (
-          teacherId ? <TestResultsManager teacherId={teacherId} /> : (
+          teacherLoading ? (
             <div className="flex items-center justify-center h-64">
               <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#eb1b23]" />
             </div>
-          )
+          ) : teacherId ? <TestResultsManager teacherId={teacherId} /> : <TeacherProfileMissing />
         ) : activeTab === 'success' ? (
-          teacherId ? <SuccessManager teacherId={teacherId} /> : (
+          teacherLoading ? (
             <div className="flex items-center justify-center h-64">
               <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#eb1b23]" />
             </div>
-          )
+          ) : teacherId ? <SuccessManager teacherId={teacherId} /> : <TeacherProfileMissing />
         ) : activeTab === 'dashboard' ? (
           <div className="p-4 sm:p-6 lg:p-8">
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">Dashboard</h2>
@@ -514,6 +519,23 @@ export default function TeacherDashboard() {
   );
 }
 
+function TeacherProfileMissing() {
+  return (
+    <div className="p-8 flex items-center justify-center h-64">
+      <div className="text-center">
+        <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
+          <AlertTriangle className="w-8 h-8 text-amber-500" />
+        </div>
+        <h4 className="text-lg font-semibold text-gray-800 mb-2">Teacher profile not set up</h4>
+        <p className="text-sm text-gray-500 max-w-sm mx-auto">
+          Your account role is set to Teacher, but no teacher record was found.
+          Please ask an administrator to create your teacher profile in the database.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function StudentGrowthChart({ data }: { data: StudentGrowthData[] }) {
   const maxCount = Math.max(...data.map(d => d.count), 1);
   const chartHeight = 250;
@@ -529,13 +551,13 @@ function StudentGrowthChart({ data }: { data: StudentGrowthData[] }) {
   });
 
   const pathData = points.map((p, i) =>
-    `${i === 0 ? 'M' : 'L'} ${p.x},${p.y}`
+    `${i === 0 ? 'M' : 'L'} ${p.x},${p.y} `
   ).join(' ');
 
   return (
     <div className="w-full overflow-x-auto">
       <svg
-        viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+        viewBox={`0 0 ${chartWidth} ${chartHeight} `}
         className="w-full"
         style={{ maxWidth: '800px', margin: '0 auto' }}
       >
