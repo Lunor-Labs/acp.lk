@@ -159,7 +159,7 @@ export default function TestResultsManager({ teacherId }: TestResultsManagerProp
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
                 <h4 className="text-sm font-semibold text-blue-800 mb-1">CSV Format</h4>
                 <p className="text-xs text-blue-700 mb-2">Your CSV should have these columns (header row required):</p>
-                <code className="text-xs bg-blue-100 text-blue-900 px-3 py-1.5 rounded-lg block font-mono">
+                <code className="text-xs bg-blue-100 text-blue-900 px-3 py-1.5 rounded-lg block font-mono overflow-x-auto">
                     student_name,school,marks,student_image_url
                 </code>
                 <p className="text-xs text-blue-600 mt-2">

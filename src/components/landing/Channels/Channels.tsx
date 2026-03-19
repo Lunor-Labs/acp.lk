@@ -14,21 +14,21 @@ const Channels: React.FC = () => {
       year: '2026',
       category: 'THEORY',
       buttonText: 'Join Now',
-      joinLink: '#',
+      joinLink: 'https://t.me/+OzupmFyuZb9mYjU1',
       image: twenty26theory
     },
     {
       year: '2027',
       category: 'THEORY',
       buttonText: 'Join Now',
-      joinLink: '#',
+      joinLink: 'https://t.me/physics2027amilac',
       image: twenty27theory
     },
     {
       year: '2028',
       category: 'THEORY',
       buttonText: 'Join Now',
-      joinLink: '#',
+      joinLink: 'https://t.me/physics2028amilac',
       image: twenty28theory
     }
   ];

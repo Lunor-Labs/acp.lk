@@ -174,6 +174,7 @@ export default function TeacherDashboard() {
       <aside className={`
         fixed lg:static inset-y-0 left-0 z-50
         w-64 bg-slate-900 text-white flex flex-col
+        h-screen overflow-hidden
         transform transition-transform duration-300 ease-in-out
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
@@ -196,7 +197,7 @@ export default function TeacherDashboard() {
             </button>
           </div>
 
-          <nav className="space-y-1">
+          <nav className="space-y-1 overflow-y-auto flex-1 -mx-2 px-2 max-h-[calc(100vh-280px)] lg:max-h-none">
             <button
               onClick={() => {
                 setActiveTab('dashboard');

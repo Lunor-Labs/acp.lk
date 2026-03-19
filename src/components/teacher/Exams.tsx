@@ -874,20 +874,20 @@ export default function Exams() {
 
                   <div className="space-y-2">
                     {question.options.map((option, optIndex) => (
-                      <div key={optIndex} className="flex items-center space-x-2">
+                      <div key={optIndex} className="flex items-center space-x-2 min-w-0">
                         <input
                           type="radio"
                           name={`correct-${question.id}`}
                           checked={question.correct_answer === String.fromCharCode(65 + optIndex)}
                           onChange={() => updateQuestion(question.id, 'correct_answer', String.fromCharCode(65 + optIndex))}
-                          className="text-[#eb1b23] focus:ring-[#eb1b23]"
+                          className="text-[#eb1b23] focus:ring-[#eb1b23] flex-shrink-0"
                         />
                         <input
                           type="text"
                           value={option}
                           onChange={(e) => updateQuestionOption(question.id, optIndex, e.target.value)}
                           placeholder={`Option ${String.fromCharCode(65 + optIndex)}`}
-                          className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#eb1b23] focus:border-transparent"
+                          className="flex-1 min-w-0 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#eb1b23] focus:border-transparent"
                         />
                       </div>
                     ))}
