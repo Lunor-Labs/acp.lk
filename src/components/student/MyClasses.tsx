@@ -8,14 +8,16 @@ import {
   BookOpen,
   Clock,
   Video,
-  FileText,
   Lock,
   CheckCircle,
   X,
   Download,
-  Play,
   Calendar,
-  User
+  User,
+  PlayCircle,
+  FileText as FileIcon,
+  Play,
+  FileText
 } from 'lucide-react';
 
 interface Class {
@@ -30,6 +32,7 @@ interface Class {
   zoom_link: string;
   next_session_date: string;
   materials: Material[];
+  weeks?: any[];
   teacher: {
     id: string;
     profile: {
@@ -93,6 +96,7 @@ export default function MyClasses() {
           zoom_link,
           next_session_date,
           materials,
+          weeks,
           teacher:teachers(
             id,
             profile:profiles(
@@ -492,22 +496,24 @@ export default function MyClasses() {
 
 function MaterialsModal({ classItem, onClose }: { classItem: Class; onClose: () => void }) {
   const materials = classItem.materials || [];
+  const weeks = classItem.weeks || [];
 
   const groupedMaterials = materials.reduce((acc, material) => {
-    if (!acc[material.week]) {
-      acc[material.week] = [];
+    const weekName = material.week || 'General Materials';
+    if (!acc[weekName]) {
+      acc[weekName] = [];
     }
-    acc[material.week].push(material);
+    acc[weekName].push(material);
     return acc;
   }, {} as Record<string, Material[]>);
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
-        <div className="bg-gradient-to-r from-[#eb1b23] to-red-600 p-6 flex items-center justify-between">
+        <div className="bg-gradient-to-r from-teal-600 to-teal-700 p-6 flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold text-white mb-1">{classItem.title}</h2>
-            <p className="text-teal-50">Course Materials</p>
+            <p className="text-teal-50">Course Content & Materials</p>
           </div>
           <button
             onClick={onClose}
@@ -517,25 +523,106 @@ function MaterialsModal({ classItem, onClose }: { classItem: Class; onClose: () 
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto max-h-[calc(80vh-120px)]">
-          {materials.length === 0 ? (
-            <div className="text-center py-12">
-              <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-600">No materials available yet</p>
-            </div>
-          ) : (
+        <div className="p-6 overflow-y-auto max-h-[calc(80vh-120px)] bg-gray-50">
+          {weeks.length > 0 ? (
             <div className="space-y-6">
-              {Object.entries(groupedMaterials).map(([week, weekMaterials]) => (
-                <div key={week} className="bg-gray-50 rounded-xl p-5 border border-gray-200">
+              {weeks.map((week: any, idx: number) => (
+                <div key={week.id || idx} className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                  <div className="bg-gray-50 px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-[#eb1b23]/10 flex items-center justify-center text-[#eb1b23] font-bold">
+                        {idx + 1}
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-900">{week.title}</h3>
+                        {week.description && <p className="text-sm text-gray-500">{week.description}</p>}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {week.zoom_link && (
+                        <a
+                          href={week.zoom_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm font-semibold hover:bg-blue-100 transition border border-blue-100"
+                        >
+                          <Video className="w-4 h-4" />
+                          Join Zoom
+                        </a>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="p-4 space-y-4">
+                    {week.recordings?.length > 0 && (
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Video Recordings</label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {week.recordings.map((rec: string, rIdx: number) => (
+                            <a
+                              key={rIdx}
+                              href={rec}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-3 p-3 bg-red-50 text-[#eb1b23] rounded-xl hover:bg-red-100 transition border border-red-100 group"
+                            >
+                              <PlayCircle className="w-5 h-5 flex-shrink-0" />
+                              <div className="min-w-0">
+                                <p className="text-xs font-bold truncate">Part {rIdx + 1}</p>
+                                <p className="text-[10px] opacity-70 truncate">Watch Recording</p>
+                              </div>
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Documents & Materials</label>
+                      <div className="space-y-2">
+                        {week.materials?.length > 0 ? (
+                          week.materials.map((mat: any, mIdx: number) => (
+                            <div key={mIdx} className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition border border-transparent hover:border-gray-100 bg-white shadow-sm">
+                              <div className="flex items-center gap-3">
+                                {mat.type === 'pdf' ? (
+                                  <FileIcon className="w-5 h-5 text-red-500" />
+                                ) : (
+                                  <Video className="w-5 h-5 text-blue-500" />
+                                )}
+                                <span className="font-medium text-gray-700 text-sm">{mat.name}</span>
+                              </div>
+                              <a
+                                href={mat.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-2 text-[#eb1b23] hover:bg-red-50 rounded-lg transition"
+                              >
+                                <Download className="w-5 h-5" />
+                              </a>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-sm text-gray-400 italic text-center py-2 bg-white rounded-xl border border-dashed border-gray-200">No documents for this module</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : materials.length > 0 ? (
+            <div className="space-y-6">
+              {Object.entries(groupedMaterials).map(([weekName, weekMaterials]) => (
+                <div key={weekName} className="bg-white rounded-xl p-5 border border-gray-200">
                   <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-[#eb1b23]" />
-                    {week}
+                    <Calendar className="w-5 h-5 text-teal-600" />
+                    {weekName}
                   </h3>
                   <div className="space-y-3">
-                    {weekMaterials.map((material) => (
+                    {weekMaterials.map((material, mIdx) => (
                       <div
-                        key={material.id}
-                        className="bg-white rounded-lg p-4 flex items-center justify-between hover:shadow-md transition group"
+                        key={mIdx}
+                        className="bg-gray-50 rounded-lg p-4 flex items-center justify-between hover:shadow-md transition group"
                       >
                         <div className="flex items-center gap-3 flex-1">
                           {material.type === 'pdf' ? (
@@ -549,7 +636,7 @@ function MaterialsModal({ classItem, onClose }: { classItem: Class; onClose: () 
                           )}
                           <div>
                             <p className="font-semibold text-gray-900 group-hover:text-[#eb1b23] transition">
-                              {material.topic}
+                              {material.name || material.topic}
                             </p>
                             <p className="text-sm text-gray-500 capitalize">{material.type}</p>
                           </div>
@@ -558,25 +645,24 @@ function MaterialsModal({ classItem, onClose }: { classItem: Class; onClose: () 
                           href={material.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-2 px-4 py-2 bg-[#eb1b23] text-white rounded-lg hover:bg-red-700 transition font-medium"
+                          className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition font-medium"
                         >
-                          {material.type === 'pdf' ? (
-                            <>
-                              <Download className="w-4 h-4" />
-                              Download
-                            </>
-                          ) : (
-                            <>
-                              <Play className="w-4 h-4" />
-                              Watch
-                            </>
-                          )}
+                          <Download className="w-4 h-4" />
+                          Download
                         </a>
                       </div>
                     ))}
                   </div>
                 </div>
               ))}
+            </div>
+          ) : (
+            <div className="text-center py-20">
+              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FileText className="w-10 h-10 text-gray-300" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">No content yet</h3>
+              <p className="text-gray-500">Your teacher hasn't uploaded any materials for this class.</p>
             </div>
           )}
         </div>

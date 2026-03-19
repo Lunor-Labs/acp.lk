@@ -7,12 +7,13 @@ export interface Class {
     title: string;
     description: string;
     subject: string;
-    schedule: string;
-    zoom_link: string;
+    schedule?: string;
+    zoom_link?: string;
     price: number;
     is_free: boolean;
     is_active: boolean;
     materials: any[];
+    weeks?: any[]; // Array of weekly subclasses
     next_session_date?: string;
     status?: string;
     created_at: string;
