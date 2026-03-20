@@ -15,6 +15,9 @@ export interface PendingRegisterData {
   role: string;
   alYear?: number;
   center?: ClassCenter;
+  nic?: string;
+  whatsappNo?: string;
+  mobileNo?: string;
   password: string;
   studentId?: string; // pre-generated before OTP send
 }
@@ -152,7 +155,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     token: string,
     data: PendingRegisterData
   ): Promise<{ studentId: string }> {
-    const { fullName, role, alYear, center, password, studentId } = data;
+    const { fullName, role, alYear, center, password, studentId, nic, whatsappNo, mobileNo } = data;
 
     // Step 1: verify OTP → creates Supabase auth user (passwordless session)
     const { user: newUser, error: verifyError } = await db.auth.verifyOtp(email, token);
@@ -191,6 +194,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       student_id: finalStudentId,
       al_year: alYear,
       center: center,
+      nic,
+      whatsapp_no: whatsappNo,
+      mobile_no: mobileNo,
     });
 
     // Step 6: create teacher row if applicable

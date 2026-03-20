@@ -23,6 +23,9 @@ const RegisterForm: React.FC<Props> = ({ onSwitchToLogin, onRegisterSuccess }) =
   const [showPw, setShowPw] = useState(false);
   const [alYear, setAlYear] = useState<number>(2026);
   const [center, setCenter] = useState<ClassCenter>('online');
+  const [nic, setNic] = useState('');
+  const [whatsappNo, setWhatsappNo] = useState('');
+  const [mobileNo, setMobileNo] = useState('');
 
   // ─── OTP step ────────────────────────────────────────────────────────────
   const [otp, setOtp] = useState('');
@@ -50,6 +53,18 @@ const RegisterForm: React.FC<Props> = ({ onSwitchToLogin, onRegisterSuccess }) =
       setError('Please enter your email address');
       return;
     }
+    if (!nic) {
+      setError('Please enter your NIC');
+      return;
+    }
+    if (!mobileNo) {
+      setError('Please enter your mobile number');
+      return;
+    }
+    if (!whatsappNo) {
+      setError('Please enter your WhatsApp mobile number');
+      return;
+    }
     if (!password || password.length < 6) {
       setError('Password must be at least 6 characters');
       return;
@@ -67,6 +82,9 @@ const RegisterForm: React.FC<Props> = ({ onSwitchToLogin, onRegisterSuccess }) =
         role: 'student',
         alYear,
         center,
+        nic,
+        whatsappNo,
+        mobileNo,
         password,
       };
 
@@ -254,6 +272,42 @@ const RegisterForm: React.FC<Props> = ({ onSwitchToLogin, onRegisterSuccess }) =
             required
             disabled={loading}
           />
+        </div>
+
+        <div className="form-group">
+          <label>NIC Number</label>
+          <input
+            value={nic}
+            onChange={(e) => setNic(e.target.value)}
+            placeholder="National ID Card Number"
+            required
+            disabled={loading}
+          />
+        </div>
+
+        <div className="form-row">
+          <div className="form-group flex-1">
+            <label>Mobile No</label>
+            <input
+              type="tel"
+              value={mobileNo}
+              onChange={(e) => setMobileNo(e.target.value.replace(/\D/g, ''))}
+              placeholder="0771234567"
+              required
+              disabled={loading}
+            />
+          </div>
+          <div className="form-group flex-1">
+            <label>WhatsApp No</label>
+            <input
+              type="tel"
+              value={whatsappNo}
+              onChange={(e) => setWhatsappNo(e.target.value.replace(/\D/g, ''))}
+              placeholder="0771234567"
+              required
+              disabled={loading}
+            />
+          </div>
         </div>
 
         {/* ── Password ── */}

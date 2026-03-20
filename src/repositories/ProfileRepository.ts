@@ -21,6 +21,9 @@ export interface Profile {
     student_id?: string;
     al_year?: number;
     center?: ClassCenter;
+    nic?: string;
+    whatsapp_no?: string;
+    mobile_no?: string;
     created_at: string;
     updated_at: string;
 }
