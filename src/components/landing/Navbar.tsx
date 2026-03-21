@@ -74,7 +74,7 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
       <div className="max-w-screen-2xl mx-auto w-full">
         <div className="flex items-center justify-between h-16 lg:h-20 px-4 lg:px-0 relative">
           {/* Mobile Menu Button - Left */}
-          <div className="lg:hidden flex-shrink-0 z-10">
+          <div className="lg:hidden flex-1 flex justify-start z-10">
             <button
               className="flex flex-col gap-1.5 p-1 bg-transparent"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -88,7 +88,7 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
 
           {/* Logo/Brand Section - Centered on Mobile */}
           <div
-            className="absolute left-1/2 -translate-x-1/2 lg:static lg:transform-none flex items-center justify-center lg:px-4 xl:px-8 cursor-pointer bg-transparent h-full min-w-[120px] lg:min-w-[180px] xl:min-w-[240px] z-10"
+            className="flex items-center justify-center lg:px-4 xl:px-8 cursor-pointer bg-transparent h-full min-w-[100px] lg:min-w-[180px] xl:min-w-[240px] z-10 flex-shrink-0"
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           >
             <img
@@ -132,20 +132,20 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
           </div>
 
           {/* Mobile CTA only */}
-          <div className="flex lg:hidden items-center z-10">
+          <div className="flex-1 lg:hidden flex items-center justify-end z-10">
             {user ? (
               <button
                 onClick={onLoginRequest}
-                className="bg-white text-black font-bold px-5 py-2 rounded-full shadow-lg transition-all duration-200 hover:bg-gray-100 text-sm whitespace-nowrap"
+                className="bg-white text-black font-bold px-4 py-2 rounded-full shadow-lg transition-all duration-200 hover:bg-gray-100 text-xs sm:text-sm whitespace-nowrap"
               >
-                Go to Portal
+                Portal
               </button>
             ) : (
               <button
                 onClick={onLoginRequest}
-                className="bg-white text-black font-bold px-5 py-2 rounded-full shadow-lg transition-all duration-200 hover:bg-gray-100 text-sm whitespace-nowrap"
+                className="bg-white text-black font-bold px-4 py-2 rounded-full shadow-lg transition-all duration-200 hover:bg-gray-100 text-xs sm:text-sm whitespace-nowrap"
               >
-                Student Portal
+                Portal
               </button>
             )}
           </div>
