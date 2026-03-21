@@ -183,24 +183,32 @@ const Reviews: React.FC = () => {
         <div className="relative w-full flex items-center justify-center">
           {/* Mobile: single centered card */}
           <div className="w-full overflow-x-hidden py-6 sm:py-8 md:py-10 md:hidden">
-            <div className="flex justify-center px-2 sm:px-0">
-              <div className="w-52 sm:w-64 md:w-[22rem] h-52 sm:h-64 md:h-[22rem] mx-auto flex flex-col items-center">
-                <div className="relative w-full h-full bg-gradient-to-b from-neutral-800 to-neutral-900 border border-white/60 rounded-[20px] sm:rounded-[28px] md:rounded-[32px] px-2.5 sm:px-4 md:px-6 py-3 sm:py-6 md:py-8 text-center text-white shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col items-center justify-between">
-                  <div className="absolute -top-6 sm:-top-8 md:-top-10 left-1/2 -translate-x-1/2 w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full border-4 border-white bg-black/80 overflow-hidden flex items-center justify-center">
+            <div className="flex justify-center px-4 sm:px-6">
+              <div className="w-full max-w-xs sm:max-w-sm mx-auto flex flex-col items-center">
+                <div className="relative w-full bg-gradient-to-b from-neutral-800 to-neutral-900 border border-white/60 rounded-[20px] sm:rounded-[28px] px-4 sm:px-6 pt-10 sm:pt-12 pb-5 sm:pb-6 text-center text-white shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col items-center">
+                  {/* Avatar */}
+                  <div className="absolute -top-6 sm:-top-8 left-1/2 -translate-x-1/2 w-12 h-12 sm:w-16 sm:h-16 rounded-full border-4 border-white bg-black/80 overflow-hidden flex items-center justify-center">
                     <ReviewAvatar review={currentReview} className="w-full h-full object-cover" />
                   </div>
 
-                  <h4 className="mt-3 sm:mt-6 md:mt-8 text-[10px] sm:text-sm md:text-xl font-bold">{currentReview.name}</h4>
-                  <p className="mt-1 sm:mt-2 md:mt-6 text-[8px] sm:text-xs md:text-sm leading-relaxed md:leading-relaxed text-gray-100 line-clamp-2 sm:line-clamp-3 md:line-clamp-none">
-                    {currentReview.text}
-                  </p>
+                  {/* Name */}
+                  <h4 className="text-sm sm:text-base font-bold mb-2">{currentReview.name}</h4>
 
-                  <div className="mt-1 sm:mt-2 md:mt-6 flex justify-center gap-0.5 text-yellow-400 text-xs sm:text-base md:text-base">
+                  {/* Stars */}
+                  <div className="flex justify-center gap-0.5 text-yellow-400 text-sm sm:text-base mb-3">
                     {[...Array(5)].map((_, i) => (
-                      <span key={i} className={i < currentReview.rating ? "text-yellow-400" : "text-gray-400"}>
+                      <span key={i} className={i < currentReview.rating ? 'text-yellow-400' : 'text-gray-500'}>
                         {i < currentReview.rating ? '★' : '☆'}
                       </span>
                     ))}
+                  </div>
+
+                  {/* Scrollable review text */}
+                  <div className="w-full max-h-36 sm:max-h-44 overflow-y-auto overscroll-contain rounded-lg px-1"
+                    style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.2) transparent' }}>
+                    <p className="text-xs sm:text-sm leading-relaxed text-gray-100">
+                      {currentReview.text}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -241,95 +249,44 @@ const Reviews: React.FC = () => {
               ))}
             </div>
           </div>
-          {/* Navigation Buttons for Mobile (Sides) and Desktop (Bottom) */}
-          <div className="absolute top-1/2 -translate-y-1/2 w-full flex justify-between px-2 sm:px-4 z-20 pointer-events-none md:hidden">
-            <button
-              className="w-10 h-10 rounded-full border border-white bg-neutral-900/80 flex items-center justify-center text-red-500 hover:bg-red-600 hover:text-white transition-colors duration-300 pointer-events-auto"
-              onClick={handlePrev}
-              aria-label="Previous review"
-            >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M15 18L9 12L15 6"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
-            <button
-              className="w-10 h-10 rounded-full border border-white bg-neutral-900/80 flex items-center justify-center text-red-500 hover:bg-red-600 hover:text-white transition-colors duration-300 pointer-events-auto"
-              onClick={handleNext}
-              aria-label="Next review"
-            >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M9 18L15 12L9 6"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
-          </div>
+
         </div>
 
-        {/* Navigation Buttons for Desktop (Bottom) */}
-        <div className="mt-8 hidden md:flex items-center justify-center gap-4">
+        {/* Navigation Buttons — shown on both mobile and desktop */}
+        <div className="mt-6 flex items-center justify-center gap-4">
           <button
             className="w-10 h-10 md:w-12 md:h-12 rounded-full border border-white bg-neutral-900 flex items-center justify-center text-red-500 hover:bg-red-600 hover:text-white transition-colors duration-300"
             onClick={handlePrev}
             aria-label="Previous review"
           >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M15 18L9 12L15 6"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
+
+          {/* Dot indicators */}
+          <div className="flex gap-2">
+            {reviews.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentIndex(i)}
+                aria-label={`Go to review ${i + 1}`}
+                className={`rounded-full transition-all duration-300 ${
+                  i === currentIndex
+                    ? 'w-6 h-2 bg-red-500'
+                    : 'w-2 h-2 bg-white/40 hover:bg-white/70'
+                }`}
+              />
+            ))}
+          </div>
+
           <button
             className="w-10 h-10 md:w-12 md:h-12 rounded-full border border-white bg-neutral-900 flex items-center justify-center text-red-500 hover:bg-red-600 hover:text-white transition-colors duration-300"
             onClick={handleNext}
             aria-label="Next review"
           >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M9 18L15 12L9 6"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
         </div>
