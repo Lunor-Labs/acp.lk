@@ -206,7 +206,7 @@ export default function TeacherDashboard({ onGoToLanding }: TeacherDashboardProp
             </button>
           </div>
 
-          <nav className="space-y-1 overflow-y-auto flex-1 -mx-2 px-2 max-h-[calc(100vh-280px)] lg:max-h-none">
+          <nav className="space-y-1 overflow-y-auto flex-1 -mx-2 px-2 max-h-[calc(100vh-280px)]">
             <button
               onClick={() => {
                 setActiveTab('dashboard');

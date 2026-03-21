@@ -15,17 +15,17 @@ const Footer: React.FC = () => {
   const socialLinks = [
     {
       name: 'Facebook',
-      url: '#',
+      url: 'https://www.facebook.com/share/1BDDM9Ua7x/',
       icon: <Facebook className="w-5 h-5" />
     },
     {
       name: 'YouTube',
-      url: '#',
+      url: 'https://youtube.com/@amila_c_edirimanna?si=Z1pQkH-SiuP9oIBv',
       icon: <Youtube className="w-5 h-5" />
     },
     {
       name: 'TikTok',
-      url: '#',
+      url: 'https://www.tiktok.com/@amilac123?_r=1&_t=ZS-94rv3RZacAJ',
       icon: <TiktokIcon className="w-5 h-5" />
     }
   ];
