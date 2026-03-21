@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import acpLogo from '../../assets/acp-logo.webp';
+import acpLogoWhite from '../../assets/acp-logo-white.webp';
 
 interface NavbarProps {
   onLoginRequest?: () => void;
@@ -92,7 +93,7 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           >
             <img
-              src={acpLogo}
+              src={isScrolled ? acpLogoWhite : acpLogo}
               alt="ACP Logo"
               className="h-12 lg:h-16 w-auto object-contain drop-shadow-xl transform origin-center"
             />
