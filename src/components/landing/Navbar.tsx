@@ -72,7 +72,7 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
         } w-full`}
     >
       <div className="max-w-screen-2xl mx-auto w-full">
-        <div className="flex items-center justify-between h-12 lg:h-12 px-4 lg:px-0 relative">
+        <div className="flex items-center justify-between h-16 lg:h-20 px-4 lg:px-0 relative">
           {/* Mobile Menu Button - Left */}
           <div className="lg:hidden flex-shrink-0 z-10">
             <button
@@ -88,13 +88,13 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
 
           {/* Logo/Brand Section - Centered on Mobile */}
           <div
-            className="absolute left-1/2 -translate-x-1/2 lg:static lg:transform-none flex items-center justify-center lg:px-4 xl:px-8 cursor-pointer bg-transparent lg:bg-[#8b0e11] h-full min-w-[120px] lg:min-w-[180px] xl:min-w-[240px] z-10"
+            className="absolute left-1/2 -translate-x-1/2 lg:static lg:transform-none flex items-center justify-center lg:px-4 xl:px-8 cursor-pointer bg-transparent h-full min-w-[120px] lg:min-w-[180px] xl:min-w-[240px] z-10"
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           >
             <img
               src={acpLogo}
               alt="ACP Logo"
-              className="h-10 lg:h-16 w-auto object-contain drop-shadow-xl transform origin-center"
+              className="h-12 lg:h-16 w-auto object-contain drop-shadow-xl transform origin-center"
             />
           </div>
 
