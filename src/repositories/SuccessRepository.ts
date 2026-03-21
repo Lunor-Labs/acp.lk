@@ -69,6 +69,22 @@ export class SuccessRepository extends BaseRepository<SuccessStudent> {
   }
 
   /**
+   * Only upload an image file to Supabase Storage and return the filename
+   */
+  async uploadSuccessImage(file: File): Promise<string> {
+    const ext = file.name.split('.').pop();
+    const fileName = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const storagePath = `${this.STORAGE_FOLDER}/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from(this.STORAGE_BUCKET)
+      .upload(storagePath, file, { upsert: false });
+
+    if (uploadError) throw uploadError;
+    return fileName;
+  }
+
+  /**
    * Upload an image file to Supabase Storage and create a DB record
    */
   async uploadSuccess(
@@ -79,16 +95,7 @@ export class SuccessRepository extends BaseRepository<SuccessStudent> {
     faculty: string,
     university: string
   ): Promise<SuccessStudentWithUrl> {
-    const ext = file.name.split('.').pop();
-    const fileName = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-    const storagePath = `${this.STORAGE_FOLDER}/${fileName}`;
-
-    // Upload to storage
-    const { error: uploadError } = await supabase.storage
-      .from(this.STORAGE_BUCKET)
-      .upload(storagePath, file, { upsert: false });
-
-    if (uploadError) throw uploadError;
+    const fileName = await this.uploadSuccessImage(file);
 
     // Save to DB
     const { data, error } = await supabase

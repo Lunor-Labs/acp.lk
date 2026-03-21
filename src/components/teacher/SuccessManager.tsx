@@ -120,20 +120,21 @@ export default function SuccessManager({ teacherId }: SuccessManagerProps) {
         setSaving(true);
         try {
             if (editingId) {
+                let newImagePath: string | undefined;
+
+                if (selectedFile) {
+                    newImagePath = await successRepository.uploadSuccessImage(selectedFile);
+                }
+
                 await successRepository.updateSuccess(editingId, {
                     full_name: form.full_name,
-                    index_no: BigInt(form.index_no),
+                    index_no: parseInt(form.index_no) as any,
                     results: form.results,
                     faculty: form.faculty,
                     university: form.university,
+                    ...(newImagePath && { image_path: newImagePath })
                 });
-                // If user chose a new image while editing, upload it too
-                if (selectedFile) {
-                    await successRepository.uploadSuccess(
-                        selectedFile, form.full_name, form.index_no,
-                        form.results, form.faculty, form.university
-                    );
-                }
+
                 showSuccessMsg('Student record updated successfully!');
             } else if (selectedFile) {
                 await successRepository.uploadSuccess(
