@@ -12,6 +12,7 @@ interface ReviewFormState {
     review_text: string;
     rating: number;
     student_image_url: string;
+    gender: 'male' | 'female' | null;
 }
 
 const EMPTY_FORM: ReviewFormState = {
@@ -19,7 +20,189 @@ const EMPTY_FORM: ReviewFormState = {
     review_text: '',
     rating: 5,
     student_image_url: '',
+    gender: null,
 };
+
+// ── Inline SVG avatars (no external dependency) ──────────────────────────────
+
+function MaleAvatarSVG({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className={className}>
+            {/* Background */}
+            <circle cx="50" cy="50" r="50" fill="#3B82F6" />
+            {/* Body */}
+            <ellipse cx="50" cy="85" rx="28" ry="20" fill="#1D4ED8" />
+            {/* Shirt */}
+            <ellipse cx="50" cy="78" rx="22" ry="16" fill="#2563EB" />
+            {/* Head */}
+            <circle cx="50" cy="38" r="20" fill="#FBBF24" />
+            {/* Hair */}
+            <ellipse cx="50" cy="22" rx="20" ry="10" fill="#1F2937" />
+            <rect x="30" y="22" width="40" height="8" fill="#1F2937" />
+            {/* Eyes */}
+            <circle cx="43" cy="37" r="3" fill="#1F2937" />
+            <circle cx="57" cy="37" r="3" fill="#1F2937" />
+            <circle cx="44" cy="36" r="1" fill="white" />
+            <circle cx="58" cy="36" r="1" fill="white" />
+            {/* Smile */}
+            <path d="M43 44 Q50 50 57 44" stroke="#1F2937" strokeWidth="2" fill="none" strokeLinecap="round" />
+        </svg>
+    );
+}
+
+function FemaleAvatarSVG({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className={className}>
+            {/* Background */}
+            <circle cx="50" cy="50" r="50" fill="#EC4899" />
+            {/* Body / dress */}
+            <ellipse cx="50" cy="87" rx="30" ry="18" fill="#BE185D" />
+            <path d="M28 70 Q50 90 72 70 Q65 55 50 58 Q35 55 28 70Z" fill="#DB2777" />
+            {/* Head */}
+            <circle cx="50" cy="38" r="20" fill="#FBBF24" />
+            {/* Long hair */}
+            <ellipse cx="50" cy="24" rx="21" ry="12" fill="#7C3AED" />
+            <rect x="29" y="24" width="8" height="26" rx="4" fill="#7C3AED" />
+            <rect x="63" y="24" width="8" height="26" rx="4" fill="#7C3AED" />
+            {/* Eyes */}
+            <circle cx="43" cy="37" r="3" fill="#1F2937" />
+            <circle cx="57" cy="37" r="3" fill="#1F2937" />
+            <circle cx="44" cy="36" r="1" fill="white" />
+            <circle cx="58" cy="36" r="1" fill="white" />
+            {/* Smile */}
+            <path d="M43 44 Q50 50 57 44" stroke="#BE185D" strokeWidth="2" fill="none" strokeLinecap="round" />
+        </svg>
+    );
+}
+
+/** Renders the right avatar: real image > gender avatar > initial */
+function StudentAvatar({
+    imageUrl,
+    gender,
+    name,
+    size = 'md',
+}: {
+    imageUrl: string | null;
+    gender: 'male' | 'female' | null;
+    name: string;
+    size?: 'sm' | 'md' | 'lg';
+}) {
+    const sizeClass = size === 'sm' ? 'w-10 h-10' : size === 'lg' ? 'w-16 h-16' : 'w-12 h-12';
+
+    if (imageUrl) {
+        return (
+            <div className={`${sizeClass} rounded-full flex-shrink-0 overflow-hidden`}>
+                <img src={imageUrl} alt={name} className="w-full h-full object-cover" />
+            </div>
+        );
+    }
+
+    if (gender === 'male') {
+        return (
+            <div className={`${sizeClass} rounded-full flex-shrink-0 overflow-hidden`}>
+                <MaleAvatarSVG className="w-full h-full" />
+            </div>
+        );
+    }
+
+    if (gender === 'female') {
+        return (
+            <div className={`${sizeClass} rounded-full flex-shrink-0 overflow-hidden`}>
+                <FemaleAvatarSVG className="w-full h-full" />
+            </div>
+        );
+    }
+
+    // Fallback: initial
+    return (
+        <div className={`${sizeClass} rounded-full flex-shrink-0 flex items-center justify-center bg-[#eb1b23]/10 text-[#eb1b23] font-bold text-lg`}>
+            {name[0]?.toUpperCase()}
+        </div>
+    );
+}
+
+// ── Gender Picker ─────────────────────────────────────────────────────────────
+
+function GenderPicker({
+    value,
+    onChange,
+}: {
+    value: 'male' | 'female' | null;
+    onChange: (g: 'male' | 'female' | null) => void;
+}) {
+    return (
+        <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+                Student Avatar <span className="text-gray-400 font-normal">(shown when no photo)</span>
+            </label>
+            <div className="flex gap-3 items-center">
+                {/* Male */}
+                <button
+                    type="button"
+                    onClick={() => onChange(value === 'male' ? null : 'male')}
+                    className={`flex flex-col items-center gap-1.5 px-4 py-3 rounded-xl border-2 transition-all ${
+                        value === 'male'
+                            ? 'border-blue-500 bg-blue-50 shadow-sm'
+                            : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50/40'
+                    }`}
+                >
+                    <MaleAvatarSVG className="w-12 h-12" />
+                    <span className={`text-xs font-semibold ${value === 'male' ? 'text-blue-600' : 'text-gray-500'}`}>
+                        Male
+                    </span>
+                    {value === 'male' && (
+                        <span className="inline-flex items-center gap-0.5 text-[10px] bg-blue-500 text-white px-1.5 py-0.5 rounded-full">
+                            <Check className="w-2.5 h-2.5" /> Selected
+                        </span>
+                    )}
+                </button>
+
+                {/* Female */}
+                <button
+                    type="button"
+                    onClick={() => onChange(value === 'female' ? null : 'female')}
+                    className={`flex flex-col items-center gap-1.5 px-4 py-3 rounded-xl border-2 transition-all ${
+                        value === 'female'
+                            ? 'border-pink-500 bg-pink-50 shadow-sm'
+                            : 'border-gray-200 bg-white hover:border-pink-300 hover:bg-pink-50/40'
+                    }`}
+                >
+                    <FemaleAvatarSVG className="w-12 h-12" />
+                    <span className={`text-xs font-semibold ${value === 'female' ? 'text-pink-600' : 'text-gray-500'}`}>
+                        Female
+                    </span>
+                    {value === 'female' && (
+                        <span className="inline-flex items-center gap-0.5 text-[10px] bg-pink-500 text-white px-1.5 py-0.5 rounded-full">
+                            <Check className="w-2.5 h-2.5" /> Selected
+                        </span>
+                    )}
+                </button>
+
+                {/* Preview */}
+                {value && (
+                    <div className="flex flex-col items-center gap-1 ml-2">
+                        <p className="text-xs text-gray-400 mb-1">Preview</p>
+                        <StudentAvatar
+                            imageUrl={null}
+                            gender={value}
+                            name="A"
+                            size="lg"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => onChange(null)}
+                            className="text-[10px] text-gray-400 hover:text-red-500 transition-colors"
+                        >
+                            Clear
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// ── Main Component ────────────────────────────────────────────────────────────
 
 export default function ReviewsManager({ teacherId }: ReviewsManagerProps) {
     const [reviews, setReviews] = useState<ClassReview[]>([]);
@@ -64,6 +247,7 @@ export default function ReviewsManager({ teacherId }: ReviewsManagerProps) {
             review_text: review.review_text,
             rating: review.rating,
             student_image_url: review.student_image_url || '',
+            gender: review.gender ?? null,
         });
         setShowForm(true);
     }
@@ -95,6 +279,7 @@ export default function ReviewsManager({ teacherId }: ReviewsManagerProps) {
                     review_text: form.review_text,
                     rating: form.rating,
                     student_image_url: form.student_image_url || null,
+                    gender: form.gender,
                 });
                 showSuccessMsg('Review updated!');
             } else {
@@ -104,7 +289,8 @@ export default function ReviewsManager({ teacherId }: ReviewsManagerProps) {
                     form.review_text,
                     form.rating,
                     form.student_image_url || undefined,
-                    reviews.length
+                    reviews.length,
+                    form.gender,
                 );
                 showSuccessMsg('Review added!');
             }
@@ -166,7 +352,7 @@ export default function ReviewsManager({ teacherId }: ReviewsManagerProps) {
                     <h3 className="text-lg font-semibold text-gray-800 mb-4">
                         {editingId ? 'Edit Review' : 'Add New Review'}
                     </h3>
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form onSubmit={handleSubmit} className="space-y-5">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Student Name *</label>
@@ -180,7 +366,7 @@ export default function ReviewsManager({ teacherId }: ReviewsManagerProps) {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Student Photo URL (optional)</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Student Photo URL <span className="font-normal text-gray-400">(optional — overrides avatar)</span></label>
                                 <input
                                     type="url"
                                     value={form.student_image_url}
@@ -190,6 +376,12 @@ export default function ReviewsManager({ teacherId }: ReviewsManagerProps) {
                                 />
                             </div>
                         </div>
+
+                        {/* Gender Picker */}
+                        <GenderPicker
+                            value={form.gender}
+                            onChange={(g) => setForm({ ...form, gender: g })}
+                        />
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1.5">Rating *</label>
@@ -278,22 +470,29 @@ export default function ReviewsManager({ teacherId }: ReviewsManagerProps) {
                                     : 'border-gray-200 bg-gray-100 opacity-60'
                                     }`}
                             >
-                                {/* Avatar */}
-                                <div className="w-12 h-12 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden">
-                                    {review.student_image_url ? (
-                                        <img src={review.student_image_url} alt={review.student_name} className="w-full h-full object-cover" />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center bg-[#eb1b23]/10 text-[#eb1b23] font-bold text-lg">
-                                            {review.student_name[0]?.toUpperCase()}
-                                        </div>
-                                    )}
-                                </div>
+                                {/* Avatar — real image > gender avatar > initial */}
+                                <StudentAvatar
+                                    imageUrl={review.student_image_url}
+                                    gender={review.gender}
+                                    name={review.student_name}
+                                    size="md"
+                                />
 
                                 {/* Content */}
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-start justify-between gap-2 mb-1">
                                         <div>
                                             <span className="font-semibold text-gray-900 text-sm">{review.student_name}</span>
+                                            {/* Gender badge */}
+                                            {review.gender && (
+                                                <span className={`ml-2 inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
+                                                    review.gender === 'male'
+                                                        ? 'bg-blue-100 text-blue-600'
+                                                        : 'bg-pink-100 text-pink-600'
+                                                }`}>
+                                                    {review.gender === 'male' ? '♂ Male' : '♀ Female'}
+                                                </span>
+                                            )}
                                             <div className="flex gap-0.5 mt-0.5">
                                                 {[1, 2, 3, 4, 5].map((s) => (
                                                     <span key={s} className={`text-sm ${s <= review.rating ? 'text-yellow-400' : 'text-gray-300'}`}>★</span>

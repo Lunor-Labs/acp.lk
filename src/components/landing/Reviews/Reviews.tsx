@@ -1,35 +1,103 @@
 import React, { useState, useEffect } from 'react';
-import type { Review } from '../../../types/landing';
 import testimonialBg from '../../../assets/testimonial-bg.webp';
 import { classReviewRepository } from '../../../repositories/ClassReviewRepository';
+
+interface Review {
+  id: number;
+  text: string;
+  name: string;
+  image: string | null;
+  gender: 'male' | 'female' | null;
+  rating: number;
+}
+
+// ── Inline gender SVG avatars ───────────────────────────────────────────────
+function MaleAvatarSVG({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className={className}>
+      <circle cx="50" cy="50" r="50" fill="#3B82F6" />
+      <ellipse cx="50" cy="85" rx="28" ry="20" fill="#1D4ED8" />
+      <ellipse cx="50" cy="78" rx="22" ry="16" fill="#2563EB" />
+      <circle cx="50" cy="38" r="20" fill="#FBBF24" />
+      <ellipse cx="50" cy="22" rx="20" ry="10" fill="#1F2937" />
+      <rect x="30" y="22" width="40" height="8" fill="#1F2937" />
+      <circle cx="43" cy="37" r="3" fill="#1F2937" />
+      <circle cx="57" cy="37" r="3" fill="#1F2937" />
+      <circle cx="44" cy="36" r="1" fill="white" />
+      <circle cx="58" cy="36" r="1" fill="white" />
+      <path d="M43 44 Q50 50 57 44" stroke="#1F2937" strokeWidth="2" fill="none" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function FemaleAvatarSVG({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className={className}>
+      <circle cx="50" cy="50" r="50" fill="#EC4899" />
+      <ellipse cx="50" cy="87" rx="30" ry="18" fill="#BE185D" />
+      <path d="M28 70 Q50 90 72 70 Q65 55 50 58 Q35 55 28 70Z" fill="#DB2777" />
+      <circle cx="50" cy="38" r="20" fill="#FBBF24" />
+      <ellipse cx="50" cy="24" rx="21" ry="12" fill="#7C3AED" />
+      <rect x="29" y="24" width="8" height="26" rx="4" fill="#7C3AED" />
+      <rect x="63" y="24" width="8" height="26" rx="4" fill="#7C3AED" />
+      <circle cx="43" cy="37" r="3" fill="#1F2937" />
+      <circle cx="57" cy="37" r="3" fill="#1F2937" />
+      <circle cx="44" cy="36" r="1" fill="white" />
+      <circle cx="58" cy="36" r="1" fill="white" />
+      <path d="M43 44 Q50 50 57 44" stroke="#BE185D" strokeWidth="2" fill="none" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function ReviewAvatar({ review, className }: { review: Review; className?: string }) {
+  if (review.image) {
+    return <img src={review.image} alt={review.name} className={className} />;
+  }
+  if (review.gender === 'male') {
+    return <MaleAvatarSVG className={className} />;
+  }
+  if (review.gender === 'female') {
+    return <FemaleAvatarSVG className={className} />;
+  }
+  // Generic fallback — single initial on a dark circle
+  return (
+    <div className={`${className ?? ''} flex items-center justify-center bg-neutral-700 text-white font-bold text-2xl`}>
+      {review.name[0]?.toUpperCase()}
+    </div>
+  );
+}
 
 const STATIC_REVIEWS: Review[] = [
   {
     id: 1,
     text: 'සර් උගන්වන ඉංග්‍රීසි පාඩම්වලින් කියලා හැම විෂයක පොඩිම පොඩිම ප්‍රශ්න වුනත් අදාළව සර් නිතිතම තමයි හොඳම විදිහ',
     name: 'Amara Fernando',
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+    image: null,
+    gender: 'male',
     rating: 5,
   },
   {
     id: 2,
     text: 'සර් උගන්වපු විදිහට, අභ්‍යාශයට කියලා ඉතාමොන්න කියලා පාඩම් එපා එපා මං සෙන්සුස් පුළුවන් කෙනාට දෙන්න පුළුවන් විදිහට සර්ලා තේරුම් කරදෙනව තාම කියනො',
     name: 'Kavindu Silva',
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+    image: null,
+    gender: 'male',
     rating: 5,
   },
   {
     id: 3,
     text: 'සර් නිසා තමයි මම අද විශයාව පෙරළවීම අතෙ සපය සර් නිතිතම පාඩම් වලින් හොඳොම සීමාව පරතෙහසත් ගොඩක් තිකිලා හොඳවුවා',
     name: 'Nisha Perera',
-    image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
+    image: null,
+    gender: 'female',
     rating: 5,
   },
   {
     id: 4,
     text: 'සර් උගන්වන ඉංග්‍රීසි පාඩම්වලින් කියලා හැම විෂයක පොඩිම පොඩිම ප්‍රශ්න වුනත් අදාළව සර් නිතිතම තමයි හොඳම විදිහ',
     name: 'Roshan Gunasekara',
-    image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+    image: null,
+    gender: 'male',
     rating: 4,
   }
 ];
@@ -49,8 +117,8 @@ const Reviews: React.FC = () => {
             id: idx + 1,
             text: r.review_text,
             name: r.student_name,
-            image: r.student_image_url ||
-              'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+            image: r.student_image_url || null,
+            gender: r.gender ?? null,
             rating: r.rating,
           }))
         );
@@ -119,11 +187,7 @@ const Reviews: React.FC = () => {
               <div className="w-52 sm:w-64 md:w-[22rem] h-52 sm:h-64 md:h-[22rem] mx-auto flex flex-col items-center">
                 <div className="relative w-full h-full bg-gradient-to-b from-neutral-800 to-neutral-900 border border-white/60 rounded-[20px] sm:rounded-[28px] md:rounded-[32px] px-2.5 sm:px-4 md:px-6 py-3 sm:py-6 md:py-8 text-center text-white shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col items-center justify-between">
                   <div className="absolute -top-6 sm:-top-8 md:-top-10 left-1/2 -translate-x-1/2 w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full border-4 border-white bg-black/80 overflow-hidden flex items-center justify-center">
-                    <img
-                      src={currentReview.image}
-                      alt={currentReview.name}
-                      className="w-full h-full object-cover"
-                    />
+                    <ReviewAvatar review={currentReview} className="w-full h-full object-cover" />
                   </div>
 
                   <h4 className="mt-3 sm:mt-6 md:mt-8 text-[10px] sm:text-sm md:text-xl font-bold">{currentReview.name}</h4>
@@ -157,11 +221,7 @@ const Reviews: React.FC = () => {
                 >
                   <div className="relative w-full bg-gradient-to-b from-neutral-800 to-neutral-900 border border-white/60 rounded-[32px] px-6 py-10 md:px-8 md:py-12 lg:px-10 lg:py-14 text-center text-white shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col items-center justify-between min-h-[380px] md:min-h-[420px] lg:min-h-[440px]">
                     <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-20 h-20 rounded-full border-4 border-white bg-black/80 overflow-hidden flex items-center justify-center">
-                      <img
-                        src={review.image}
-                        alt={review.name}
-                        className="w-full h-full object-cover"
-                      />
+                      <ReviewAvatar review={review} className="w-full h-full object-cover" />
                     </div>
 
                     <h4 className="mt-8 text-xl md:text-2xl font-bold">{review.name}</h4>

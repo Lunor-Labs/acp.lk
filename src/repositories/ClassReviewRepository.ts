@@ -8,6 +8,7 @@ export interface ClassReview {
     review_text: string;
     rating: number;
     student_image_url: string | null;
+    gender: 'male' | 'female' | null;
     is_visible: boolean;
     display_order: number;
     created_at: string;
@@ -62,7 +63,8 @@ export class ClassReviewRepository extends BaseRepository<ClassReview> {
         reviewText: string,
         rating: number,
         studentImageUrl?: string,
-        displayOrder?: number
+        displayOrder?: number,
+        gender?: 'male' | 'female' | null
     ): Promise<ClassReview> {
         const { data, error } = await supabase
             .from('class_reviews')
@@ -72,6 +74,7 @@ export class ClassReviewRepository extends BaseRepository<ClassReview> {
                 review_text: reviewText,
                 rating,
                 student_image_url: studentImageUrl || null,
+                gender: gender ?? null,
                 is_visible: true,
                 display_order: displayOrder ?? 0,
             })
@@ -88,7 +91,7 @@ export class ClassReviewRepository extends BaseRepository<ClassReview> {
      */
     async updateReview(
         reviewId: string,
-        updates: Partial<Pick<ClassReview, 'student_name' | 'review_text' | 'rating' | 'student_image_url' | 'is_visible' | 'display_order'>>
+        updates: Partial<Pick<ClassReview, 'student_name' | 'review_text' | 'rating' | 'student_image_url' | 'gender' | 'is_visible' | 'display_order'>>
     ): Promise<ClassReview> {
         const { data, error } = await supabase
             .from('class_reviews')
