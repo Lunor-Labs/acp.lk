@@ -5,7 +5,7 @@ import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
 import ForgotPasswordForm from './ForgotPasswordForm';
 import studentBg from '../../../assets/register/student-bg.webp';
-import acpLogo from '../../../assets/acp-logo.webp';
+import acpLogo from '../../../assets/acp-logo-dark.webp';
 
 interface AuthPanelProps {
   defaultMode?: 'login' | 'register';

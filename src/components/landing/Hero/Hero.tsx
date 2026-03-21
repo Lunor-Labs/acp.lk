@@ -58,21 +58,21 @@ const Hero: React.FC<HeroProps> = ({ onLoginRequest }) => {
           {/* Bottom overlay: buttons + dots */}
           <div className="absolute bottom-0 left-0 right-0 z-10 px-3 pb-3 flex flex-col items-center gap-3">
             {/* Buttons row */}
-            <div className="flex flex-row gap-2 justify-center w-full">
+            <div className="flex flex-row gap-3 justify-center w-full">
               <button
                 onClick={onLoginRequest}
-                className="bg-[#eb1b23] hover:bg-red-700 text-white font-bold px-4 py-2 rounded-full shadow-lg text-[11px] transition-all duration-300 hover:scale-105 hover:shadow-xl flex items-center justify-center gap-1.5 group whitespace-nowrap"
+                className="bg-gradient-to-r from-[#eb1b23] to-[#b31219] hover:from-[#f02b33] hover:to-[#c4151d] text-white font-semibold px-5 py-2.5 rounded-full shadow-[0_8px_20px_-5px_rgba(235,27,35,0.6)] text-xs transition-all duration-300 hover:-translate-y-0.5 flex items-center justify-center gap-1.5 group whitespace-nowrap border border-red-500/30"
               >
                 {user ? 'Go to Portal' : 'Student Portal'}
-                <div className="bg-white rounded-full p-0.5 group-hover:translate-x-1 transition-transform">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#eb1b23" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <div className="bg-white rounded-full p-0.5 group-hover:translate-x-1 transition-transform shadow-sm">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#eb1b23" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M5 12h14M12 5l7 7-7 7" />
                   </svg>
                 </div>
               </button>
               <a
                 href="#contact"
-                className="bg-white hover:bg-gray-100 text-black font-bold px-4 py-2 rounded-full shadow-lg text-[11px] transition-all duration-300 hover:scale-105 hover:shadow-xl text-center flex items-center justify-center whitespace-nowrap"
+                className="backdrop-blur-md bg-white/10 hover:bg-white/20 border border-white/30 text-white font-semibold px-5 py-2.5 rounded-full shadow-[0_8px_20px_-5px_rgba(0,0,0,0.4)] text-xs transition-all duration-300 hover:-translate-y-0.5 text-center flex items-center justify-center whitespace-nowrap"
               >
                 Contact Us
               </a>
@@ -113,6 +113,9 @@ const Hero: React.FC<HeroProps> = ({ onLoginRequest }) => {
           </div>
         ))}
 
+        {/* Dark gradient overlay for elegant contrast */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-[1] pointer-events-none" />
+
         {/* Content */}
         <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 pb-24 md:pb-12 pt-32 md:pt-60 flex flex-col md:flex-row items-center md:items-end justify-between min-h-screen pointer-events-none">
           {/* Left: Buttons Area */}
@@ -122,10 +125,10 @@ const Hero: React.FC<HeroProps> = ({ onLoginRequest }) => {
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 w-full max-w-xl">
               <button
                 onClick={onLoginRequest}
-                className="bg-[#eb1b23] hover:bg-red-700 text-white font-bold px-8 md:px-10 py-3 md:py-4 rounded-full shadow-lg text-lg md:text-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl w-full sm:w-auto flex items-center justify-center gap-3 group"
+                className="bg-gradient-to-r from-[#eb1b23] to-[#b31219] hover:from-[#f02b33] hover:to-[#c4151d] text-white font-semibold tracking-wide px-8 md:px-10 py-3 md:py-4 rounded-full shadow-[0_10px_40px_-10px_rgba(235,27,35,0.7)] hover:shadow-[0_10px_40px_-5px_rgba(235,27,35,0.9)] text-lg md:text-xl transition-all duration-300 hover:-translate-y-1 w-full sm:w-auto flex items-center justify-center gap-3 group border border-red-500/30"
               >
                 {user ? 'Go to Portal' : 'Student Portal'}
-                <div className="bg-white rounded-full p-1 group-hover:translate-x-1 transition-transform">
+                <div className="bg-white rounded-full p-1 group-hover:translate-x-1 transition-transform shadow-md">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#eb1b23" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M5 12h14M12 5l7 7-7 7" />
                   </svg>
@@ -133,7 +136,7 @@ const Hero: React.FC<HeroProps> = ({ onLoginRequest }) => {
               </button>
               <a
                 href="#contact"
-                className="bg-white hover:bg-gray-100 text-black font-bold px-8 md:px-10 py-3 md:py-4 rounded-full shadow-lg text-lg md:text-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl text-center w-full sm:w-auto flex items-center justify-center"
+                className="backdrop-blur-md bg-white/10 hover:bg-white/20 border border-white/30 text-white font-semibold tracking-wide px-8 md:px-10 py-3 md:py-4 rounded-full shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] text-lg md:text-xl transition-all duration-300 hover:-translate-y-1 text-center w-full sm:w-auto flex items-center justify-center"
               >
                 Contact Us
               </a>
