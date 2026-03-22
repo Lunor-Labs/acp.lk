@@ -27,7 +27,7 @@ interface TeacherDashboardProps {
 
 export default function TeacherDashboard({ onGoToLanding }: TeacherDashboardProps) {
   const { profile, signOut } = useAuth();
-  const [activeTab, setActiveTab] = useState('classes');
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [teacherId, setTeacherId] = useState<string | null>(null);
   const [teacherLoading, setTeacherLoading] = useState(true);
