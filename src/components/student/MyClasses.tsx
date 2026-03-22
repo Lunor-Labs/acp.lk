@@ -5,7 +5,6 @@ import { payHereService } from '../../lib/payhere';
 import './MyClassCard.css';
 import {
   Search,
-  Filter,
   BookOpen,
   Video,
   Lock,
@@ -51,10 +50,7 @@ interface Material {
   name: string;
 }
 
-interface Teacher {
-  id: string;
-  name: string;
-}
+
 
 // ── Safely parse weeks from JSONB (may arrive as string, nested array, null…) ──
 function parseWeeks(raw: any): any[] {
@@ -223,10 +219,8 @@ export default function MyClasses() {
   const [filteredClasses, setFilteredClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTeacher, setSelectedTeacher] = useState('all');
   const [selectedPrice, setSelectedPrice] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
-  const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [processingPayment, setProcessingPayment] = useState<string | null>(null);
 
   // Modal state: classId + optional default week index
@@ -238,7 +232,7 @@ export default function MyClasses() {
 
   useEffect(() => {
     applyFilters();
-  }, [classes, searchQuery, selectedTeacher, selectedPrice, selectedStatus]);
+  }, [classes, searchQuery, selectedPrice, selectedStatus]);
 
   async function fetchClasses() {
     try {
@@ -303,19 +297,6 @@ export default function MyClasses() {
       })) || [];
 
       setClasses(classesWithStatus);
-
-      const uniqueTeachers = Array.from(
-        new Map(
-          allClasses
-            ?.filter(cls => cls.teacher?.profile?.full_name)
-            .map(cls => [
-              cls.teacher.id,
-              { id: cls.teacher.id, name: cls.teacher.profile.full_name }
-            ])
-        ).values()
-      ).sort((a, b) => a.name.localeCompare(b.name));
-
-      setTeachers(uniqueTeachers);
     } catch (error) {
       console.error('Error fetching classes:', error);
     } finally {
@@ -331,10 +312,6 @@ export default function MyClasses() {
         cls.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         cls.subject.toLowerCase().includes(searchQuery.toLowerCase())
       );
-    }
-
-    if (selectedTeacher !== 'all') {
-      filtered = filtered.filter(cls => cls.teacher?.id === selectedTeacher);
     }
 
     if (selectedPrice === 'free') {
@@ -429,17 +406,7 @@ export default function MyClasses() {
     }
   }
 
-  function formatDate(dateString: string) {
-    if (!dateString) return 'Not scheduled';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  }
+
 
   const canAccessClass = (classItem: Class) => {
     return classItem.is_free || classItem.payment_status === 'paid';
@@ -449,95 +416,120 @@ export default function MyClasses() {
     ? filteredClasses.find(c => c.id === modalState.classId) ?? null
     : null;
 
+  const hasActiveFilters = searchQuery || selectedPrice !== 'all' || selectedStatus !== 'all';
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-green-50">
-      <div className="max-w-7xl mx-auto p-6 md:p-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">My Classes</h1>
-          <p className="text-gray-600">Manage and access your enrolled classes</p>
+    <div className="min-h-screen bg-[#f0f2f7]">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8">
+
+        {/* ── Page header ── */}
+        <div className="mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">My Classes</h1>
+          <p className="text-sm text-slate-500 mt-1">Your enrolled classes and course materials</p>
         </div>
 
         {/* ── Filter bar ── */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-6 mb-6 sticky top-6 z-10">
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6">
+          {/* Search row */}
+          <div className="p-4 sm:p-5">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               <input
                 type="text"
-                placeholder="Search by class name or subject..."
+                placeholder="Search by class name or subject…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white transition"
+                className="w-full pl-11 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#eb1b23]/30 focus:border-[#eb1b23] transition"
               />
-            </div>
-
-            <div className="flex flex-wrap gap-3">
-              <div className="relative min-w-[160px]">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                <select
-                  value={selectedTeacher}
-                  onChange={(e) => setSelectedTeacher(e.target.value)}
-                  className="w-full pl-9 pr-10 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent appearance-none bg-white cursor-pointer transition"
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
                 >
-                  <option value="all">All Teachers</option>
-                  {teachers.map(teacher => (
-                    <option key={teacher.id} value={teacher.id}>{teacher.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="relative min-w-[140px]">
-                <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                <select
-                  value={selectedPrice}
-                  onChange={(e) => setSelectedPrice(e.target.value)}
-                  className="w-full pl-9 pr-10 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent appearance-none bg-white cursor-pointer transition"
-                >
-                  <option value="all">All Prices</option>
-                  <option value="free">Free</option>
-                  <option value="paid">Paid</option>
-                </select>
-              </div>
-
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent appearance-none bg-white cursor-pointer transition min-w-[140px]"
-              >
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="completed">Completed</option>
-              </select>
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
           </div>
 
-          <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
-            <div className="flex items-center gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                <span className="text-gray-600">Active</span>
+          {/* Filter pills + meta row */}
+          <div className="border-t border-slate-100 px-4 sm:px-5 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            {/* Left: pill groups */}
+            <div className="flex flex-wrap gap-2">
+              {/* Status pills */}
+              <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl p-1 gap-0.5">
+                {([
+                  { value: 'all', label: 'All' },
+                  { value: 'active', label: '● Active', activeColor: 'text-emerald-600' },
+                  { value: 'completed', label: '● Completed', activeColor: 'text-slate-500' },
+                ] as { value: string; label: string; activeColor?: string }[]).map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setSelectedStatus(opt.value)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 ${
+                      selectedStatus === opt.value
+                        ? 'bg-white shadow-sm text-slate-800 ring-1 ring-slate-200'
+                        : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-gray-400"></div>
-                <span className="text-gray-600">Completed</span>
+
+              {/* Price pills */}
+              <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl p-1 gap-0.5">
+                {([
+                  { value: 'all', label: 'Any price' },
+                  { value: 'free', label: 'Free' },
+                  { value: 'paid', label: 'Paid' },
+                ] as { value: string; label: string }[]).map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setSelectedPrice(opt.value)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 ${
+                      selectedPrice === opt.value
+                        ? 'bg-white shadow-sm text-slate-800 ring-1 ring-slate-200'
+                        : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
               </div>
+
+              {/* Clear all (only when filters are active) */}
+              {hasActiveFilters && (
+                <button
+                  onClick={() => { setSearchQuery(''); setSelectedStatus('all'); setSelectedPrice('all'); }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-[#eb1b23] bg-red-50 border border-red-100 hover:bg-red-100 transition"
+                >
+                  <X className="w-3 h-3" />
+                  Clear filters
+                </button>
+              )}
             </div>
-            <span className="text-sm font-medium text-gray-700">
+
+            {/* Right: result count */}
+            <p className="text-xs font-semibold text-slate-400 flex-shrink-0">
               {filteredClasses.length} {filteredClasses.length === 1 ? 'class' : 'classes'}
-            </span>
+            </p>
           </div>
         </div>
 
         {/* ── Card grid ── */}
         {loading ? (
           <div className="flex items-center justify-center h-96">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#eb1b23] border-t-transparent"></div>
+            <div className="relative w-12 h-12">
+              <div className="absolute inset-0 rounded-full border-4 border-red-100"></div>
+              <div className="absolute inset-0 rounded-full border-4 border-[#eb1b23] border-t-transparent animate-spin"></div>
+            </div>
           </div>
         ) : filteredClasses.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-sm p-16 text-center border border-gray-100">
-            <BookOpen className="w-20 h-20 text-gray-300 mx-auto mb-6" />
-            <h3 className="text-2xl font-semibold text-gray-900 mb-2">No classes found</h3>
-            <p className="text-gray-600">Try adjusting your filters or enroll in more classes</p>
+          <div className="bg-white rounded-2xl shadow-sm p-16 text-center border border-slate-100">
+            <BookOpen className="w-16 h-16 text-slate-200 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-slate-700 mb-1">No classes found</h3>
+            <p className="text-sm text-slate-400">Try adjusting your filters or enroll in more classes</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
