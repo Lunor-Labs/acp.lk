@@ -1,15 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { db } from '../../lib/database';
 import { payHereService } from '../../lib/payhere';
+import './MyClassCard.css';
 import {
   Search,
   Filter,
   BookOpen,
-  Clock,
   Video,
   Lock,
-  CheckCircle,
   X,
   Download,
   Calendar,
@@ -57,6 +56,167 @@ interface Teacher {
   name: string;
 }
 
+// ── Safely parse weeks from JSONB (may arrive as string, nested array, null…) ──
+function parseWeeks(raw: any): any[] {
+  if (!raw) return [];
+  // Already a proper array of objects
+  if (Array.isArray(raw)) {
+    // Flatten one level in case of [[week1, week2]] nesting
+    const flat = raw.length === 1 && Array.isArray(raw[0]) ? raw[0] : raw;
+    return flat.filter((w: any) => w && typeof w === 'object');
+  }
+  // Arrived as a JSON string
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      return parseWeeks(parsed);
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+// ── Colour cycling for week boxes ─────────────────────
+const BOX_COLORS = ['color-red', 'color-teal', 'color-blue', 'color-purple'];
+
+function getColor(idx: number) {
+  return BOX_COLORS[idx % BOX_COLORS.length];
+}
+
+// ── ClassCard sub-component ───────────────────────────
+interface ClassCardProps {
+  cls: Class;
+  canAccess: boolean;
+  processingPayment: string | null;
+  onOpenWeek: (weekIndex: number | null) => void;
+  onPayment: () => void;
+}
+
+function ClassCard({ cls, canAccess, processingPayment, onOpenWeek, onPayment }: ClassCardProps) {
+  const weeks = cls.weeks || [];
+  const visibleWeeks = weeks.slice(0, 3);          // at most 3 animated boxes
+  const overflowCount = weeks.length - 3;           // how many weeks are hidden
+  const hasOverflow = overflowCount > 0;
+  const hasNoWeeks = weeks.length === 0;
+
+  // Map visible boxes to their sizes (largest → smallest)
+  const boxSizeMap = ['mc-box-1', 'mc-box-2', 'mc-box-3'];
+
+  return (
+    <div className="mc-card" role="article" aria-label={cls.title}>
+      {/* Background gradient */}
+      <div className="mc-background" />
+
+      {/* Top info strip */}
+      <div className="mc-info-strip">
+        <div className="mc-meta" style={{ marginBottom: 6 }}>
+          <span className={`mc-badge ${cls.status === 'active' ? 'mc-badge-active' : 'mc-badge-completed'}`}>
+            {cls.status === 'active' ? 'Active' : 'Completed'}
+          </span>
+          {cls.is_free ? (
+            <span className="mc-badge mc-badge-free">Free</span>
+          ) : (
+            <span className="mc-badge mc-badge-paid">LKR {cls.price}</span>
+          )}
+        </div>
+        <p className="mc-title">{cls.title}</p>
+        <div className="mc-meta">
+          <User style={{ width: 10, height: 10 }} />
+          <span>{cls.teacher?.profile?.full_name || 'Teacher'}</span>
+          {cls.subject && (
+            <>
+              <span style={{ opacity: 0.4 }}>·</span>
+              <span>{cls.subject}</span>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Centre logo – shifts to bottom-right on hover */}
+      <div className="mc-logo">
+        <div className="mc-logo-icon">
+          <BookOpen style={{ width: 22, height: 22, color: '#eb1b23' }} />
+        </div>
+        <span className="mc-logo-subject">{cls.subject}</span>
+      </div>
+
+      {/* No-weeks fallback hint */}
+      {hasNoWeeks && <span className="mc-browse-badge">Browse Materials</span>}
+
+      {/* ── Animated week boxes ── */}
+      {canAccess ? (
+        <>
+          {visibleWeeks.map((week: any, idx: number) => (
+            <button
+              key={week.id || idx}
+              /* Largest box = index 0, rendered first → sits BEHIND smaller boxes */
+              className={`mc-box ${boxSizeMap[idx]} ${getColor(idx)}`}
+              onClick={() => onOpenWeek(idx)}
+              title={`Open ${week.title || `Week ${idx + 1}`}`}
+              style={{ border: 'none', outline: 'none' }}
+            >
+              <span className="mc-box-label">
+                <span className="week-num">W{idx + 1}</span>
+                <span className="week-title">{week.title || `Week ${idx + 1}`}</span>
+              </span>
+            </button>
+          ))}
+
+          {/* Overflow box: "+N more" or single fallback "Browse" */}
+          {(hasOverflow || hasNoWeeks) && (
+            <button
+              className={`mc-box mc-box-4 ${hasOverflow ? 'color-neutral' : 'color-teal'}`}
+              onClick={() => onOpenWeek(null)}
+              title={hasOverflow ? `+${overflowCount} more weeks` : 'Browse Materials'}
+              style={{ border: 'none', outline: 'none' }}
+            >
+              <span className="mc-box-label">
+                <span className="week-num" style={{ fontSize: 8 }}>
+                  {hasOverflow ? `+${overflowCount}` : '▶'}
+                </span>
+              </span>
+            </button>
+          )}
+        </>
+      ) : (
+        /* Locked state – show week boxes but locked */
+        <>
+          {visibleWeeks.map((_: any, idx: number) => (
+            <div
+              key={idx}
+              className={`mc-box mc-box-locked ${boxSizeMap[idx]} ${getColor(idx)}`}
+            >
+              <span className="mc-box-label">
+                <span className="week-num">🔒</span>
+              </span>
+            </div>
+          ))}
+          <div className="mc-box mc-box-locked mc-box-4 color-neutral">
+            <span className="mc-box-label">
+              <span className="week-num" style={{ fontSize: 8 }}>🔒</span>
+            </span>
+          </div>
+
+          {/* Hover overlay with pay button */}
+          <div className="mc-locked-overlay">
+            <Lock style={{ width: 28, height: 28, color: '#fff' }} />
+            <p>Complete payment to access class materials</p>
+            <button
+              className="mc-pay-btn"
+              onClick={onPayment}
+              disabled={processingPayment === cls.id}
+            >
+              {processingPayment === cls.id ? 'Processing…' : `Pay & Unlock · LKR ${cls.price}`}
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── Main component ─────────────────────────────────────
 export default function MyClasses() {
   const { profile } = useAuth();
   const [classes, setClasses] = useState<Class[]>([]);
@@ -67,8 +227,10 @@ export default function MyClasses() {
   const [selectedPrice, setSelectedPrice] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [teachers, setTeachers] = useState<Teacher[]>([]);
-  const [showMaterials, setShowMaterials] = useState<string | null>(null);
   const [processingPayment, setProcessingPayment] = useState<string | null>(null);
+
+  // Modal state: classId + optional default week index
+  const [modalState, setModalState] = useState<{ classId: string; weekIndex: number | null } | null>(null);
 
   useEffect(() => {
     fetchClasses();
@@ -130,6 +292,12 @@ export default function MyClasses() {
 
       const classesWithStatus = allClasses?.map(cls => ({
         ...cls,
+        // Always ensure weeks is a proper array regardless of how JSONB was serialised
+        weeks: parseWeeks(cls.weeks),
+        // Same defensive parse for materials
+        materials: Array.isArray(cls.materials)
+          ? cls.materials
+          : (typeof cls.materials === 'string' ? JSON.parse(cls.materials || '[]') : []),
         is_enrolled: enrolledClassIds.has(cls.id),
         payment_status: cls.is_free ? 'paid' : (paidClassIds.has(cls.id) ? 'paid' : 'unpaid') as 'paid' | 'unpaid',
       })) || [];
@@ -277,6 +445,10 @@ export default function MyClasses() {
     return classItem.is_free || classItem.payment_status === 'paid';
   };
 
+  const activeModal = modalState
+    ? filteredClasses.find(c => c.id === modalState.classId) ?? null
+    : null;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-green-50">
       <div className="max-w-7xl mx-auto p-6 md:p-8">
@@ -285,6 +457,7 @@ export default function MyClasses() {
           <p className="text-gray-600">Manage and access your enrolled classes</p>
         </div>
 
+        {/* ── Filter bar ── */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-6 mb-6 sticky top-6 z-10">
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1 relative">
@@ -355,6 +528,7 @@ export default function MyClasses() {
           </div>
         </div>
 
+        {/* ── Card grid ── */}
         {loading ? (
           <div className="flex items-center justify-center h-96">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#eb1b23] border-t-transparent"></div>
@@ -366,127 +540,26 @@ export default function MyClasses() {
             <p className="text-gray-600">Try adjusting your filters or enroll in more classes</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredClasses.map(cls => (
-              <div
+              <ClassCard
                 key={cls.id}
-                className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100 group"
-              >
-                <div className={`h-1.5 ${cls.status === 'active' ? 'bg-gradient-to-r from-green-400 to-green-600' : 'bg-gray-400'}`}></div>
-
-                <div className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="px-3 py-1 bg-teal-50 text-teal-700 text-xs font-semibold rounded-full">
-                          {cls.subject}
-                        </span>
-                        <span className={`px-3 py-1 text-xs font-semibold rounded-full ${cls.status === 'active'
-                          ? 'bg-green-50 text-green-700'
-                          : 'bg-gray-100 text-gray-600'
-                          }`}>
-                          {cls.status === 'active' ? 'Active' : 'Completed'}
-                        </span>
-                      </div>
-                    </div>
-                    {cls.is_free ? (
-                      <span className="px-3 py-1 bg-green-50 text-green-700 text-sm font-bold rounded-full">
-                        Free
-                      </span>
-                    ) : (
-                      <span className="px-3 py-1 bg-blue-50 text-blue-700 text-sm font-bold rounded-full">
-                        LKR {cls.price}
-                      </span>
-                    )}
-                  </div>
-
-                  <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-[#eb1b23] transition">
-                    {cls.title}
-                  </h3>
-
-                  <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                    {cls.description || 'Enhance your knowledge and skills with this comprehensive course'}
-                  </p>
-
-                  <div className="space-y-3 mb-6">
-                    <div className="flex items-center text-sm text-gray-600">
-                      <User className="w-4 h-4 mr-2 text-gray-400" />
-                      <span className="font-medium">{cls.teacher?.profile?.full_name || 'Teacher'}</span>
-                    </div>
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Calendar className="w-4 h-4 mr-2 text-gray-400" />
-                      <span>{formatDate(cls.next_session_date)}</span>
-                    </div>
-                    {cls.schedule && (
-                      <div className="flex items-center text-sm text-gray-600">
-                        <Clock className="w-4 h-4 mr-2 text-gray-400" />
-                        <span>{cls.schedule}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {!canAccessClass(cls) ? (
-                    <div className="space-y-3">
-                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-3">
-                        <Lock className="w-5 h-5 text-amber-600 flex-shrink-0" />
-                        <p className="text-sm text-amber-800">
-                          Complete payment to access class materials and sessions
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => handlePayment(cls)}
-                        disabled={processingPayment === cls.id}
-                        className="w-full px-4 py-3 bg-gradient-to-r from-[#eb1b23] to-red-600 text-white font-semibold rounded-xl hover:from-red-700 hover:to-red-700 transition-all duration-300 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                      >
-                        {processingPayment === cls.id ? (
-                          <>
-                            <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                            Processing...
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle className="w-5 h-5" />
-                            Pay & Unlock - LKR {cls.price}
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-3">
-                      <a
-                        href={cls.zoom_link || '#'}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold transition-all duration-300 ${cls.zoom_link
-                          ? 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
-                          : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
-                          }`}
-                        onClick={(e) => {
-                          if (!cls.zoom_link) e.preventDefault();
-                        }}
-                      >
-                        <Video className="w-4 h-4" />
-                        Join Zoom
-                      </a>
-                      <button
-                        onClick={() => setShowMaterials(cls.id)}
-                        className="flex items-center justify-center gap-2 px-4 py-3 bg-teal-50 text-teal-700 hover:bg-teal-100 rounded-xl font-semibold transition-all duration-300 border border-teal-200"
-                      >
-                        <FileText className="w-4 h-4" />
-                        Materials
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
+                cls={cls}
+                canAccess={canAccessClass(cls)}
+                processingPayment={processingPayment}
+                onOpenWeek={(weekIndex) => setModalState({ classId: cls.id, weekIndex })}
+                onPayment={() => handlePayment(cls)}
+              />
             ))}
           </div>
         )}
 
-        {showMaterials && (
+        {/* ── Materials Modal ── */}
+        {activeModal && (
           <MaterialsModal
-            classItem={filteredClasses.find(c => c.id === showMaterials)!}
-            onClose={() => setShowMaterials(null)}
+            classItem={activeModal}
+            defaultWeekIndex={modalState!.weekIndex}
+            onClose={() => setModalState(null)}
           />
         )}
       </div>
@@ -494,9 +567,38 @@ export default function MyClasses() {
   );
 }
 
-function MaterialsModal({ classItem, onClose }: { classItem: Class; onClose: () => void }) {
+// ── MaterialsModal ─────────────────────────────────────
+function MaterialsModal({
+  classItem,
+  defaultWeekIndex,
+  onClose,
+}: {
+  classItem: Class;
+  defaultWeekIndex: number | null;
+  onClose: () => void;
+}) {
   const materials = classItem.materials || [];
   const weeks = classItem.weeks || [];
+
+  // Ref to the scrollable body div
+  const scrollBodyRef = useRef<HTMLDivElement | null>(null);
+  // Refs to each week section header
+  const weekRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  useEffect(() => {
+    if (defaultWeekIndex === null || !weekRefs.current[defaultWeekIndex]) return;
+    // Use a small delay so the modal has rendered and measured heights
+    const timer = setTimeout(() => {
+      const target = weekRefs.current[defaultWeekIndex];
+      const container = scrollBodyRef.current;
+      if (target && container) {
+        const containerTop = container.getBoundingClientRect().top;
+        const targetTop   = target.getBoundingClientRect().top;
+        container.scrollBy({ top: targetTop - containerTop - 16, behavior: 'smooth' });
+      }
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [defaultWeekIndex]);
 
   const groupedMaterials = materials.reduce((acc, material) => {
     const weekName = material.week || 'General Materials';
@@ -509,11 +611,16 @@ function MaterialsModal({ classItem, onClose }: { classItem: Class; onClose: () 
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
-        <div className="bg-gradient-to-r from-teal-600 to-teal-700 p-6 flex items-center justify-between">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[85vh] overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-[#eb1b23] to-red-700 p-6 flex items-center justify-between flex-shrink-0">
           <div>
             <h2 className="text-2xl font-bold text-white mb-1">{classItem.title}</h2>
-            <p className="text-teal-50">Course Content & Materials</p>
+            <p className="text-red-100">
+              {defaultWeekIndex !== null && weeks[defaultWeekIndex]
+                ? `Jumping to: ${weeks[defaultWeekIndex].title || `Week ${defaultWeekIndex + 1}`}`
+                : 'Course Content & Materials'}
+            </p>
           </div>
           <button
             onClick={onClose}
@@ -523,11 +630,45 @@ function MaterialsModal({ classItem, onClose }: { classItem: Class; onClose: () 
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto max-h-[calc(80vh-120px)] bg-gray-50">
+        {/* Week quick-nav pills (if multiple weeks) */}
+        {weeks.length > 1 && (
+          <div className="flex gap-2 px-6 py-3 bg-gray-50 border-b border-gray-100 overflow-x-auto flex-shrink-0">
+            {weeks.map((week: any, idx: number) => (
+              <button
+                key={week.id || idx}
+                onClick={() => {
+                  const target = weekRefs.current[idx];
+                  const container = scrollBodyRef.current;
+                  if (target && container) {
+                    const containerTop = container.getBoundingClientRect().top;
+                    const targetTop   = target.getBoundingClientRect().top;
+                    container.scrollBy({ top: targetTop - containerTop - 16, behavior: 'smooth' });
+                  }
+                }}
+                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+                  defaultWeekIndex === idx
+                    ? 'bg-[#eb1b23] text-white shadow-md'
+                    : 'bg-white text-gray-600 border border-gray-200 hover:border-[#eb1b23] hover:text-[#eb1b23]'
+                }`}
+              >
+                W{idx + 1} · {week.title?.substring(0, 18) || `Week ${idx + 1}`}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Body */}
+        <div ref={scrollBodyRef} className="p-6 overflow-y-auto flex-1 bg-gray-50">
           {weeks.length > 0 ? (
             <div className="space-y-6">
               {weeks.map((week: any, idx: number) => (
-                <div key={week.id || idx} className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                <div
+                  key={week.id || idx}
+                  ref={el => { weekRefs.current[idx] = el; }}
+                  className={`bg-white rounded-2xl shadow-sm border overflow-hidden transition-all ${
+                    defaultWeekIndex === idx ? 'border-[#eb1b23]/40 ring-2 ring-[#eb1b23]/20' : 'border-gray-200'
+                  }`}
+                >
                   <div className="bg-gray-50 px-6 py-4 border-b border-gray-200 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-[#eb1b23]/10 flex items-center justify-center text-[#eb1b23] font-bold">
