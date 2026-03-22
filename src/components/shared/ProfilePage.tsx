@@ -45,12 +45,12 @@ export default function ProfilePage({ onBack }: ProfilePageProps) {
       const path = `avatars/${profile.id}.${ext}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('profiles')
+        .from('acp')
         .upload(path, avatarFile, { upsert: true });
 
       if (uploadError) throw uploadError;
 
-      const { data } = supabase.storage.from('profiles').getPublicUrl(path);
+      const { data } = supabase.storage.from('acp').getPublicUrl(path);
       // Bust cache by appending a timestamp
       return `${data.publicUrl}?t=${Date.now()}`;
     } catch (err: any) {
