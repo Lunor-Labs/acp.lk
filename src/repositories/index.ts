@@ -16,6 +16,7 @@ export { PdfPaperRepository } from './PdfPaperRepository';
 export { GalleryRepository, galleryRepository } from './GalleryRepository';
 export { ClassReviewRepository, classReviewRepository } from './ClassReviewRepository';
 export { TestResultRepository, testResultRepository } from './TestResultRepository';
+export { DashboardRepository, dashboardRepository } from './DashboardRepository';
 
 // Export types
 export type { Class } from './ClassRepository';
