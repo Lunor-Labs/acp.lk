@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { LayoutDashboard, BookOpen, FileText, Package, LogOut, GraduationCap, User, Menu, X, TrendingUp, Clock, Search, Home } from 'lucide-react';
+import { LayoutDashboard, BookOpen, FileText, Package, LogOut, User, Menu, X, TrendingUp, Clock, Search, Home } from 'lucide-react';
 import { db } from '../../lib/database';
 import { ExamRepository } from '../../repositories';
 import MyClasses from './MyClasses';
@@ -9,6 +9,7 @@ import StudyPacks from './StudyPacks';
 import Exams from './Exams';
 import ProfileMenu from '../shared/ProfileMenu';
 import ProfilePage from '../shared/ProfilePage';
+import acpLogo from '../../assets/acp-logo.webp';
 
 interface DashboardStats {
   enrolledClasses: number;
@@ -139,14 +140,15 @@ export default function StudentDashboard({ onGoToLanding }: StudentDashboardProp
       `}>
         <div className="p-6 flex-1 flex flex-col relative">
           <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center space-x-3">
-              <div className="bg-[#eb1b23] p-2 rounded-lg shadow-lg shadow-red-500/30">
-                <GraduationCap className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold">ACP</h1>
-                <p className="text-xs text-slate-400">Student Portal</p>
-              </div>
+            <div className="flex flex-col items-center w-full space-y-2">
+              <img
+                src={acpLogo}
+                alt="ACP Logo"
+                className="h-10 w-auto object-contain"
+              />
+              <span className="text-xs font-semibold text-slate-400 tracking-widest uppercase text-center">
+                Student Portal
+              </span>
             </div>
             <button
               onClick={() => setIsMobileMenuOpen(false)}

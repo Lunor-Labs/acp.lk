@@ -12,6 +12,7 @@ import { supabase } from '../../lib/supabase';
 import { TeacherRepository } from '../../repositories/TeacherRepository';
 import ProfileMenu from '../shared/ProfileMenu';
 import ProfilePage from '../shared/ProfilePage';
+import acpLogo from '../../assets/acp-logo.webp';
 
 const teacherRepository = new TeacherRepository();
 
@@ -191,14 +192,15 @@ export default function TeacherDashboard({ onGoToLanding }: TeacherDashboardProp
       `}>
         <div className="p-6 flex-1 flex flex-col relative">
           <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center space-x-3">
-              <div className="bg-[#eb1b23] p-2 rounded-lg shadow-lg shadow-red-500/30">
-                <GraduationCap className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold">ACP</h1>
-                <p className="text-xs text-slate-400">Teacher Portal</p>
-              </div>
+            <div className="flex flex-col items-center w-full space-y-2">
+              <img
+                src={acpLogo}
+                alt="ACP Logo"
+                className="h-10 w-auto object-contain"
+              />
+              <span className="text-xs font-semibold text-slate-400 tracking-widest uppercase text-center">
+                Teacher Portal
+              </span>
             </div>
             <button
               onClick={() => setIsMobileMenuOpen(false)}
