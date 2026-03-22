@@ -31,9 +31,9 @@ export default function ProfileMenu({ role, onProfileClick }: ProfileMenuProps) 
     .toUpperCase();
 
   const roleLabel =
-    role === 'teacher' ? 'Educator'
-    : role === 'student' ? 'Senior Scholar'
-    : 'Administrator';
+    role === 'teacher' ? 'Teacher'
+      : role === 'student' ? 'Student'
+        : 'Administrator';
 
   return (
     <div ref={menuRef} style={{ position: 'relative', userSelect: 'none' }}>
