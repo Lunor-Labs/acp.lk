@@ -59,6 +59,10 @@ interface AuthContextType {
    * Password reset step 2: verifies OTP, then sets the new password.
    */
   resetPasswordWithOtp: (email: string, token: string, newPassword: string) => Promise<void>;
+  /**
+   * Update profile fields and refresh the in-memory profile state.
+   */
+  updateProfile: (updates: Partial<Pick<Profile, 'full_name' | 'phone' | 'avatar_url' | 'whatsapp_no' | 'mobile_no' | 'nic'>>) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -249,6 +253,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (pwError) throw pwError;
   }
 
+  // ─── updateProfile ────────────────────────────────────────────────────────
+  async function updateProfile(
+    updates: Partial<Pick<Profile, 'full_name' | 'phone' | 'avatar_url' | 'whatsapp_no' | 'mobile_no' | 'nic'>>
+  ): Promise<void> {
+    if (!user?.id) throw new Error('Not authenticated');
+    const { error } = await db.from<Profile>('profiles')
+      .update(updates as any)
+      .eq('id', user.id)
+      .execute();
+    if (error) throw error;
+    // Refresh cached profile
+    await loadProfile(user.id);
+  }
+
   // ─── signOut ─────────────────────────────────────────────────────────────
   async function signOut() {
     const { error } = await db.auth.signOut();
@@ -261,6 +279,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signIn,
       requestSignUpOtp, verifySignUpOtp,
       requestPasswordResetOtp, resetPasswordWithOtp,
+      updateProfile,
       signOut,
     }}>
       {children}

@@ -10,6 +10,8 @@ import TestResultsManager from './TestResultsManager';
 import SuccessManager from './SuccessManager';
 import { supabase } from '../../lib/supabase';
 import { TeacherRepository } from '../../repositories/TeacherRepository';
+import ProfileMenu from '../shared/ProfileMenu';
+import ProfilePage from '../shared/ProfilePage';
 
 const teacherRepository = new TeacherRepository();
 
@@ -367,15 +369,20 @@ export default function TeacherDashboard({ onGoToLanding }: TeacherDashboardProp
       </aside>
 
       <main className="flex-1 overflow-auto lg:ml-0">
-        <div className="lg:hidden bg-white border-b border-gray-200 p-4 sticky top-0 z-30">
+        {/* Top bar */}
+        <div className="bg-white border-b border-gray-200 p-4 sticky top-0 z-30 flex items-center justify-between">
           <button
             onClick={() => setIsMobileMenuOpen(true)}
-            className="text-gray-600 hover:text-gray-900"
+            className="lg:hidden text-gray-600 hover:text-gray-900"
           >
             <Menu className="w-6 h-6" />
           </button>
+          <div className="flex-1" />
+          <ProfileMenu role="teacher" onProfileClick={() => setActiveTab('profile')} />
         </div>
-        {activeTab === 'classes' ? (
+        {activeTab === 'profile' ? (
+          <ProfilePage onBack={() => setActiveTab('dashboard')} />
+        ) : activeTab === 'classes' ? (
           <MyClasses />
         ) : activeTab === 'exams' ? (
           <Exams />
