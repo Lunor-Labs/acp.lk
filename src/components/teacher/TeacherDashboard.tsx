@@ -204,7 +204,7 @@ export default function TeacherDashboard({ onGoToLanding }: TeacherDashboardProp
       </aside>
 
       {/* ─── Main content ─── */}
-      <main className="flex-1 overflow-auto min-w-0">
+      <main className="flex-1 min-w-0 h-screen flex flex-col overflow-hidden">
         {/* Top bar */}
         <div className="bg-white/80 backdrop-blur-md border-b border-gray-200/80 px-4 sm:px-6 py-3.5 sticky top-0 z-30 flex items-center justify-between">
           <button
@@ -273,7 +273,7 @@ function DashboardContent({
   const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 flex flex-col gap-3 h-full min-h-0 overflow-y-auto">
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
@@ -302,7 +302,7 @@ function DashboardContent({
       ) : (
         <>
           {/* ── Stat Cards ── */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 flex-shrink-0">
             <StatCard
               label="Platform Students"
               value={stats.totalPlatformStudents}
@@ -343,7 +343,7 @@ function DashboardContent({
           </div>
 
           {/* ── Secondary stats row ── */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-shrink-0">
             <MiniStatCard
               label="Total Classes"
               value={stats.totalClasses}
@@ -361,8 +361,8 @@ function DashboardContent({
           </div>
 
           {/* ── Chart ── */}
-          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-            <div className="px-6 pt-6 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100">
+          <div className="bg-white rounded-2xl shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
+            <div className="px-6 pt-5 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 flex-shrink-0">
               <div>
                 <h2 className="text-base font-bold text-slate-900">Student Onboarding Trend</h2>
                 <p className="text-xs text-slate-400 mt-0.5">Monthly new platform students vs. enrollments in your classes</p>
@@ -378,11 +378,11 @@ function DashboardContent({
                 </span>
               </div>
             </div>
-            <div className="p-4 sm:p-6">
+            <div className="flex-1 min-h-0 p-4 sm:p-5">
               {onboardingData.length > 0 ? (
                 <OnboardingChart data={onboardingData} />
               ) : (
-                <div className="flex items-center justify-center h-48 text-slate-400 text-sm">
+                <div className="flex items-center justify-center h-full text-slate-400 text-sm">
                   No enrollment data available yet.
                 </div>
               )}
@@ -513,12 +513,13 @@ function OnboardingChart({ data }: { data: StudentOnboardingDataPoint[] }) {
   const enrollAreaPath = areaPath(enrollPts);
 
   return (
-    <div className="relative w-full overflow-x-auto">
+    <div className="relative w-full h-full overflow-x-auto">
       <svg
         ref={svgRef}
         viewBox={`0 0 ${W} ${H}`}
-        className="w-full"
-        style={{ minWidth: 320, maxWidth: '100%' }}
+        className="w-full h-full"
+        style={{ minWidth: 320, minHeight: 140 }}
+        preserveAspectRatio="xMidYMid meet"
         onMouseLeave={() => setTooltip(null)}
       >
         <defs>

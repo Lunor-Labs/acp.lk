@@ -121,9 +121,9 @@ export default function StudentDashboard({ onGoToLanding }: StudentDashboardProp
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'browse', label: 'Browse Classes', icon: Search },
     { id: 'classes', label: 'My Classes', icon: BookOpen },
     { id: 'studypacks', label: 'Study Packs', icon: Package },
-    { id: 'browse', label: 'Browse Classes', icon: Search },
     { id: 'exams', label: 'Exams & Results', icon: FileText },
   ];
 
