@@ -326,7 +326,7 @@ export default function ReviewsManager({ teacherId }: ReviewsManagerProps) {
     }
 
     return (
-        <div className="p-4 sm:p-6 lg:p-8">
+        <div className="h-full min-h-0 overflow-y-auto p-4 sm:p-6 lg:p-8">
             <div className="mb-8">
                 <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Reviews Manager</h2>
                 <p className="text-gray-500">Add and manage student review messages collected in class.</p>
