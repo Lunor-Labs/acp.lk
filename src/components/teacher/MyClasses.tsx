@@ -338,31 +338,31 @@ export default function MyClasses() {
   );
 
   return (
-    <div className="p-8">
-      <div className="mb-6">
-        <h2 className="text-3xl font-bold text-gray-900">My Classes</h2>
+    <div className="h-full min-h-0 overflow-y-auto p-4 sm:p-6 lg:p-8">
+      <div className="mb-4 sm:mb-6">
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">My Classes</h2>
       </div>
 
       {notification && (
-        <div className={`mb-6 p-4 rounded-xl flex items-center space-x-3 transition-all duration-300 animate-in fade-in slide-in-from-top-4 ${notification.type === 'success' ? 'bg-emerald-50 border border-emerald-100 text-emerald-700' : 'bg-red-50 border border-red-100 text-red-700'}`}>
-          {notification.type === 'success' ? <Check className="w-5 h-5 flex-shrink-0" /> : <AlertCircle className="w-5 h-5 flex-shrink-0" />}
-          <p className="text-sm font-bold">{notification.message}</p>
+        <div className={`mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl flex items-center gap-2 sm:gap-3 transition-all duration-300 animate-in fade-in slide-in-from-top-4 ${notification.type === 'success' ? 'bg-emerald-50 border border-emerald-100 text-emerald-700' : 'bg-red-50 border border-red-100 text-red-700'}`}>
+          {notification.type === 'success' ? <Check className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" /> : <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />}
+          <p className="text-xs sm:text-sm font-bold">{notification.message}</p>
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-              <h3 className="text-xl font-bold text-gray-900">Active Classes</h3>
+          <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900">Active Classes</h3>
               <div className="relative w-full sm:w-auto">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
                 <input
                   type="text"
                   placeholder="Search class..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#eb1b23] focus:border-transparent w-full sm:w-64"
+                  className="pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#eb1b23] focus:border-transparent w-full sm:w-64"
                 />
               </div>
             </div>
@@ -393,36 +393,43 @@ export default function MyClasses() {
                   const colors = getClassColor(0); // Default to first color
 
                   return (
-                    <div key={cls.id} className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition">
-                      <div className="flex items-start space-x-4">
-                        <div className={`${colors.bg} rounded-2xl p-4 flex items-center justify-center w-20 h-20`}>
-                          <IconComponent className={`w-12 h-12 ${colors.icon}`} />
+                    <div key={cls.id} className="border border-gray-200 rounded-xl p-3 sm:p-4 hover:shadow-md transition">
+                      <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:space-x-4">
+                        {/* Icon - smaller on mobile */}
+                        <div className={`${colors.bg} rounded-2xl p-3 sm:p-4 flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0`}>
+                          <IconComponent className={`w-8 h-8 sm:w-12 sm:h-12 ${colors.icon}`} />
                         </div>
 
-                        <div className="flex-1">
-                          <div className="flex items-start justify-between mb-2">
-                            <div>
-                              <div className="flex items-center space-x-2 mb-2">
-                                <span className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${colors.badge}`}>
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          {/* Title and metadata - stack on mobile */}
+                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-0 mb-3">
+                            <div className="min-w-0">
+                              {/* Subject badge and date */}
+                              <div className="flex flex-wrap items-center gap-2 mb-2">
+                                <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-semibold uppercase whitespace-nowrap ${colors.badge}`}>
                                   {cls.subject}
                                 </span>
-                                <span className="text-xs text-gray-500">
+                                <span className="text-xs text-gray-500 whitespace-nowrap">
                                   {new Date(cls.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                 </span>
                               </div>
-                              <h4 className="text-lg font-bold text-gray-900">{cls.title}</h4>
-                              <p className="text-sm text-gray-600 mt-1 line-clamp-2">{cls.description}</p>
+                              {/* Title - truncate properly on mobile */}
+                              <h4 className="text-base sm:text-lg font-bold text-gray-900 line-clamp-2">{cls.title}</h4>
+                              {/* Description - truncate on mobile */}
+                              <p className="text-xs sm:text-sm text-gray-600 mt-1 line-clamp-2">{cls.description}</p>
                             </div>
-                            <div className="flex items-center space-x-2">
+                            {/* Action buttons - stack vertically on mobile */}
+                            <div className="flex items-center gap-2 flex-shrink-0">
                               <button
                                 onClick={() => handleToggleActive(cls.id, cls.is_active)}
-                                className={`text-xs font-medium px-2 py-1 rounded transition ${cls.is_active ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                                className={`text-xs font-medium px-2 py-1 rounded transition whitespace-nowrap ${cls.is_active ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
                               >
                                 {cls.is_active ? 'Active' : 'Paused'}
                               </button>
                               <button
                                 onClick={() => handleEdit(cls)}
-                                className="text-[#eb1b23] hover:text-red-700 bg-red-50 p-2 rounded-lg transition-colors group"
+                                className="text-[#eb1b23] hover:text-red-700 bg-red-50 p-2 rounded-lg transition-colors group flex-shrink-0"
                                 title="Edit Class"
                               >
                                 <Edit2 className="w-4 h-4" />
@@ -430,34 +437,35 @@ export default function MyClasses() {
                             </div>
                           </div>
 
-                          <div className="flex items-center space-x-6 text-sm text-gray-600 mt-3">
-                            <div className="flex items-center space-x-1">
-                              <Users className="w-4 h-4" />
+                          {/* Stats - responsive layout */}
+                          <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs sm:text-sm text-gray-600 mt-3">
+                            <div className="flex items-center gap-1 whitespace-nowrap">
+                              <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                               <span>{enrollmentCounts[cls.id] || 0} Students</span>
                             </div>
-                            <div className="flex items-center space-x-1">
-                              <Calendar className="w-4 h-4" />
+                            <div className="flex items-center gap-1 whitespace-nowrap">
+                              <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                               <span>{cls.weeks?.length || 0} Weeks</span>
                             </div>
                           </div>
                         </div>
                       </div>
 
-                      {/* Weeks Display in List */}
+                      {/* Weeks Display - responsive grid */}
                       {cls.weeks && cls.weeks.length > 0 && (
-                        <div className="mt-4 pt-4 border-t border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-2">
+                        <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-100 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                           {cls.weeks.map((week, idx) => (
-                            <div key={week.id || idx} className="bg-gray-50 rounded-lg p-3 text-xs flex items-center justify-between group">
-                              <div className="flex items-center space-x-2">
-                                <div className="w-6 h-6 rounded bg-white flex items-center justify-center font-bold text-gray-500">
+                            <div key={week.id || idx} className="bg-gray-50 rounded-lg p-2 sm:p-3 text-xs flex items-center justify-between group overflow-hidden">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <div className="w-5 h-5 sm:w-6 sm:h-6 rounded bg-white flex items-center justify-center font-bold text-gray-500 flex-shrink-0 text-xs">
                                   {idx + 1}
                                 </div>
-                                <span className="font-semibold text-gray-700">{week.title}</span>
+                                <span className="font-semibold text-gray-700 truncate text-xs">{week.title}</span>
                               </div>
-                              <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                {week.zoom_link && <Video className="w-3.5 h-3.5 text-blue-500" />}
-                                {week.recordings?.length > 0 && <PlayCircle className="w-3.5 h-3.5 text-[#eb1b23]" />}
-                                {week.materials?.length > 0 && <FileIcon className="w-3.5 h-3.5 text-gray-400" />}
+                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                                {week.zoom_link && <Video className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-blue-500" />}
+                                {week.recordings?.length > 0 && <PlayCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#eb1b23]" />}
+                                {week.materials?.length > 0 && <FileIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-400" />}
                               </div>
                             </div>
                           ))}
@@ -472,13 +480,13 @@ export default function MyClasses() {
         </div>
 
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-xl shadow-sm p-6 sticky top-6 border-t-4 border-[#eb1b23] flex flex-col max-h-[calc(100vh-100px)]">
-            <div className="flex items-center space-x-2 mb-6 flex-shrink-0">
-              <div>
-                <h3 className="text-lg font-bold text-slate-900 leading-tight">
+          <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 sticky top-6 border-t-4 border-[#eb1b23] flex flex-col max-h-[calc(100vh-100px)]">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-4 sm:mb-6 flex-shrink-0">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-tight">
                   {editingClassId ? 'Edit Class Details' : 'Create New Class'}
                 </h3>
-                <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">
+                <p className="text-[9px] sm:text-[10px] text-slate-500 uppercase font-bold tracking-wider">
                   {editingClassId ? 'Update existing configuration' : 'Module-based setup'}
                 </p>
               </div>
@@ -486,17 +494,17 @@ export default function MyClasses() {
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="px-3 py-1 bg-gray-100 text-gray-500 rounded text-xs font-bold hover:bg-gray-200"
+                  className="px-2 sm:px-3 py-1 bg-gray-100 text-gray-500 rounded text-xs font-bold hover:bg-gray-200 whitespace-nowrap flex-shrink-0"
                 >
                   Cancel
                 </button>
               )}
             </div>
 
-            <form onSubmit={handleCreateClass} className="space-y-6 overflow-y-auto pr-2 flex-1 pb-4">
-              <div className="space-y-4">
+            <form onSubmit={handleCreateClass} className="space-y-4 sm:space-y-6 overflow-y-auto pr-2 flex-1 pb-4">
+              <div className="space-y-3 sm:space-y-4">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Class Title</label>
+                  <label className="block text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase mb-1">Class Title</label>
                   <input
                     type="text"
                     required
