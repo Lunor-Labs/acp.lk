@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { ExamRepository, ClassRepository, TeacherRepository, PdfPaperRepository } from '../../repositories';
-import { Plus, Calendar, Clock, Users, Upload, X, FileText, ChevronRight } from 'lucide-react';
+import { Plus, Calendar, Clock, Users, Upload, X, FileText, ChevronRight, Image } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface Exam {
@@ -31,6 +31,9 @@ interface Question {
   options: string[];
   correct_answer: string;
   marks: number;
+  image_path?: string;
+  image_file?: File;
+  image_preview?: string;
 }
 
 interface PdfAnswer {
@@ -50,6 +53,7 @@ interface ManualQuestion {
   options: string[];
   correct_answer: string;
   marks: number;
+  image_path?: string;
 }
 
 interface ExamDetail {
@@ -68,6 +72,7 @@ export default function Exams() {
   const [classes, setClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('all');
+  const [isCreatingExam, setIsCreatingExam] = useState(false);
   
   // State for exam detail modal
   const [selectedExamDetail, setSelectedExamDetail] = useState<ExamDetail | null>(null);
@@ -107,7 +112,7 @@ export default function Exams() {
     {
       id: '1',
       question_text: '',
-      options: ['', '', '', ''],
+      options: ['', '', '', '', ''],
       correct_answer: '',
       marks: 1,
     },
@@ -338,23 +343,105 @@ export default function Exams() {
       }
 
       const validQuestions = questions.filter(q => q.question_text.trim());
+      // console.log(`[EXAM] Starting exam creation with ${validQuestions.length} questions`);
+      
       if (validQuestions.length === 0) {
         alert('Please add at least one question');
         return;
       }
 
+      setIsCreatingExam(true);
       const startTime = new Date(`${formData.exam_date}T${formData.exam_time}`);
       const endTime = new Date(startTime.getTime() + formData.duration_minutes * 60000);
 
-      const questionsToInsert = validQuestions.map((q, index) => ({
-        question_number: index + 1,
-        question_text: q.question_text,
-        options: q.options.filter(opt => opt.trim()),
-        correct_answer: q.correct_answer,
-        marks: q.marks,
-      }));
+      // Upload images and prepare questions - sequential upload to avoid filename collision
+      const questionsToInsert: any[] = [];
+      const failedQuestions: number[] = [];
+      const uploadedImages: string[] = [];
 
-      await examRepo.createWithQuestions(
+      // console.log(`[EXAM] Starting sequential image upload for ${validQuestions.length} questions...`);
+
+      for (let index = 0; index < validQuestions.length; index++) {
+        const q = validQuestions[index];
+        let imagePath: string | undefined = undefined;
+        const questionNum = index + 1;
+
+        // console.log(`[Q${questionNum}] Processing question ${questionNum}/${validQuestions.length}`);
+        // console.log(`[Q${questionNum}] Has image: ${!!q.image_file}, Question text: ${q.question_text.substring(0, 50)}`);
+
+        // Upload image if provided
+        if (q.image_file) {
+          try {
+            // Use more unique filename: timestamp + question index + random + extension
+            const ext = q.image_file.type.split('/')[1] || 'jpg';
+            const fileName = `${Date.now()}-q${questionNum}-${Math.random().toString(36).substr(2, 9)}.${ext}`;
+            const filePath = `acp/questions/images/${fileName}`;
+
+            // console.log(`[Q${questionNum}] Uploading image: ${fileName} (Size: ${q.image_file.size} bytes)`);
+
+            const { error: uploadError, data: uploadData } = await supabase.storage
+              .from('acp')
+              .upload(`questions/images/${fileName}`, q.image_file, {
+                cacheControl: '3600',
+                upsert: false,
+              });
+
+            if (uploadError) {
+              // console.error(`[Q${questionNum}] ❌ Image upload FAILED:`, uploadError);
+              failedQuestions.push(questionNum);
+              // Continue - save question without image
+            } else {
+              // console.log(`[Q${questionNum}] ✅ Image uploaded successfully`);
+              imagePath = filePath;
+              uploadedImages.push(fileName);
+            }
+          } catch (error) {
+            // console.error(`[Q${questionNum}] ❌ Image upload EXCEPTION:`, error);
+            failedQuestions.push(questionNum);
+            // Continue - save question without image
+          }
+        }
+
+        // Validate question data
+        const filteredOptions = q.options.filter(opt => opt.trim());
+        // console.log(`[Q${questionNum}] Options: ${filteredOptions.length}, Correct answer: ${q.correct_answer}`);
+
+        const questionData = {
+          question_number: questionNum,
+          question_text: q.question_text,
+          options: filteredOptions,
+          correct_answer: q.correct_answer,
+          marks: q.marks,
+          image_path: imagePath,
+        };
+
+        
+        questionsToInsert.push(questionData);
+      }
+
+      // console.log(`[EXAM] Upload summary - Total: ${validQuestions.length}, Failed: ${failedQuestions.length}, Uploaded images: ${uploadedImages.length}`);
+
+      // Check if any images failed to upload
+      if (failedQuestions.length > 0) {
+        const msg = `Image upload failed for questions: ${failedQuestions.join(', ')}. These questions will be saved without images.`;
+        // console.warn(`[EXAM] ⚠️ ${msg}`);
+        alert(msg);
+      }
+
+      if (questionsToInsert.length === 0) {
+        alert('No questions to save. Please check your questions and try again.');
+        setIsCreatingExam(false);
+        return;
+      }
+
+      // console.log(`[EXAM] Creating exam with ${questionsToInsert.length} questions in database...`);
+      // console.log(`[EXAM] Exam data:`, {
+      //   title: formData.title,
+      //   subject: formData.subject,
+      //   questions_count: questionsToInsert.length,
+      // });
+
+      const createdExam = await examRepo.createWithQuestions(
         {
           teacher_id: teacher.id,
           class_id: formData.class_id,
@@ -369,12 +456,15 @@ export default function Exams() {
         questionsToInsert
       );
 
+    //  console.log(`[EXAM] ✅ Exam created successfully! Exam ID:`, createdExam.id);
       alert('Exam created successfully!');
       resetForm();
       fetchExams();
     } catch (error) {
-      console.error('Error creating exam:', error);
-      alert('Failed to create exam. Please try again.');
+      //console.error('[EXAM] ❌ Error creating exam:', error);
+      alert('Failed to create exam. Please check browser console for details.');
+    } finally {
+      setIsCreatingExam(false);
     }
   }
 
@@ -393,7 +483,7 @@ export default function Exams() {
       {
         id: '1',
         question_text: '',
-        options: ['', '', '', ''],
+        options: ['', '', '', '', ''],
         correct_answer: '',
         marks: 1,
       },
@@ -414,7 +504,7 @@ export default function Exams() {
       {
         id: Date.now().toString(),
         question_text: '',
-        options: ['', '', '', ''],
+        options: ['', '', '', '', ''],
         correct_answer: '',
         marks: 1,
       },
@@ -434,6 +524,42 @@ export default function Exams() {
       questions.map((q) =>
         q.id === id
           ? { ...q, options: q.options.map((opt, i) => (i === optionIndex ? value : opt)) }
+          : q
+      )
+    );
+  }
+
+  function handleQuestionImageSelect(questionId: string, e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        alert('Please select a valid image file');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setQuestions(
+          questions.map((q) =>
+            q.id === questionId
+              ? {
+                  ...q,
+                  image_file: file,
+                  image_preview: event.target?.result as string,
+                }
+              : q
+          )
+        );
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  function removeQuestionImage(questionId: string) {
+    setQuestions(
+      questions.map((q) =>
+        q.id === questionId
+          ? { ...q, image_file: undefined, image_preview: undefined, image_path: undefined }
           : q
       )
     );
@@ -872,6 +998,41 @@ export default function Exams() {
                     className="w-full border-0 border-b border-gray-200 px-0 py-2 focus:ring-0 focus:border-[#eb1b23] text-sm"
                   />
 
+                  {/* Image Upload Section */}
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    {question.image_preview ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-semibold text-gray-600">Image Attached</span>
+                          <button
+                            onClick={() => removeQuestionImage(question.id)}
+                            className="text-xs text-red-600 hover:text-red-700 font-medium"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                        <img
+                          src={question.image_preview}
+                          alt="Question"
+                          className="w-full h-40 object-contain bg-white rounded border border-gray-200"
+                        />
+                      </div>
+                    ) : (
+                      <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#eb1b23] transition">
+                        <Image className="w-5 h-5 text-gray-400 mb-1" />
+                        <span className="text-xs text-gray-600 text-center">
+                          Add image (optional)
+                        </span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleQuestionImageSelect(question.id, e)}
+                          className="hidden"
+                        />
+                      </label>
+                    )}
+                  </div>
+
                   <div className="space-y-2">
                     {question.options.map((option, optIndex) => (
                       <div key={optIndex} className="flex items-center space-x-2 min-w-0">
@@ -908,9 +1069,17 @@ export default function Exams() {
 
               <button
                 onClick={handleCreateExam}
-                className="w-full bg-[#eb1b23] text-white px-6 py-3 rounded-lg font-medium hover:bg-red-700 transition-all duration-200 hover:shadow-lg"
+                disabled={isCreatingExam}
+                className="w-full bg-[#eb1b23] text-white px-6 py-3 rounded-lg font-medium hover:bg-red-700 transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
               >
-                Publish Exam
+                {isCreatingExam ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Uploading & Publishing...</span>
+                  </>
+                ) : (
+                  <span>Publish Exam</span>
+                )}
               </button>
                 </>
               ) : null}
@@ -1051,6 +1220,17 @@ export default function Exams() {
                                 </div>
                                 
                                 <p className="text-sm font-medium text-gray-800 mb-3">{question.question_text}</p>
+
+                                {/* Display image if present */}
+                                {question.image_path && (
+                                  <div className="mb-4 rounded-lg overflow-hidden bg-gray-50 border border-gray-200">
+                                    <img
+                                      src={supabase.storage.from('acp').getPublicUrl(question.image_path.replace('acp/', '')).data.publicUrl}
+                                      alt={`Question ${question.question_number}`}
+                                      className="w-full h-48 object-contain"
+                                    />
+                                  </div>
+                                )}
                                 
                                 <div className="space-y-2">
                                   {question.options.map((option, optIndex) => {

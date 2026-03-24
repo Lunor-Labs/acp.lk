@@ -24,6 +24,7 @@ export interface ExamQuestion {
     options: string[];
     correct_answer: string;
     marks: number;
+    image_path?: string;
     created_at: string;
 }
 
@@ -142,20 +143,36 @@ export class ExamRepository extends BaseRepository<Exam> {
      */
     async createWithQuestions(exam: Partial<Exam>, questions: Partial<ExamQuestion>[]): Promise<Exam> {
         // Create exam
+        //console.log('[ExamRepository] Creating exam...', exam.title);
         const createdExam = await this.create(exam);
+        //console.log('[ExamRepository] ✅ Exam created with ID:', createdExam.id);
 
         // Create questions
         if (questions.length > 0) {
-            const questionsWithExamId = questions.map(q => ({
+            //console.log(`[ExamRepository] Inserting ${questions.length} questions...`);
+            const questionsWithExamId = questions.map((q, idx) => {
+              const questionData = {
                 ...q,
                 exam_id: createdExam.id
-            }));
+              };
+            //   console.log(`[ExamRepository] Q${idx + 1}:`, {
+            //     question_number: questionData.question_number,
+            //     text: questionData.question_text?.substring(0, 50),
+            //     options_count: questionData.options?.length,
+            //     has_image: !!questionData.image_path,
+            //   });
+              return questionData;
+            });
 
-            const { error } = await db.from<ExamQuestion>('exam_questions')
+            const { data: insertedData, error } = await db.from<ExamQuestion>('exam_questions')
                 .insert(questionsWithExamId)
                 .execute();
 
-            if (error) throw error;
+            if (error) {
+              //console.error('[ExamRepository] ❌ Batch insert failed:', error);
+              throw error;
+            }
+            //console.log(`[ExamRepository] ✅ Successfully inserted ${questions.length} questions`);
         }
 
         return createdExam;
