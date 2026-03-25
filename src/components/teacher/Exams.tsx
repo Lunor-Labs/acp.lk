@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { ExamRepository, ClassRepository, TeacherRepository, PdfPaperRepository } from '../../repositories';
-import { Plus, Calendar, Clock, Users, Upload, X, FileText, ChevronRight, Image } from 'lucide-react';
+import { Plus, Calendar, Clock, Users, Upload, X, FileText, ChevronRight, Image, Edit, Trash2, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface Exam {
@@ -59,7 +59,11 @@ interface ManualQuestion {
 interface ExamDetail {
   id: string;
   title: string;
+  description: string;
   subject: string;
+  start_time: string;
+  end_time: string;
+  duration_minutes: number;
   pdfPath: string | null;
   markedAnswers: (PdfAnswer | ManualAnswer)[];
   manualQuestions: ManualQuestion[];
@@ -81,6 +85,10 @@ export default function Exams() {
   const [manualQuestions, setManualQuestions] = useState<ManualQuestion[]>([]);
   const [editedAnswers, setEditedAnswers] = useState<Record<string, string | number>>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditingExamDetails, setIsEditingExamDetails] = useState(false);
+  const [editExamData, setEditExamData] = useState({ title: '', description: '', exam_date: '', exam_time: '', duration_minutes: 0 });
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const examRepo = new ExamRepository();
   const classRepo = new ClassRepository();
@@ -209,7 +217,11 @@ export default function Exams() {
         setSelectedExamDetail({
           id: exam.id,
           title: exam.title,
+          description: exam.description,
           subject: exam.subject,
+          start_time: exam.start_time,
+          end_time: exam.end_time,
+          duration_minutes: exam.duration_minutes,
           pdfPath: pdfUrl,
           markedAnswers: formattedAnswers,
           manualQuestions: [],
@@ -250,7 +262,11 @@ export default function Exams() {
       setSelectedExamDetail({
         id: exam.id,
         title: exam.title,
+        description: exam.description,
         subject: exam.subject,
+        start_time: exam.start_time,
+        end_time: exam.end_time,
+        duration_minutes: exam.duration_minutes,
         pdfPath: null,
         markedAnswers: manualAnswers,
         manualQuestions: formattedQuestions,
@@ -261,6 +277,76 @@ export default function Exams() {
       alert('Failed to load exam details');
     } finally {
       setLoadingExamDetail(false);
+    }
+  }
+
+  function startEditingExamDetails() {
+    if (!selectedExamDetail) return;
+    const startDate = new Date(selectedExamDetail.start_time);
+    const startTime = startDate.toISOString().slice(0, 16).split('T');
+    setEditExamData({
+      title: selectedExamDetail.title,
+      description: selectedExamDetail.description,
+      exam_date: startTime[0],
+      exam_time: startTime[1],
+      duration_minutes: selectedExamDetail.duration_minutes,
+    });
+    setIsEditingExamDetails(true);
+  }
+
+  async function handleUpdateExamDetails() {
+    if (!selectedExamDetail) return;
+    
+    try {
+      setIsSaving(true);
+      const startTime = new Date(`${editExamData.exam_date}T${editExamData.exam_time}`);
+      const endTime = new Date(startTime.getTime() + editExamData.duration_minutes * 60000);
+
+      await examRepo.update(selectedExamDetail.id, {
+        title: editExamData.title,
+        description: editExamData.description,
+        start_time: startTime.toISOString(),
+        end_time: endTime.toISOString(),
+        duration_minutes: editExamData.duration_minutes,
+      });
+
+      alert('Exam details updated successfully!');
+      setIsEditingExamDetails(false);
+      fetchExams();
+      
+      // Update the selected exam detail
+      setSelectedExamDetail({
+        ...selectedExamDetail,
+        title: editExamData.title,
+        description: editExamData.description,
+        start_time: startTime.toISOString(),
+        end_time: endTime.toISOString(),
+        duration_minutes: editExamData.duration_minutes,
+      });
+    } catch (error) {
+      console.error('Error updating exam details:', error);
+      alert('Failed to update exam details. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleDeleteExam() {
+    if (!selectedExamDetail) return;
+
+    try {
+      setIsDeleting(true);
+      await examRepo.delete(selectedExamDetail.id);
+      
+      alert('Exam deleted successfully!');
+      setSelectedExamDetail(null);
+      setShowDeleteConfirm(false);
+      fetchExams();
+    } catch (error) {
+      console.error('Error deleting exam:', error);
+      alert('Failed to delete exam. Please try again.');
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -342,7 +428,7 @@ export default function Exams() {
         return;
       }
 
-      const validQuestions = questions.filter(q => q.question_text.trim());
+      const validQuestions = questions.filter(q => q.question_text.trim() || q.image_file || q.image_path);
       // console.log(`[EXAM] Starting exam creation with ${validQuestions.length} questions`);
       
       if (validQuestions.length === 0) {
@@ -379,7 +465,7 @@ export default function Exams() {
 
             // console.log(`[Q${questionNum}] Uploading image: ${fileName} (Size: ${q.image_file.size} bytes)`);
 
-            const { error: uploadError, data: uploadData } = await supabase.storage
+            const { error: uploadError } = await supabase.storage
               .from('acp')
               .upload(`questions/images/${fileName}`, q.image_file, {
                 cacheControl: '3600',
@@ -1099,19 +1185,128 @@ export default function Exams() {
             ) : (
               <>
                 {/* Header */}
-                <div className="sticky top-0 bg-gradient-to-r from-[#eb1b23] to-red-700 text-white p-6 flex items-center justify-between">
-                  <div>
-                    <h2 className="text-2xl font-bold">{selectedExamDetail.title}</h2>
-                    <p className="text-red-100 text-sm mt-1">{selectedExamDetail.subject}</p>
+                {isEditingExamDetails ? (
+                  <div className="sticky top-0 bg-gradient-to-r from-[#eb1b23] to-red-700 text-white p-6 flex flex-col gap-4">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-2xl font-bold">Edit Exam Details</h2>
+                      <button
+                        onClick={() => setIsEditingExamDetails(false)}
+                        className="text-white hover:bg-red-600 rounded-lg p-2 transition"
+                      >
+                        <X className="w-6 h-6" />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Exam Title</label>
+                        <input
+                          type="text"
+                          value={editExamData.title}
+                          onChange={(e) => setEditExamData({ ...editExamData, title: e.target.value })}
+                          className="w-full px-3 py-2 bg-red-50 border border-red-200 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Duration (minutes)</label>
+                        <input
+                          type="number"
+                          value={editExamData.duration_minutes}
+                          onChange={(e) => setEditExamData({ ...editExamData, duration_minutes: parseInt(e.target.value) })}
+                          className="w-full px-3 py-2 bg-red-50 border border-red-200 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Date</label>
+                        <input
+                          type="date"
+                          value={editExamData.exam_date}
+                          onChange={(e) => setEditExamData({ ...editExamData, exam_date: e.target.value })}
+                          className="w-full px-3 py-2 bg-red-50 border border-red-200 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Time</label>
+                        <input
+                          type="time"
+                          value={editExamData.exam_time}
+                          onChange={(e) => setEditExamData({ ...editExamData, exam_time: e.target.value })}
+                          className="w-full px-3 py-2 bg-red-50 border border-red-200 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-white"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium mb-1">Description</label>
+                        <textarea
+                          value={editExamData.description}
+                          onChange={(e) => setEditExamData({ ...editExamData, description: e.target.value })}
+                          rows={2}
+                          className="w-full px-3 py-2 bg-red-50 border border-red-200 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-white"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={handleUpdateExamDetails}
+                        disabled={isSaving}
+                        className="flex-1 bg-white text-red-700 px-4 py-2 rounded font-medium hover:bg-gray-100 disabled:opacity-50 flex items-center justify-center space-x-2"
+                      >
+                        {isSaving ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-red-200 border-t-red-700 rounded-full animate-spin"></div>
+                            <span>Saving...</span>
+                          </>
+                        ) : (
+                          <span>Save Changes</span>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => setIsEditingExamDetails(false)}
+                        className="px-4 py-2 bg-red-900 text-white rounded font-medium hover:bg-red-800"
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </div>
-                  <button
-                    onClick={() => setSelectedExamDetail(null)}
-                    title="Close exam details"
-                    className="text-white hover:bg-red-600 rounded-lg p-2 transition"
-                  >
-                    <X className="w-6 h-6" />
-                  </button>
-                </div>
+                ) : (
+                  <div className="sticky top-0 bg-gradient-to-r from-[#eb1b23] to-red-700 text-white p-6 flex items-center justify-between">
+                    <div>
+                      <h2 className="text-2xl font-bold">{selectedExamDetail.title}</h2>
+                      <p className="text-red-100 text-sm mt-1">{selectedExamDetail.subject}</p>
+                      <div className="flex items-center space-x-4 mt-2 text-sm text-red-100">
+                        <span className="flex items-center">
+                          <Calendar className="w-4 h-4 mr-1" />
+                          {new Date(selectedExamDetail.start_time).toLocaleDateString()}
+                        </span>
+                        <span className="flex items-center">
+                          <Clock className="w-4 h-4 mr-1" />
+                          {selectedExamDetail.duration_minutes} mins
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={startEditingExamDetails}
+                        className="bg-white text-red-700 p-2 rounded-lg hover:bg-gray-100 transition flex items-center space-x-1"
+                        title="Edit exam details"
+                      >
+                        <Edit className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => setShowDeleteConfirm(true)}
+                        className="bg-red-900 text-white p-2 rounded-lg hover:bg-red-800 transition"
+                        title="Delete exam"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => setSelectedExamDetail(null)}
+                        className="text-white hover:bg-red-600 rounded-lg p-2 transition"
+                        title="Close exam details"
+                      >
+                        <X className="w-6 h-6" />
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <div className="overflow-y-auto flex-1 p-6">
                   {selectedExamDetail.isPdfExam ? (
@@ -1331,6 +1526,50 @@ export default function Exams() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md p-6">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <AlertCircle className="w-6 h-6 text-red-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">Delete Exam?</h3>
+            </div>
+            <p className="text-gray-600 mb-4">
+              Are you sure you want to delete this exam? This action cannot be undone. All exam data and student attempts will be deleted.
+            </p>
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-6">
+              <p className="text-sm font-medium text-gray-900">
+                Exam: <span className="text-red-700">{selectedExamDetail?.title}</span>
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteExam}
+                disabled={isDeleting}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+              >
+                {isDeleting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <span>Delete Exam</span>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}
