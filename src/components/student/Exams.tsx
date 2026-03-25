@@ -24,6 +24,7 @@ interface ExamQuestion {
   options: string[];
   correct_answer: string;
   marks: number;
+  image_path?: string;
 }
 
 interface ExamAttempt {
@@ -198,6 +199,7 @@ export default function Exams() {
           options: q.options || [],
           correct_answer: q.correct_answer,
           marks: q.marks,
+          image_path: q.image_path,
         }));
       }
 
@@ -528,6 +530,17 @@ export default function Exams() {
                     <h3 className="text-2xl font-bold text-gray-900 mb-8 leading-relaxed">
                       {activeExam.questions[activeExam.currentQuestion].question_text}
                     </h3>
+
+                    {/* Display image if present */}
+                    {activeExam.questions[activeExam.currentQuestion].image_path && (
+                      <div className="mb-8 rounded-lg overflow-hidden bg-gray-50 border border-gray-200 flex items-center justify-center p-4">
+                        <img
+                          src={supabase.storage.from('acp').getPublicUrl(activeExam.questions[activeExam.currentQuestion].image_path!.replace('acp/', '')).data.publicUrl}
+                          alt={`Question ${activeExam.currentQuestion + 1}`}
+                          className="max-w-full max-h-96 object-contain"
+                        />
+                      </div>
+                    )}
 
                     <div className="space-y-4">
                       {activeExam.questions[activeExam.currentQuestion].options.map((option, idx) => {
