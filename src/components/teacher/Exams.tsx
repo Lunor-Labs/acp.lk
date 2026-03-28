@@ -91,6 +91,20 @@ export default function Exams() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+  // Edit Question State
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
+  const [editQuestionData, setEditQuestionData] = useState<{
+    id: string;
+    question_text: string;
+    options: string[];
+    marks: number;
+    image_path?: string;
+    image_file?: File;
+    image_preview?: string;
+    remove_image?: boolean;
+  } | null>(null);
+  const [isUpdatingQuestion, setIsUpdatingQuestion] = useState(false);
+
   // Toast notification state
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info'; visible: boolean } | null>(null);
 
@@ -259,6 +273,7 @@ export default function Exams() {
         options: q.options || [],
         correct_answer: q.correct_answer,
         marks: q.marks,
+        image_path: q.image_path,
       }));
       
       // Create answer sheet for manual exam
@@ -362,6 +377,108 @@ export default function Exams() {
     }
   }
 
+  function handleStartEditQuestion(question: ManualQuestion) {
+    setEditingQuestionId(question.id);
+    setEditQuestionData({
+      id: question.id,
+      question_text: question.question_text,
+      options: [...question.options],
+      marks: question.marks,
+      image_path: question.image_path,
+    });
+  }
+
+  function handleEditQuestionImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file && editQuestionData) {
+      if (!file.type.startsWith('image/')) {
+        showToast('Please select a valid image file', 'warning');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setEditQuestionData({
+          ...editQuestionData,
+          image_file: file,
+          image_preview: event.target?.result as string,
+          remove_image: false,
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  function handleEditQuestionRemoveImage() {
+    if (editQuestionData) {
+      setEditQuestionData({
+        ...editQuestionData,
+        image_file: undefined,
+        image_preview: undefined,
+        remove_image: true,
+      });
+    }
+  }
+
+  async function handleUpdateQuestion() {
+    if (!editQuestionData) return;
+    
+    try {
+      setIsUpdatingQuestion(true);
+      let finalImagePath: string | null = editQuestionData.image_path || null;
+
+      if (editQuestionData.image_file) {
+        const ext = editQuestionData.image_file.type.split('/')[1] || 'jpg';
+        const fileName = `${Date.now()}-q-edit-${Math.random().toString(36).substr(2, 9)}.${ext}`;
+        const filePath = `acp/questions/images/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('acp')
+          .upload(`questions/images/${fileName}`, editQuestionData.image_file, {
+            cacheControl: '3600',
+            upsert: false,
+          });
+
+        if (uploadError) throw uploadError;
+        finalImagePath = filePath;
+      } else if (editQuestionData.remove_image) {
+        finalImagePath = null;
+      }
+
+      const filteredOptions = editQuestionData.options.map(opt => opt.trim());
+
+      const { error } = await supabase
+        .from('exam_questions')
+        .update({
+          question_text: editQuestionData.question_text,
+          options: filteredOptions,
+          marks: editQuestionData.marks,
+          image_path: finalImagePath,
+        })
+        .eq('id', editQuestionData.id);
+
+      if (error) throw error;
+
+      setManualQuestions(manualQuestions.map(q => 
+        q.id === editQuestionData.id ? { 
+          ...q, 
+          question_text: editQuestionData.question_text, 
+          options: filteredOptions, 
+          marks: editQuestionData.marks, 
+          image_path: finalImagePath || undefined
+        } : q
+      ));
+
+      showToast('Question updated successfully!', 'success');
+      setEditingQuestionId(null);
+      setEditQuestionData(null);
+    } catch (error) {
+      console.error('Error updating question:', error);
+      showToast('Failed to update question', 'error');
+    } finally {
+      setIsUpdatingQuestion(false);
+    }
+  }
+
   async function handleSaveAnswerChanges() {
     if (!selectedExamDetail) return;
     
@@ -420,10 +537,30 @@ export default function Exams() {
   }
 
   function updateAnswerEdit(identifier: string | number, answer: string | number) {
-    setEditedAnswers(prev => ({
-      ...prev,
-      [identifier]: answer
-    }));
+    if (typeof answer === 'number') {
+      setEditedAnswers(prev => ({
+        ...prev,
+        [identifier]: answer
+      }));
+    } else {
+      setEditedAnswers(prev => {
+        const originalQuestion = manualQuestions.find(q => q.question_number === Number(identifier));
+        const startingAnswer = prev[identifier] !== undefined ? prev[identifier] as string : (originalQuestion?.correct_answer || '');
+        
+        let currentAnswers = startingAnswer ? startingAnswer.split(',') : [];
+        if (currentAnswers.includes(answer as string)) {
+          currentAnswers = currentAnswers.filter(a => a !== answer);
+        } else {
+          currentAnswers.push(answer as string);
+          currentAnswers.sort();
+        }
+        
+        return {
+          ...prev,
+          [identifier]: currentAnswers.join(',')
+        };
+      });
+    }
   }
 
   async function handleCreateExam() {
@@ -615,6 +752,22 @@ export default function Exams() {
         q.id === id ? { ...q, [field]: value } : q
       )
     );
+  }
+
+  function handleQuestionToggleCorrectAnswer(questionId: string, optionLetter: string) {
+    setQuestions(questions.map(q => {
+      if (q.id === questionId) {
+        let currentAnswers = q.correct_answer ? q.correct_answer.split(',') : [];
+        if (currentAnswers.includes(optionLetter)) {
+          currentAnswers = currentAnswers.filter(a => a !== optionLetter);
+        } else {
+          currentAnswers.push(optionLetter);
+        }
+        currentAnswers.sort();
+        return { ...q, correct_answer: currentAnswers.join(',') };
+      }
+      return q;
+    }));
   }
 
   function updateQuestionOption(id: string, optionIndex: number, value: string) {
@@ -1237,11 +1390,11 @@ export default function Exams() {
                     {question.options.map((option, optIndex) => (
                       <div key={optIndex} className="flex items-center space-x-2 min-w-0">
                         <input
-                          type="radio"
+                          type="checkbox"
                           name={`correct-${question.id}`}
-                          checked={question.correct_answer === String.fromCharCode(65 + optIndex)}
-                          onChange={() => updateQuestion(question.id, 'correct_answer', String.fromCharCode(65 + optIndex))}
-                          className="text-[#eb1b23] focus:ring-[#eb1b23] flex-shrink-0"
+                          checked={(question.correct_answer || '').split(',').includes(String.fromCharCode(65 + optIndex))}
+                          onChange={() => handleQuestionToggleCorrectAnswer(question.id, String.fromCharCode(65 + optIndex))}
+                          className="text-[#eb1b23] focus:ring-[#eb1b23] flex-shrink-0 rounded"
                         />
                         <input
                           type="text"
@@ -1253,7 +1406,7 @@ export default function Exams() {
                       </div>
                     ))}
                     <p className="text-xs text-gray-400 italic mt-2">
-                      select the radio button to mark correct answer
+                      select the checkboxes to mark correct answers
                     </p>
                   </div>
                 </div>
@@ -1521,46 +1674,160 @@ export default function Exams() {
                           {manualQuestions.length > 0 ? (
                             manualQuestions.map((question) => (
                               <div key={question.id} className="bg-white border border-gray-200 rounded-lg p-4">
-                                <div className="flex items-start justify-between mb-3">
-                                  <span className="font-bold text-gray-900">Q{question.question_number}</span>
-                                  <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded">
-                                    {question.marks} mark{question.marks > 1 ? 's' : ''}
-                                  </span>
-                                </div>
-                                
-                                <p className="text-sm font-medium text-gray-800 mb-3">{question.question_text}</p>
-
-                                {/* Display image if present */}
-                                {question.image_path && (
-                                  <div className="mb-4 rounded-lg overflow-hidden bg-gray-50 border border-gray-200">
-                                    <img
-                                      src={supabase.storage.from('acp').getPublicUrl(question.image_path.replace('acp/', '')).data.publicUrl}
-                                      alt={`Question ${question.question_number}`}
-                                      className="w-full h-48 object-contain"
-                                    />
-                                  </div>
-                                )}
-                                
-                                <div className="space-y-2">
-                                  {question.options.map((option, optIndex) => {
-                                    const optionLabel = String.fromCharCode(65 + optIndex);
-                                    const isCorrect = question.correct_answer === optionLabel;
-                                    return (
-                                      <div
-                                        key={optIndex}
-                                        className={`p-2 rounded text-sm border ${
-                                          isCorrect
-                                            ? 'border-green-500 bg-green-50'
-                                            : 'border-gray-200 bg-gray-50'
-                                        }`}
-                                      >
-                                        <span className="font-semibold text-gray-700">{optionLabel})</span>
-                                        <span className="text-gray-700 ml-2">{option}</span>
-                                        {isCorrect && <span className="ml-2 text-xs text-green-700">✓ Correct</span>}
+                                {editingQuestionId === question.id ? (
+                                  <div className="space-y-4">
+                                    <div className="flex items-center justify-between mb-3">
+                                      <span className="font-bold text-gray-900">Edit Q{question.question_number}</span>
+                                      <div className="flex items-center gap-2">
+                                        <label className="text-sm text-gray-600">Marks:</label>
+                                        <input 
+                                          type="number" 
+                                          value={editQuestionData?.marks || 1} 
+                                          onChange={e => setEditQuestionData({...editQuestionData!, marks: parseInt(e.target.value) || 1})}
+                                          className="w-16 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#eb1b23]"
+                                        />
                                       </div>
-                                    );
-                                  })}
-                                </div>
+                                    </div>
+                                    
+                                    <textarea
+                                      value={editQuestionData?.question_text || ''}
+                                      onChange={e => setEditQuestionData({...editQuestionData!, question_text: e.target.value})}
+                                      className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#eb1b23] min-h-[80px]"
+                                      rows={3}
+                                      placeholder="Question text..."
+                                    />
+                                    
+                                    {/* Image Section */}
+                                    <div className="bg-gray-50 rounded-lg p-3">
+                                      {editQuestionData?.image_preview || (editQuestionData?.image_path && !editQuestionData?.remove_image) ? (
+                                        <div className="space-y-2">
+                                          <div className="flex items-center justify-between mb-2">
+                                            <span className="text-xs font-semibold text-gray-600">Image Attached</span>
+                                            <button
+                                              onClick={handleEditQuestionRemoveImage}
+                                              className="text-xs text-red-600 hover:text-red-700 font-medium"
+                                            >
+                                              Remove
+                                            </button>
+                                          </div>
+                                          <img
+                                            src={editQuestionData.image_preview || supabase.storage.from('acp').getPublicUrl((editQuestionData.image_path || '').replace('acp/', '')).data.publicUrl}
+                                            alt={`Edit Question ${question.question_number}`}
+                                            className="w-full h-40 object-contain bg-white rounded border border-gray-200"
+                                          />
+                                        </div>
+                                      ) : (
+                                        <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#eb1b23] transition bg-white">
+                                          <Image className="w-5 h-5 text-gray-400 mb-1" />
+                                          <span className="text-xs text-gray-600 text-center">
+                                            Add image (optional)
+                                          </span>
+                                          <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleEditQuestionImageSelect}
+                                            className="hidden"
+                                          />
+                                        </label>
+                                      )}
+                                    </div>
+                                    
+                                    <div className="space-y-2">
+                                      {editQuestionData?.options.map((option, optIndex) => (
+                                        <div key={optIndex} className="flex items-center gap-2">
+                                          <span className="font-semibold text-gray-700 w-6">{String.fromCharCode(65 + optIndex)})</span>
+                                          <input
+                                            type="text"
+                                            value={option}
+                                            onChange={e => {
+                                              if (!editQuestionData) return;
+                                              const newOptions = [...editQuestionData.options];
+                                              newOptions[optIndex] = e.target.value;
+                                              setEditQuestionData({...editQuestionData, options: newOptions});
+                                            }}
+                                            className="flex-1 px-3 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#eb1b23]"
+                                          />
+                                        </div>
+                                      ))}
+                                    </div>
+                                    
+                                    <div className="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
+                                      <button
+                                        onClick={() => { setEditingQuestionId(null); setEditQuestionData(null); }}
+                                        className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg transition bg-white hover:bg-gray-50"
+                                      >
+                                        Cancel
+                                      </button>
+                                      <button
+                                        onClick={handleUpdateQuestion}
+                                        disabled={isUpdatingQuestion}
+                                        className="px-4 py-2 text-sm font-medium text-white bg-[#eb1b23] rounded-lg hover:bg-red-700 transition disabled:opacity-50 flex items-center gap-2"
+                                      >
+                                        {isUpdatingQuestion ? (
+                                          <>
+                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                            <span>Saving...</span>
+                                          </>
+                                        ) : (
+                                          <span>Save Changes</span>
+                                        )}
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <div className="flex items-start justify-between mb-3">
+                                      <div className="flex items-center gap-3">
+                                        <span className="font-bold text-gray-900">Q{question.question_number}</span>
+                                        <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded">
+                                          {question.marks} mark{question.marks > 1 ? 's' : ''}
+                                        </span>
+                                      </div>
+                                      
+                                      <button
+                                        onClick={() => handleStartEditQuestion(question)}
+                                        className="text-gray-400 hover:text-[#eb1b23] p-1.5 rounded-lg hover:bg-red-50 transition"
+                                        title="Edit Question"
+                                      >
+                                        <Edit className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                    
+                                    <p className="text-sm font-medium text-gray-800 mb-3">{question.question_text}</p>
+
+                                    {/* Display image if present */}
+                                    {question.image_path && (
+                                      <div className="mb-4 rounded-lg overflow-hidden bg-gray-50 border border-gray-200">
+                                        <img
+                                          src={supabase.storage.from('acp').getPublicUrl(question.image_path.replace('acp/', '')).data.publicUrl}
+                                          alt={`Question ${question.question_number}`}
+                                          className="w-full h-48 object-contain"
+                                        />
+                                      </div>
+                                    )}
+                                    
+                                    <div className="space-y-2">
+                                      {question.options.map((option, optIndex) => {
+                                        const optionLabel = String.fromCharCode(65 + optIndex);
+                                        const isCorrect = (question.correct_answer || '').split(',').includes(optionLabel);
+                                        return (
+                                          <div
+                                            key={optIndex}
+                                            className={`p-2 rounded text-sm border ${
+                                              isCorrect
+                                                ? 'border-green-500 bg-green-50'
+                                                : 'border-gray-200 bg-gray-50'
+                                            }`}
+                                          >
+                                            <span className="font-semibold text-gray-700">{optionLabel})</span>
+                                            <span className="text-gray-700 ml-2">{option}</span>
+                                            {isCorrect && <span className="ml-2 text-xs text-green-700">✓ Correct</span>}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </>
+                                )}
                               </div>
                             ))
                           ) : (
@@ -1592,9 +1859,10 @@ export default function Exams() {
                               <div className="flex gap-1 flex-wrap">
                                 {question.options.map((_, optIndex) => {
                                   const optLabel = String.fromCharCode(65 + optIndex);
-                                  const isSelected =
-                                    editedAnswers[question.question_number] === optLabel ||
-                                    (editedAnswers[question.question_number] === undefined && question.correct_answer === optLabel);
+                                  const currentAnsString = editedAnswers[question.question_number] !== undefined 
+                                    ? editedAnswers[question.question_number] as string
+                                    : (question.correct_answer || '');
+                                  const isSelected = currentAnsString.split(',').includes(optLabel);
                                   
                                   return (
                                     <button
