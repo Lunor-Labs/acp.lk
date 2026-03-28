@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { ExamRepository, ClassRepository, TeacherRepository, PdfPaperRepository } from '../../repositories';
-import { Plus, Calendar, Clock, Users, Upload, X, FileText, ChevronRight, Image, Edit, Trash2, AlertCircle } from 'lucide-react';
+import { Plus, Calendar, Clock, Users, Upload, X, FileText, ChevronRight, Image, Edit, Trash2, AlertCircle, Search, CheckCircle2, FileQuestion, BookOpen, GraduationCap, Check, AlertTriangle, Info } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface Exam {
@@ -76,6 +76,7 @@ export default function Exams() {
   const [classes, setClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [isCreatingExam, setIsCreatingExam] = useState(false);
   
   // State for exam detail modal
@@ -89,6 +90,17 @@ export default function Exams() {
   const [editExamData, setEditExamData] = useState({ title: '', description: '', exam_date: '', exam_time: '', duration_minutes: 0 });
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Toast notification state
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info'; visible: boolean } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
+    setToast({ message, type, visible: true });
+    setTimeout(() => {
+      setToast(prev => prev ? { ...prev, visible: false } : null);
+      setTimeout(() => setToast(null), 300);
+    }, 4000);
+  };
 
   const examRepo = new ExamRepository();
   const classRepo = new ClassRepository();
@@ -274,7 +286,7 @@ export default function Exams() {
       });
     } catch (error) {
       console.error('Error loading exam details:', error);
-      alert('Failed to load exam details');
+      showToast('Failed to load exam details', 'error');
     } finally {
       setLoadingExamDetail(false);
     }
@@ -310,7 +322,7 @@ export default function Exams() {
         duration_minutes: editExamData.duration_minutes,
       });
 
-      alert('Exam details updated successfully!');
+      showToast('Exam details updated successfully!', 'success');
       setIsEditingExamDetails(false);
       fetchExams();
       
@@ -325,7 +337,7 @@ export default function Exams() {
       });
     } catch (error) {
       console.error('Error updating exam details:', error);
-      alert('Failed to update exam details. Please try again.');
+      showToast('Failed to update exam details. Please try again.', 'error');
     } finally {
       setIsSaving(false);
     }
@@ -338,13 +350,13 @@ export default function Exams() {
       setIsDeleting(true);
       await examRepo.delete(selectedExamDetail.id);
       
-      alert('Exam deleted successfully!');
+      showToast('Exam deleted successfully!', 'success');
       setSelectedExamDetail(null);
       setShowDeleteConfirm(false);
       fetchExams();
     } catch (error) {
       console.error('Error deleting exam:', error);
-      alert('Failed to delete exam. Please try again.');
+      showToast('Failed to delete exam. Please try again.', 'error');
     } finally {
       setIsDeleting(false);
     }
@@ -356,7 +368,7 @@ export default function Exams() {
     try {
       const changes = Object.entries(editedAnswers);
       if (changes.length === 0) {
-        alert('No changes made to save');
+        showToast('No changes made to save', 'warning');
         return;
       }
 
@@ -398,10 +410,10 @@ export default function Exams() {
       }
 
       setEditedAnswers({});
-      alert('Answer sheet updated successfully!');
+      showToast('Answer sheet updated successfully!', 'success');
     } catch (error) {
       console.error('Error saving answer changes:', error);
-      alert('Failed to save changes');
+      showToast('Failed to save changes', 'error');
     } finally {
       setIsSaving(false);
     }
@@ -419,12 +431,12 @@ export default function Exams() {
       const teacher = await teacherRepo.findByProfileId(profile?.id!);
 
       if (!teacher) {
-        alert('Teacher profile not found');
+        showToast('Teacher profile not found', 'error');
         return;
       }
 
       if (!formData.class_id || !formData.title || !formData.exam_date || !formData.exam_time) {
-        alert('Please fill in all required fields');
+        showToast('Please fill in all required fields', 'warning');
         return;
       }
 
@@ -432,7 +444,7 @@ export default function Exams() {
       // console.log(`[EXAM] Starting exam creation with ${validQuestions.length} questions`);
       
       if (validQuestions.length === 0) {
-        alert('Please add at least one question');
+        showToast('Please add at least one question', 'warning');
         return;
       }
 
@@ -511,11 +523,11 @@ export default function Exams() {
       if (failedQuestions.length > 0) {
         const msg = `Image upload failed for questions: ${failedQuestions.join(', ')}. These questions will be saved without images.`;
         // console.warn(`[EXAM] ⚠️ ${msg}`);
-        alert(msg);
+        showToast(msg, 'warning');
       }
 
       if (questionsToInsert.length === 0) {
-        alert('No questions to save. Please check your questions and try again.');
+        showToast('No questions to save. Please check your questions and try again.', 'error');
         setIsCreatingExam(false);
         return;
       }
@@ -543,12 +555,12 @@ export default function Exams() {
       );
 
     //  console.log(`[EXAM] ✅ Exam created successfully! Exam ID:`, createdExam.id);
-      alert('Exam created successfully!');
+      showToast('Exam created successfully!', 'success');
       resetForm();
       fetchExams();
     } catch (error) {
       //console.error('[EXAM] ❌ Error creating exam:', error);
-      alert('Failed to create exam. Please check browser console for details.');
+      showToast('Failed to create exam. Please check browser console for details.', 'error');
     } finally {
       setIsCreatingExam(false);
     }
@@ -619,7 +631,7 @@ export default function Exams() {
     const file = e.target.files?.[0];
     if (file) {
       if (!file.type.startsWith('image/')) {
-        alert('Please select a valid image file');
+        showToast('Please select a valid image file', 'warning');
         return;
       }
 
@@ -655,7 +667,7 @@ export default function Exams() {
     const file = e.target.files?.[0];
     if (file) {
       if (file.type !== 'application/pdf') {
-        alert('Please select a PDF file');
+        showToast('Please select a PDF file', 'warning');
         return;
       }
       setPdfFile(file);
@@ -666,14 +678,14 @@ export default function Exams() {
   async function handlePdfAnswerSheetSubmit() {
     try {
       if (!pdfFile) {
-        alert('Please select a PDF file');
+        showToast('Please select a PDF file', 'warning');
         return;
       }
 
       // Validate all answers are selected (1-5)
       const allAnswered = pdfAnswers.every(answer => answer.correct_answer > 0);
       if (!allAnswered) {
-        alert('Please mark correct answers for all 50 questions');
+        showToast('Please mark correct answers for all 50 questions', 'warning');
         return;
       }
 
@@ -681,12 +693,12 @@ export default function Exams() {
 
       const teacher = await teacherRepo.findByProfileId(profile?.id!);
       if (!teacher) {
-        alert('Teacher profile not found');
+        showToast('Teacher profile not found', 'error');
         return;
       }
 
       if (!formData.class_id || !formData.title || !formData.exam_date || !formData.exam_time) {
-        alert('Please fill in all required fields');
+        showToast('Please fill in all required fields', 'warning');
         return;
       }
 
@@ -721,19 +733,19 @@ export default function Exams() {
         console.error('PDF upload error:', uploadError);
         // Delete the exam if PDF upload fails
         await examRepo.delete(exam.id);
-        alert('Failed to upload PDF. Please try again.');
+        showToast('Failed to upload PDF. Please try again.', 'error');
         return;
       }
 
       // Save PDF answers to database
       await pdfPaperRepo.createPdfAnswers(exam.id, filePath, pdfAnswers);
 
-      alert('PDF Paper exam created successfully!');
+      showToast('PDF Paper exam created successfully!', 'success');
       resetForm();
       fetchExams();
     } catch (error) {
       console.error('Error creating PDF exam:', error);
-      alert('Failed to create PDF exam. Please try again.');
+      showToast('Failed to create PDF exam. Please try again.', 'error');
     } finally {
       setPdfUploading(false);
     }
@@ -764,130 +776,232 @@ export default function Exams() {
   }
 
   const filteredExams = exams.filter((exam) => {
-    if (filterStatus === 'all') return true;
+    const matchesSearch = exam.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         exam.subject.toLowerCase().includes(searchQuery.toLowerCase());
+    if (filterStatus === 'all') return matchesSearch;
     const status = getExamStatus(exam);
-    return status.label.toLowerCase() === filterStatus;
+    return status.label.toLowerCase() === filterStatus && matchesSearch;
   });
 
   return (
-    <div className="h-full min-h-0 overflow-y-auto p-8">
-      <div className="mb-6">
-        <h2 className="text-3xl font-bold text-gray-900">Exams</h2>
+    <div className="h-full min-h-0 overflow-y-auto p-6 lg:p-8 bg-gray-50/50">
+      {/* Header Section */}
+      <div className="mb-8">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <h2 className="text-3xl font-bold text-slate-900">Exams</h2>
+            <p className="text-slate-500 mt-1">Manage and track all your examinations</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-200">
+              <Search className="w-5 h-5 text-slate-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search exams..."
+                className="bg-transparent border-none outline-none text-sm w-48 lg:w-64 text-slate-700 placeholder-slate-400"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Overview */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-50 rounded-lg">
+              <FileQuestion className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-slate-900">{exams.length}</p>
+              <p className="text-xs text-slate-500">Total Exams</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-green-50 rounded-lg">
+              <CheckCircle2 className="w-5 h-5 text-green-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-slate-900">{exams.filter(e => getExamStatus(e).label === 'Active').length}</p>
+              <p className="text-xs text-slate-500">Active</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-amber-50 rounded-lg">
+              <Clock className="w-5 h-5 text-amber-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-slate-900">{exams.filter(e => getExamStatus(e).label === 'Scheduled').length}</p>
+              <p className="text-xs text-slate-500">Scheduled</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-slate-50 rounded-lg">
+              <GraduationCap className="w-5 h-5 text-slate-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-slate-900">{exams.reduce((sum, e) => sum + (e.submission_count || 0), 0)}</p>
+              <p className="text-xs text-slate-500">Submissions</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column - Exams List */}
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-gray-900">Recent Exams</h3>
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-600">Filter by:</span>
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#eb1b23] focus:border-transparent"
-                >
-                  <option value="all">All Status</option>
-                  <option value="scheduled">Scheduled</option>
-                  <option value="active">Active</option>
-                  <option value="completed">Completed</option>
-                </select>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            {/* Filter Tabs */}
+            <div className="border-b border-gray-100">
+              <div className="flex items-center p-2 gap-1">
+                {[
+                  { id: 'all', label: 'All Exams', count: exams.length },
+                  { id: 'active', label: 'Active', count: exams.filter(e => getExamStatus(e).label === 'Active').length },
+                  { id: 'scheduled', label: 'Scheduled', count: exams.filter(e => getExamStatus(e).label === 'Scheduled').length },
+                  { id: 'completed', label: 'Completed', count: exams.filter(e => getExamStatus(e).label === 'Completed').length },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setFilterStatus(tab.id)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      filterStatus === tab.id
+                        ? 'bg-[#eb1b23] text-white shadow-md'
+                        : 'text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    {tab.label}
+                    <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
+                      filterStatus === tab.id ? 'bg-white/20' : 'bg-slate-100'
+                    }`}>
+                      {tab.count}
+                    </span>
+                  </button>
+                ))}
               </div>
             </div>
 
-            {loading ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#eb1b23]"></div>
-              </div>
-            ) : filteredExams.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-gray-500">No exams found</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {filteredExams.map((exam) => {
-                  const status = getExamStatus(exam);
-                  return (
-                    <div
-                      key={exam.id}
-                      onClick={() => handleExamCardClick(exam)}
-                      className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition cursor-pointer hover:border-[#eb1b23] hover:bg-red-50/20"
-                    >
-                      <div className="flex flex-col sm:flex-row items-start gap-4">
-                        <div className={`w-12 h-12 sm:w-16 sm:h-16 flex-shrink-0 rounded-xl flex items-center justify-center ${exam.subject.toLowerCase().includes('physics') ? 'bg-red-100' :
-                          exam.subject.toLowerCase().includes('chemistry') ? 'bg-blue-100' :
-                            exam.subject.toLowerCase().includes('maths') ? 'bg-purple-100' :
-                              'bg-teal-100'
+            {/* Content */}
+            <div className="p-6">
+              {loading ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#eb1b23]"></div>
+                </div>
+              ) : filteredExams.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="w-20 h-20 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <FileQuestion className="w-10 h-10 text-slate-300" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                    {searchQuery ? 'No exams found' : 'No exams yet'}
+                  </h3>
+                  <p className="text-slate-500 text-sm max-w-sm mx-auto">
+                    {searchQuery 
+                      ? 'Try adjusting your search terms or filters to find what you are looking for.' 
+                      : 'Create your first exam to get started with assessments.'}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {filteredExams.map((exam) => {
+                    const status = getExamStatus(exam);
+                    const isPdfExam = exam.total_marks === 50; // Heuristic for PDF exams
+                    return (
+                      <div
+                        key={exam.id}
+                        onClick={() => handleExamCardClick(exam)}
+                        className="group bg-white border border-gray-100 rounded-xl p-5 hover:shadow-lg hover:border-[#eb1b23]/30 transition-all duration-300 cursor-pointer"
+                      >
+                        <div className="flex items-start gap-4">
+                          {/* Icon */}
+                          <div className={`flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center ${
+                            exam.subject.toLowerCase().includes('physics') ? 'bg-red-50 text-red-600' :
+                            exam.subject.toLowerCase().includes('chemistry') ? 'bg-blue-50 text-blue-600' :
+                            exam.subject.toLowerCase().includes('maths') || exam.subject.toLowerCase().includes('math') ? 'bg-purple-50 text-purple-600' :
+                            exam.subject.toLowerCase().includes('bio') ? 'bg-green-50 text-green-600' :
+                            'bg-amber-50 text-amber-600'
                           }`}>
-                          <span className="text-xl sm:text-2xl font-bold">
-                            {exam.subject.substring(0, 2).toUpperCase()}
-                          </span>
-                        </div>
-
-                        <div className="flex-1 w-full">
-                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
-                            <div className="flex-1">
-                              <div className="flex flex-wrap items-center gap-2 mb-1">
-                                <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium ${exam.subject.toLowerCase().includes('physics') ? 'bg-red-100 text-red-700' :
-                                  exam.subject.toLowerCase().includes('chemistry') ? 'bg-blue-100 text-blue-700' :
-                                    exam.subject.toLowerCase().includes('maths') ? 'bg-purple-100 text-purple-700' :
-                                      'bg-teal-100 text-teal-700'
-                                  }`}>
-                                  {exam.subject.toUpperCase()}
-                                </span>
-                                <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium ${status.color}`}>
-                                  {status.label}
-                                </span>
-                              </div>
-                              <h4 className="text-base sm:text-lg font-bold text-gray-900">{exam.title}</h4>
-                              <p className="text-xs sm:text-sm text-gray-600 mt-1 line-clamp-2">{exam.description}</p>
-                            </div>
-                            <div className="flex items-center space-x-2 flex-shrink-0">
-                              <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-[#eb1b23]" />
-                            </div>
+                            {isPdfExam ? <FileText className="w-7 h-7" /> : <BookOpen className="w-7 h-7" />}
                           </div>
 
-                          <div className="grid grid-cols-2 sm:flex sm:items-center sm:gap-6 gap-2 text-xs sm:text-sm text-gray-600 mt-3">
-                            <div className="flex items-center gap-1">
-                              <Calendar className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                              <span className="truncate">{new Date(exam.start_time).toLocaleDateString()}</span>
+                          {/* Content */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                  <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+                                    {exam.subject}
+                                  </span>
+                                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${status.color}`}>
+                                    {status.label}
+                                  </span>
+                                  {isPdfExam && (
+                                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-orange-50 text-orange-600 border border-orange-100">
+                                      PDF
+                                    </span>
+                                  )}
+                                </div>
+                                <h4 className="text-lg font-bold text-slate-900 group-hover:text-[#eb1b23] transition-colors truncate">
+                                  {exam.title}
+                                </h4>
+                                <p className="text-sm text-slate-500 mt-1 line-clamp-1">{exam.description || 'No description'}</p>
+                              </div>
+                              <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-[#eb1b23] transition-colors flex-shrink-0 mt-1" />
                             </div>
-                            <div className="flex items-center gap-1">
-                              <Clock className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                              <span>{new Date(exam.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Users className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                              <span className="truncate">{exam.submission_count} Submitted</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Clock className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                              <span>{exam.duration_minutes}m</span>
+
+                            {/* Meta Info */}
+                            <div className="flex flex-wrap items-center gap-4 mt-4 text-sm text-slate-500">
+                              <div className="flex items-center gap-1.5">
+                                <Calendar className="w-4 h-4" />
+                                <span>{new Date(exam.start_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <Clock className="w-4 h-4" />
+                                <span>{new Date(exam.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <Users className="w-4 h-4" />
+                                <span>{exam.submission_count || 0} submissions</span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+                                <span>{exam.duration_minutes} min</span>
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
+        {/* Right Column - Create Form */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-xl shadow-sm p-6 border-t-4 border-[#eb1b23]">
-            <div className="flex items-center space-x-2 mb-6">
-              <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                <Plus className="w-4 h-4 text-red-600" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-slate-900">Create New Exam</h3>
-                <p className="text-xs text-slate-500">Setup Area Details & Questions</p>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 sticky top-6">
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-[#eb1b23] to-red-600 rounded-xl flex items-center justify-center shadow-lg shadow-red-200">
+                  <Plus className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">Create Exam</h3>
+                  <p className="text-xs text-slate-500">Setup exam details & questions</p>
+                </div>
               </div>
             </div>
 
-            <div className="space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto pr-2">
+            <div className="p-6 space-y-5 max-h-[calc(100vh-280px)] overflow-y-auto custom-scrollbar">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Assign to Class
@@ -1570,6 +1684,41 @@ export default function Exams() {
                 )}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed bottom-6 right-6 z-[100] transition-all duration-300 transform ${
+          toast.visible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+        }`}>
+          <div className={`flex items-center gap-3 px-5 py-4 rounded-xl shadow-2xl border-l-4 min-w-[320px] max-w-[480px] ${
+            toast.type === 'success' ? 'bg-white border-green-500 text-slate-800' :
+            toast.type === 'error' ? 'bg-white border-red-500 text-slate-800' :
+            toast.type === 'warning' ? 'bg-white border-amber-500 text-slate-800' :
+            'bg-white border-blue-500 text-slate-800'
+          }`}>
+            <div className={`p-2 rounded-lg ${
+              toast.type === 'success' ? 'bg-green-100' :
+              toast.type === 'error' ? 'bg-red-100' :
+              toast.type === 'warning' ? 'bg-amber-100' :
+              'bg-blue-100'
+            }`}>
+              {toast.type === 'success' ? <Check className="w-5 h-5 text-green-600" /> :
+               toast.type === 'error' ? <AlertTriangle className="w-5 h-5 text-red-600" /> :
+               toast.type === 'warning' ? <AlertTriangle className="w-5 h-5 text-amber-600" /> :
+               <Info className="w-5 h-5 text-blue-600" />}
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium">{toast.message}</p>
+            </div>
+            <button
+              onClick={() => setToast(prev => prev ? { ...prev, visible: false } : null)}
+              className="text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
         </div>
       )}
