@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Navbar,
   Hero,
@@ -12,15 +13,14 @@ import {
   Reviews
 } from '../landing';
 
-interface LandingPageProps {
-  onLoginRequest?: () => void;
-}
+const LandingPage: React.FC = () => {
+  const navigate = useNavigate();
+  const handleLoginRequest = () => navigate('/login');
 
-const LandingPage: React.FC<LandingPageProps> = ({ onLoginRequest }) => {
   return (
     <>
-      <Navbar onLoginRequest={onLoginRequest} />
-      <Hero onLoginRequest={onLoginRequest} />
+      <Navbar onLoginRequest={handleLoginRequest} />
+      <Hero onLoginRequest={handleLoginRequest} />
       <Success />
       <Teacher />
       <Centers />

@@ -1,14 +1,10 @@
 import { useState } from 'react';
+import { NavLink, Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { LayoutDashboard, Users, GraduationCap, BookOpen, LogOut, BarChart3, User, Menu, X, Home } from 'lucide-react';
 
-interface AdminDashboardProps {
-  onGoToLanding?: () => void;
-}
-
-export default function AdminDashboard({ onGoToLanding }: AdminDashboardProps) {
+export default function AdminDashboard() {
   const { profile, signOut } = useAuth();
-  const [activeTab, setActiveTab] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
@@ -46,85 +42,37 @@ export default function AdminDashboard({ onGoToLanding }: AdminDashboardProps) {
           </div>
 
           <div className="mb-4">
-            <button
-              onClick={onGoToLanding}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 text-white hover:bg-teal-500`}
+            <NavLink
+              to="/"
+              className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 text-white hover:bg-teal-500"
             >
               <Home className="w-5 h-5" />
               <span className="font-medium">Go to Website</span>
-            </button>
+            </NavLink>
           </div>
 
           <nav className="space-y-1">
-            <button
-              onClick={() => {
-                setActiveTab('dashboard');
-                setIsMobileMenuOpen(false);
-              }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${activeTab === 'dashboard'
-                ? 'bg-white text-teal-700 shadow-lg'
-                : 'text-white hover:bg-teal-500'
-                }`}
-            >
-              <LayoutDashboard className="w-5 h-5" />
-              <span className="font-medium">Dashboard</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setActiveTab('teachers');
-                setIsMobileMenuOpen(false);
-              }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${activeTab === 'teachers'
-                ? 'bg-white text-teal-700 shadow-lg'
-                : 'text-white hover:bg-teal-500'
-                }`}
-            >
-              <GraduationCap className="w-5 h-5" />
-              <span className="font-medium">Teachers</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setActiveTab('students');
-                setIsMobileMenuOpen(false);
-              }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${activeTab === 'students'
-                ? 'bg-white text-teal-700 shadow-lg'
-                : 'text-white hover:bg-teal-500'
-                }`}
-            >
-              <Users className="w-5 h-5" />
-              <span className="font-medium">Students</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setActiveTab('classes');
-                setIsMobileMenuOpen(false);
-              }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${activeTab === 'classes'
-                ? 'bg-white text-teal-700 shadow-lg'
-                : 'text-white hover:bg-teal-500'
-                }`}
-            >
-              <BookOpen className="w-5 h-5" />
-              <span className="font-medium">Classes</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setActiveTab('analytics');
-                setIsMobileMenuOpen(false);
-              }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${activeTab === 'analytics'
-                ? 'bg-white text-teal-700 shadow-lg'
-                : 'text-white hover:bg-teal-500'
-                }`}
-            >
-              <BarChart3 className="w-5 h-5" />
-              <span className="font-medium">Analytics</span>
-            </button>
+            {[
+              { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+              { path: '/admin/teachers',  label: 'Teachers',  icon: GraduationCap },
+              { path: '/admin/students',  label: 'Students',  icon: Users },
+              { path: '/admin/classes',   label: 'Classes',   icon: BookOpen },
+              { path: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
+            ].map(({ path, label, icon: Icon }) => (
+              <NavLink
+                key={path}
+                to={path}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={({ isActive }) =>
+                  `w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${
+                    isActive ? 'bg-white text-teal-700 shadow-lg' : 'text-white hover:bg-teal-500'
+                  }`
+                }
+              >
+                <Icon className="w-5 h-5" />
+                <span className="font-medium">{label}</span>
+              </NavLink>
+            ))}
           </nav>
 
           <div className="mt-auto pt-4 border-t border-teal-500">
@@ -165,63 +113,60 @@ export default function AdminDashboard({ onGoToLanding }: AdminDashboardProps) {
           </button>
         </div>
         <div className="p-4 sm:p-6 lg:p-8">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">
-            {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white p-6 rounded-xl shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Total Students</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-1">0</p>
+          <Routes>
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={
+              <>
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">Dashboard</h2>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                  <div className="bg-white p-6 rounded-xl shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">Total Students</p>
+                        <p className="text-3xl font-bold text-gray-900 mt-1">0</p>
+                      </div>
+                      <div className="bg-teal-100 p-3 rounded-lg"><Users className="w-6 h-6 text-teal-600" /></div>
+                    </div>
+                  </div>
+                  <div className="bg-white p-6 rounded-xl shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">Total Teachers</p>
+                        <p className="text-3xl font-bold text-gray-900 mt-1">0</p>
+                      </div>
+                      <div className="bg-green-100 p-3 rounded-lg"><GraduationCap className="w-6 h-6 text-green-600" /></div>
+                    </div>
+                  </div>
+                  <div className="bg-white p-6 rounded-xl shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">Active Classes</p>
+                        <p className="text-3xl font-bold text-gray-900 mt-1">0</p>
+                      </div>
+                      <div className="bg-teal-100 p-3 rounded-lg"><BookOpen className="w-6 h-6 text-teal-600" /></div>
+                    </div>
+                  </div>
+                  <div className="bg-white p-6 rounded-xl shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">Total Revenue</p>
+                        <p className="text-3xl font-bold text-gray-900 mt-1">LKR 0</p>
+                      </div>
+                      <div className="bg-green-100 p-3 rounded-lg"><span className="text-2xl">💰</span></div>
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-teal-100 p-3 rounded-lg">
-                  <Users className="w-6 h-6 text-teal-600" />
+                <div className="bg-white rounded-xl shadow-sm p-6">
+                  <p className="text-gray-600">Content for dashboard will appear here</p>
                 </div>
+              </>
+            } />
+            <Route path=":tab" element={
+              <div className="bg-white rounded-xl shadow-sm p-6">
+                <p className="text-gray-600">Content will appear here</p>
               </div>
-            </div>
-
-            <div className="bg-white p-6 rounded-xl shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Total Teachers</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-1">0</p>
-                </div>
-                <div className="bg-green-100 p-3 rounded-lg">
-                  <GraduationCap className="w-6 h-6 text-green-600" />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white p-6 rounded-xl shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Active Classes</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-1">0</p>
-                </div>
-                <div className="bg-teal-100 p-3 rounded-lg">
-                  <BookOpen className="w-6 h-6 text-teal-600" />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white p-6 rounded-xl shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Total Revenue</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-1">LKR 0</p>
-                </div>
-                <div className="bg-green-100 p-3 rounded-lg">
-                  <span className="text-2xl">💰</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <p className="text-gray-600">Content for {activeTab} will appear here</p>
-          </div>
+            } />
+          </Routes>
         </div>
       </main>
     </div>

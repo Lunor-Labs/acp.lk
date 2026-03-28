@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { NavLink, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   LayoutDashboard, BookOpen, FileText, Package, LogOut,
@@ -26,15 +27,11 @@ interface PerformanceData {
   percentage: number;
 }
 
-interface StudentDashboardProps {
-  onGoToLanding?: () => void;
-}
-
 const examRepo = new ExamRepository();
 
-export default function StudentDashboard({ onGoToLanding }: StudentDashboardProps) {
+export default function StudentDashboard() {
   const { profile, signOut } = useAuth();
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [stats, setStats] = useState<DashboardStats>({
     enrolledClasses: 0,
@@ -45,10 +42,10 @@ export default function StudentDashboard({ onGoToLanding }: StudentDashboardProp
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (activeTab === 'dashboard' && profile?.id) {
+    if (profile?.id) {
       fetchDashboardData();
     }
-  }, [activeTab, profile?.id]);
+  }, [profile?.id]);
 
   async function fetchDashboardData() {
     try {
@@ -120,11 +117,11 @@ export default function StudentDashboard({ onGoToLanding }: StudentDashboardProp
   }
 
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'browse', label: 'Browse Classes', icon: Search },
-    { id: 'classes', label: 'My Classes', icon: BookOpen },
-    { id: 'studypacks', label: 'Study Packs', icon: Package },
-    { id: 'exams', label: 'Exams & Results', icon: FileText },
+    { path: '/student/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { path: '/student/browse', label: 'Browse Classes', icon: Search },
+    { path: '/student/classes', label: 'My Classes', icon: BookOpen },
+    { path: '/student/studypacks', label: 'Study Packs', icon: Package },
+    { path: '/student/exams', label: 'Exams & Results', icon: FileText },
   ];
 
   return (
@@ -168,29 +165,32 @@ export default function StudentDashboard({ onGoToLanding }: StudentDashboardProp
           </p>
 
           {/* Go to Website quick link */}
-          <button
-            onClick={onGoToLanding}
+          <NavLink
+            to="/"
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:bg-white/5 hover:text-white transition-all duration-200"
           >
             <Home className="w-4 h-4" />
             Go to Website
-          </button>
+          </NavLink>
 
           {navItems.map(item => {
             const Icon = item.icon;
-            const active = activeTab === item.id;
             return (
-              <button
-                key={item.id}
-                onClick={() => { setActiveTab(item.id); setIsMobileMenuOpen(false); }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${active
-                  ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-900/40'
-                  : 'text-slate-400 hover:bg-white/5 hover:text-white'
-                  }`}
+              <NavLink
+                key={item.path}
+                to={item.path}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={({ isActive }) =>
+                  `w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                    isActive
+                      ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-900/40'
+                      : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                  }`
+                }
               >
                 <Icon className="w-4 h-4 flex-shrink-0" />
                 {item.label}
-              </button>
+              </NavLink>
             );
           })}
         </nav>
@@ -230,35 +230,27 @@ export default function StudentDashboard({ onGoToLanding }: StudentDashboardProp
             <Menu className="w-5 h-5" />
           </button>
           <div className="flex-1" />
-          <ProfileMenu role="student" onProfileClick={() => setActiveTab('profile')} />
+          <ProfileMenu role="student" onProfileClick={() => navigate('/student/profile')} />
         </div>
 
         {/* ── Route content ── */}
-        {activeTab === 'profile' ? (
-          <ProfilePage onBack={() => setActiveTab('dashboard')} />
-        ) : activeTab === 'classes' ? (
-          <MyClasses />
-        ) : activeTab === 'browse' ? (
-          <BrowseClasses />
-        ) : activeTab === 'studypacks' ? (
-          <StudyPacks />
-        ) : activeTab === 'exams' ? (
-          <Exams />
-        ) : activeTab === 'dashboard' ? (
-          <StudentDashboardContent
-            loading={loading}
-            stats={stats}
-            performanceData={performanceData}
-            studentName={profile?.full_name ?? ''}
-            studentId={profile?.student_id ?? ''}
-          />
-        ) : (
-          <div className="p-6">
-            <div className="bg-white rounded-2xl shadow-sm p-6">
-              <p className="text-gray-500">Content for {activeTab}</p>
-            </div>
-          </div>
-        )}
+        <Routes>
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={
+            <StudentDashboardContent
+              loading={loading}
+              stats={stats}
+              performanceData={performanceData}
+              studentName={profile?.full_name ?? ''}
+              studentId={profile?.student_id ?? ''}
+            />
+          } />
+          <Route path="browse" element={<BrowseClasses />} />
+          <Route path="classes" element={<MyClasses />} />
+          <Route path="studypacks" element={<StudyPacks />} />
+          <Route path="exams" element={<Exams />} />
+          <Route path="profile" element={<ProfilePage onBack={() => navigate('/student/dashboard')} />} />
+        </Routes>
       </main>
     </div>
   );

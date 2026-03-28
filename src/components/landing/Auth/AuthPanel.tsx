@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import './Auth.css';
 import LoginForm from './LoginForm';
@@ -9,22 +10,19 @@ import acpLogo from '../../../assets/acp-logo-dark.webp';
 
 interface AuthPanelProps {
   defaultMode?: 'login' | 'register';
-  onBackToHome?: () => void;
 }
 
-const AuthPanel: React.FC<AuthPanelProps> = ({ defaultMode = 'login', onBackToHome }) => {
+const AuthPanel: React.FC<AuthPanelProps> = ({ defaultMode = 'login' }) => {
   const [mode, setMode] = useState<'login' | 'register' | 'forgot-password'>(defaultMode);
-  const { loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
 
-  const handleLoginSuccess = () => {
-    // Auth context will handle navigation through the Router component
-    console.log('Login successful');
-  };
-
-  const handleRegisterSuccess = () => {
-    console.log('Registration successful');
-    setMode('login');
-  };
+  // Redirect to dashboard after login
+  useEffect(() => {
+    if (user && profile) {
+      navigate(`/${profile.role}`, { replace: true });
+    }
+  }, [user, profile, navigate]);
 
   return (
     <div className="auth-page">
@@ -48,7 +46,7 @@ const AuthPanel: React.FC<AuthPanelProps> = ({ defaultMode = 'login', onBackToHo
         <div className="auth-card">
           <div className="auth-header">
             <button
-              onClick={onBackToHome}
+              onClick={() => navigate('/')}
               className="back-to-home"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -82,13 +80,12 @@ const AuthPanel: React.FC<AuthPanelProps> = ({ defaultMode = 'login', onBackToHo
                   <LoginForm
                     onSwitchToRegister={() => setMode('register')}
                     onForgotPassword={() => setMode('forgot-password')}
-                    onLoginSuccess={handleLoginSuccess}
                   />
                 )}
                 {mode === 'register' && (
                   <RegisterForm
                     onSwitchToLogin={() => setMode('login')}
-                    onRegisterSuccess={handleRegisterSuccess}
+                    onRegisterSuccess={() => setMode('login')}
                   />
                 )}
                 {mode === 'forgot-password' && (

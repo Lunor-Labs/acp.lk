@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { NavLink, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   LayoutDashboard, Users, FileText, Package, LogOut,
@@ -21,13 +22,9 @@ import acpLogo from '../../assets/acp-logo.webp';
 
 const teacherRepository = new TeacherRepository();
 
-interface TeacherDashboardProps {
-  onGoToLanding?: () => void;
-}
-
-export default function TeacherDashboard({ onGoToLanding }: TeacherDashboardProps) {
+export default function TeacherDashboard() {
   const { profile, signOut } = useAuth();
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [teacherId, setTeacherId] = useState<string | null>(null);
   const [teacherLoading, setTeacherLoading] = useState(true);
@@ -54,10 +51,10 @@ export default function TeacherDashboard({ onGoToLanding }: TeacherDashboardProp
   }, [profile?.id]);
 
   useEffect(() => {
-    if (activeTab === 'dashboard' && teacherId) {
+    if (teacherId) {
       fetchDashboardData(teacherId);
     }
-  }, [activeTab, teacherId]);
+  }, [teacherId]);
 
   async function fetchDashboardData(tid: string) {
     try {
@@ -76,14 +73,14 @@ export default function TeacherDashboard({ onGoToLanding }: TeacherDashboardProp
   }
 
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, section: 'main' },
-    { id: 'classes', label: 'My Classes', icon: GraduationCap, section: 'main' },
-    { id: 'exams', label: 'Exams', icon: FileText, section: 'main' },
-    { id: 'study-packs', label: 'Study Packs', icon: Package, section: 'main' },
-    { id: 'gallery', label: 'Gallery', icon: Image, section: 'website' },
-    { id: 'reviews', label: 'Reviews', icon: MessageSquare, section: 'website' },
-    { id: 'test-results', label: 'Test Results', icon: Trophy, section: 'website' },
-    { id: 'success', label: 'Success Stories', icon: BookOpen, section: 'website' },
+    { path: '/teacher/dashboard', label: 'Dashboard', icon: LayoutDashboard, section: 'main' },
+    { path: '/teacher/classes', label: 'My Classes', icon: GraduationCap, section: 'main' },
+    { path: '/teacher/exams', label: 'Exams', icon: FileText, section: 'main' },
+    { path: '/teacher/study-packs', label: 'Study Packs', icon: Package, section: 'main' },
+    { path: '/teacher/gallery', label: 'Gallery', icon: Image, section: 'website' },
+    { path: '/teacher/reviews', label: 'Reviews', icon: MessageSquare, section: 'website' },
+    { path: '/teacher/test-results', label: 'Test Results', icon: Trophy, section: 'website' },
+    { path: '/teacher/success', label: 'Success Stories', icon: BookOpen, section: 'website' },
   ];
 
   const mainNav = navItems.filter(n => n.section === 'main');
@@ -131,19 +128,22 @@ export default function TeacherDashboard({ onGoToLanding }: TeacherDashboardProp
           </p>
           {mainNav.map(item => {
             const Icon = item.icon;
-            const active = activeTab === item.id;
             return (
-              <button
-                key={item.id}
-                onClick={() => { setActiveTab(item.id); setIsMobileMenuOpen(false); }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${active
-                  ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-900/40'
-                  : 'text-slate-400 hover:bg-white/5 hover:text-white'
-                  }`}
+              <NavLink
+                key={item.path}
+                to={item.path}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={({ isActive }) =>
+                  `w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                    isActive
+                      ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-900/40'
+                      : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                  }`
+                }
               >
                 <Icon className="w-4 h-4 flex-shrink-0" />
                 {item.label}
-              </button>
+              </NavLink>
             );
           })}
 
@@ -152,28 +152,31 @@ export default function TeacherDashboard({ onGoToLanding }: TeacherDashboardProp
             <p className="px-3 pb-2 text-[10px] font-semibold text-slate-600 uppercase tracking-widest">
               Public Website
             </p>
-            <button
-              onClick={onGoToLanding}
+            <NavLink
+              to="/"
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:bg-white/5 hover:text-white transition-all duration-200"
             >
               <Home className="w-4 h-4" />
               Go to Website
-            </button>
+            </NavLink>
             {websiteNav.map(item => {
               const Icon = item.icon;
-              const active = activeTab === item.id;
               return (
-                <button
-                  key={item.id}
-                  onClick={() => { setActiveTab(item.id); setIsMobileMenuOpen(false); }}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${active
-                    ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-900/40'
-                    : 'text-slate-400 hover:bg-white/5 hover:text-white'
-                    }`}
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={({ isActive }) =>
+                    `w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                      isActive
+                        ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-900/40'
+                        : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                    }`
+                  }
                 >
                   <Icon className="w-4 h-4 flex-shrink-0" />
                   {item.label}
-                </button>
+                </NavLink>
               );
             })}
           </div>
@@ -214,40 +217,29 @@ export default function TeacherDashboard({ onGoToLanding }: TeacherDashboardProp
             <Menu className="w-5 h-5" />
           </button>
           <div className="flex-1" />
-          <ProfileMenu role="teacher" onProfileClick={() => setActiveTab('profile')} />
+          <ProfileMenu role="teacher" onProfileClick={() => navigate('/teacher/profile')} />
         </div>
 
         {/* ── Route content ── */}
-        {activeTab === 'profile' ? (
-          <ProfilePage onBack={() => setActiveTab('dashboard')} />
-        ) : activeTab === 'classes' ? (
-          <MyClasses />
-        ) : activeTab === 'exams' ? (
-          <Exams />
-        ) : activeTab === 'study-packs' ? (
-          <StudyPacks />
-        ) : activeTab === 'gallery' ? (
-          teacherLoading ? <LoadingSpinner /> : teacherId ? <GalleryManager teacherId={teacherId} /> : <TeacherProfileMissing />
-        ) : activeTab === 'reviews' ? (
-          teacherLoading ? <LoadingSpinner /> : teacherId ? <ReviewsManager teacherId={teacherId} /> : <TeacherProfileMissing />
-        ) : activeTab === 'test-results' ? (
-          teacherLoading ? <LoadingSpinner /> : teacherId ? <TestResultsManager teacherId={teacherId} /> : <TeacherProfileMissing />
-        ) : activeTab === 'success' ? (
-          teacherLoading ? <LoadingSpinner /> : teacherId ? <SuccessManager teacherId={teacherId} /> : <TeacherProfileMissing />
-        ) : activeTab === 'dashboard' ? (
-          <DashboardContent
-            loading={loading}
-            stats={stats}
-            onboardingData={onboardingData}
-            teacherName={profile?.full_name ?? ''}
-          />
-        ) : (
-          <div className="p-6">
-            <div className="bg-white rounded-2xl shadow-sm p-6">
-              <p className="text-gray-500">Content for {activeTab}</p>
-            </div>
-          </div>
-        )}
+        <Routes>
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={
+            <DashboardContent
+              loading={loading}
+              stats={stats}
+              onboardingData={onboardingData}
+              teacherName={profile?.full_name ?? ''}
+            />
+          } />
+          <Route path="classes" element={<MyClasses />} />
+          <Route path="exams" element={<Exams />} />
+          <Route path="study-packs" element={<StudyPacks />} />
+          <Route path="gallery" element={teacherLoading ? <LoadingSpinner /> : teacherId ? <GalleryManager teacherId={teacherId} /> : <TeacherProfileMissing />} />
+          <Route path="reviews" element={teacherLoading ? <LoadingSpinner /> : teacherId ? <ReviewsManager teacherId={teacherId} /> : <TeacherProfileMissing />} />
+          <Route path="test-results" element={teacherLoading ? <LoadingSpinner /> : teacherId ? <TestResultsManager teacherId={teacherId} /> : <TeacherProfileMissing />} />
+          <Route path="success" element={teacherLoading ? <LoadingSpinner /> : teacherId ? <SuccessManager teacherId={teacherId} /> : <TeacherProfileMissing />} />
+          <Route path="profile" element={<ProfilePage onBack={() => navigate('/teacher/dashboard')} />} />
+        </Routes>
       </main>
     </div>
   );
