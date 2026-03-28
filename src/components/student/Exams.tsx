@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { FileText, Clock, Trophy, Award, Calendar, PlayCircle, AlertCircle, Save } from 'lucide-react';
+import { FileText, Clock, Trophy, Award, Calendar, PlayCircle, AlertCircle, Save, Check, AlertTriangle, Info, X, FileQuestion, CheckCircle2, BookOpen } from 'lucide-react';
 
 interface Exam {
   id: string;
@@ -72,6 +72,17 @@ export default function Exams() {
   const [view, setView] = useState<'upcoming' | 'results'>('upcoming');
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [reviewingData, setReviewingData] = useState<ReviewingResultData | null>(null);
+
+  // Toast notification state
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info'; visible: boolean } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
+    setToast({ message, type, visible: true });
+    setTimeout(() => {
+      setToast(prev => prev ? { ...prev, visible: false } : null);
+      setTimeout(() => setToast(null), 300);
+    }, 4000);
+  };
 
   useEffect(() => {
     if (profile?.id) {
@@ -154,12 +165,12 @@ export default function Exams() {
     const endTime = new Date(exam.end_time);
 
     if (now < startTime) {
-      alert('This exam has not started yet');
+      showToast('This exam has not started yet', 'warning');
       return;
     }
 
     if (now > endTime) {
-      alert('This exam has ended');
+      showToast('This exam has ended', 'warning');
       return;
     }
 
@@ -171,7 +182,7 @@ export default function Exams() {
       .maybeSingle();
 
     if (existingAttempt && existingAttempt.status === 'submitted') {
-      alert('You have already completed this exam');
+      showToast('You have already completed this exam', 'warning');
       return;
     }
 
@@ -261,7 +272,7 @@ export default function Exams() {
       });
     } catch (error) {
       console.error('Error starting exam:', error);
-      alert('Failed to start exam');
+      showToast('Failed to start exam', 'error');
     } finally {
       setLoading(false);
     }
@@ -401,13 +412,13 @@ export default function Exams() {
         // We don't necessarily want to block the success alert if the main attempt updated
       }
 
-      alert('Your answers have been submitted successfully. You can view your marks and rank after the exam ends.');
+      showToast('Your answers have been submitted successfully. You can view your marks and rank after the exam ends.', 'success');
       setActiveExam(null);
       setView('upcoming');
       loadData();
     } catch (error) {
       console.error('Error submitting exam:', error);
-      alert('Failed to submit exam. Please try again.');
+      showToast('Failed to submit exam. Please try again.', 'error');
       // Only reset submitting state if we didn't successfully close the exam
       setActiveExam(prev => prev ? { ...prev, isSubmitting: false } : null);
     }
@@ -426,7 +437,7 @@ export default function Exams() {
       
       if (elapsedMinutes >= activeExam.exam.duration_minutes || now >= examEndTime) {
         clearInterval(interval);
-        alert('Time is up! Your exam is being automatically submitted.');
+        showToast('Time is up! Your exam is being automatically submitted.', 'warning');
         submitExam(true);
       }
     }, 1000);
@@ -836,7 +847,7 @@ export default function Exams() {
       
     } catch (error) {
       console.error('Error loading result details:', error);
-      alert('Failed to load exam details');
+      showToast('Failed to load exam details', 'error');
     } finally {
       setLoading(false);
     }
@@ -970,186 +981,382 @@ export default function Exams() {
   }
 
   return (
-    <div className="p-8">
-      <div className="mb-6">
-        <h2 className="text-3xl font-bold text-gray-900">Exams & Results</h2>
-        <p className="text-gray-600 mt-1">Take exams and view your performance</p>
-      </div>
-
-      <div className="bg-white rounded-xl shadow-sm mb-6">
-        <div className="flex border-b">
-          <button
-            onClick={() => setView('upcoming')}
-            className={`flex-1 px-6 py-4 font-medium transition ${
-              view === 'upcoming'
-                ? 'text-[#eb1b23] border-b-2 border-[#eb1b23]'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Upcoming Exams
-          </button>
-          <button
-            onClick={() => setView('results')}
-            className={`flex-1 px-6 py-4 font-medium transition ${
-              view === 'results'
-                ? 'text-[#eb1b23] border-b-2 border-[#eb1b23]'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            My Results
-          </button>
+    <div className="h-full min-h-0 overflow-y-auto p-6 lg:p-8 bg-gray-50/50">
+      {/* Header Section */}
+      <div className="mb-8">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <h2 className="text-3xl font-bold text-slate-900">Exams & Results</h2>
+            <p className="text-slate-500 mt-1">Take exams and track your academic progress</p>
+          </div>
         </div>
       </div>
 
-      {view === 'upcoming' ? (
-        <div className="space-y-4">
-          {upcomingExams.length === 0 ? (
-            <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-              <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No upcoming exams</h3>
-              <p className="text-gray-600">Check back later for new assessments</p>
+      {/* Stats Overview */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-50 rounded-lg">
+              <FileText className="w-5 h-5 text-blue-600" />
             </div>
-          ) : (
-            upcomingExams.map((exam) => {
-              const startTime = new Date(exam.start_time);
-              const endTime = new Date(exam.end_time);
-              const now = new Date();
-              const isActive = now >= startTime && now <= endTime;
-              const isPast = now > endTime;
+            <div>
+              <p className="text-2xl font-bold text-slate-900">{upcomingExams.length}</p>
+              <p className="text-xs text-slate-500">Upcoming Exams</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-green-50 rounded-lg">
+              <CheckCircle2 className="w-5 h-5 text-green-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-slate-900">{results.length}</p>
+              <p className="text-xs text-slate-500">Completed</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-amber-50 rounded-lg">
+              <Trophy className="w-5 h-5 text-amber-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-slate-900">
+                {results.length > 0 ? Math.round(results.reduce((sum, r) => sum + (r.score / r.exam.total_marks) * 100, 0) / results.length) : 0}%
+              </p>
+              <p className="text-xs text-slate-500">Avg Score</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-red-50 rounded-lg">
+              <Award className="w-5 h-5 text-[#eb1b23]" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-slate-900">
+                {results.filter(r => {
+                  const endTime = new Date(r.exam.end_time);
+                  return new Date() > endTime && r.rank && r.rank <= 3;
+                }).length}
+              </p>
+              <p className="text-xs text-slate-500">Top 3 Ranks</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
-              return (
-                <div key={exam.id} className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
-                          {exam.subject}
-                        </span>
-                        {isActive && (
-                          <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
-                            ACTIVE NOW
-                          </span>
-                        )}
-                        {isPast && (
-                          <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-semibold">
-                            ENDED
-                          </span>
-                        )}
-                      </div>
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">{exam.title}</h3>
-                      <p className="text-sm text-gray-600 mb-4">{exam.description}</p>
+      {/* Tabs */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="border-b border-gray-100">
+          <div className="flex p-2 gap-1">
+            <button
+              onClick={() => setView('upcoming')}
+              className={`flex-1 px-6 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                view === 'upcoming'
+                  ? 'bg-[#eb1b23] text-white shadow-md'
+                  : 'text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <span className="flex items-center justify-center gap-2">
+                <Calendar className="w-4 h-4" />
+                Upcoming Exams
+                {upcomingExams.length > 0 && (
+                  <span className={`px-2 py-0.5 rounded-full text-xs ${view === 'upcoming' ? 'bg-white/20' : 'bg-slate-100'}`}>
+                    {upcomingExams.length}
+                  </span>
+                )}
+              </span>
+            </button>
+            <button
+              onClick={() => setView('results')}
+              className={`flex-1 px-6 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                view === 'results'
+                  ? 'bg-[#eb1b23] text-white shadow-md'
+                  : 'text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <span className="flex items-center justify-center gap-2">
+                <Award className="w-4 h-4" />
+                My Results
+                {results.length > 0 && (
+                  <span className={`px-2 py-0.5 rounded-full text-xs ${view === 'results' ? 'bg-white/20' : 'bg-slate-100'}`}>
+                    {results.length}
+                  </span>
+                )}
+              </span>
+            </button>
+          </div>
+        </div>
 
-                      <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-                        <div className="flex items-center space-x-1">
-                          <Calendar className="w-4 h-4" />
-                          <span>{startTime.toLocaleDateString()} at {startTime.toLocaleTimeString()}</span>
+        {/* Content */}
+        <div className="p-6">
+          {view === 'upcoming' ? (
+            <div className="space-y-4">
+              {upcomingExams.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="w-20 h-20 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <FileQuestion className="w-10 h-10 text-slate-300" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-2">No upcoming exams</h3>
+                  <p className="text-slate-500 text-sm max-w-sm mx-auto">
+                    Check back later for new assessments. Your scheduled exams will appear here.
+                  </p>
+                </div>
+              ) : (
+                upcomingExams.map((exam) => {
+                  const startTime = new Date(exam.start_time);
+                  const endTime = new Date(exam.end_time);
+                  const now = new Date();
+                  const isActive = now >= startTime && now <= endTime;
+                  const isPast = now > endTime;
+                  const isUpcoming = now < startTime;
+
+                  return (
+                    <div
+                      key={exam.id}
+                      className="group bg-white border border-gray-100 rounded-xl p-5 hover:shadow-lg hover:border-[#eb1b23]/30 transition-all duration-300"
+                    >
+                      <div className="flex items-start gap-4">
+                        {/* Subject Icon */}
+                        <div className={`flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center ${
+                          exam.subject.toLowerCase().includes('physics') ? 'bg-red-50 text-red-600' :
+                          exam.subject.toLowerCase().includes('chemistry') ? 'bg-blue-50 text-blue-600' :
+                          exam.subject.toLowerCase().includes('maths') || exam.subject.toLowerCase().includes('math') ? 'bg-purple-50 text-purple-600' :
+                          exam.subject.toLowerCase().includes('bio') ? 'bg-green-50 text-green-600' :
+                          'bg-amber-50 text-amber-600'
+                        }`}>
+                          {exam.subject.toLowerCase().includes('maths') || exam.subject.toLowerCase().includes('math') ? (
+                            <span className="text-xl font-bold">∑</span>
+                          ) : exam.subject.toLowerCase().includes('physics') ? (
+                            <span className="text-xl font-bold">⚛</span>
+                          ) : exam.subject.toLowerCase().includes('chemistry') ? (
+                            <span className="text-xl font-bold">⚗</span>
+                          ) : exam.subject.toLowerCase().includes('bio') ? (
+                            <span className="text-xl font-bold">🧬</span>
+                          ) : (
+                            <BookOpen className="w-7 h-7" />
+                          )}
                         </div>
-                        <div className="flex items-center space-x-1">
-                          <Clock className="w-4 h-4" />
-                          <span>{exam.duration_minutes} minutes</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <Trophy className="w-4 h-4" />
-                          <span>{exam.total_marks} marks</span>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+                                  {exam.subject}
+                                </span>
+                                {isActive && (
+                                  <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 animate-pulse">
+                                    Active Now
+                                  </span>
+                                )}
+                                {isUpcoming && (
+                                  <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                                    Scheduled
+                                  </span>
+                                )}
+                                {isPast && (
+                                  <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
+                                    Ended
+                                  </span>
+                                )}
+                              </div>
+                              <h4 className="text-lg font-bold text-slate-900 group-hover:text-[#eb1b23] transition-colors">
+                                {exam.title}
+                              </h4>
+                              <p className="text-sm text-slate-500 mt-1 line-clamp-1">{exam.description || 'No description'}</p>
+                            </div>
+                            {isActive && (
+                              <button
+                                onClick={() => startExam(exam)}
+                                className="flex-shrink-0 flex items-center gap-2 px-5 py-2.5 bg-[#eb1b23] text-white rounded-xl font-medium hover:bg-red-700 transition shadow-lg shadow-red-200"
+                              >
+                                <PlayCircle className="w-5 h-5" />
+                                <span>Start</span>
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Meta Info */}
+                          <div className="flex flex-wrap items-center gap-4 mt-4 text-sm text-slate-500">
+                            <div className="flex items-center gap-1.5">
+                              <Calendar className="w-4 h-4" />
+                              <span>{startTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <Clock className="w-4 h-4" />
+                              <span>{startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+                              <span>{exam.duration_minutes} min</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+                              <span>{exam.total_marks} marks</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
-
-                    {isActive && (
-                      <button
-                        onClick={() => startExam(exam)}
-                        className="flex items-center space-x-2 px-6 py-3 bg-[#eb1b23] text-white rounded-lg hover:bg-red-700 transition ml-4"
-                      >
-                        <PlayCircle className="w-5 h-5" />
-                        <span>Start Exam</span>
-                      </button>
-                    )}
+                  );
+                })
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {results.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="w-20 h-20 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Award className="w-10 h-10 text-slate-300" />
                   </div>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-2">No results yet</h3>
+                  <p className="text-slate-500 text-sm max-w-sm mx-auto">
+                    Complete exams to see your performance metrics and rankings here.
+                  </p>
                 </div>
-              );
-            })
+              ) : (
+                results.map((result) => {
+                  const endTime = new Date(result.exam.end_time);
+                  const now = new Date();
+                  const isExamEnded = now > endTime;
+                  const percentage = Math.round((result.score / result.exam.total_marks) * 100);
+
+                  return (
+                    <div
+                      key={result.id}
+                      className="group bg-white border border-gray-100 rounded-xl p-5 hover:shadow-lg hover:border-[#eb1b23]/30 transition-all duration-300"
+                    >
+                      <div className="flex items-start gap-4">
+                        {/* Subject Icon */}
+                        <div className={`flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center ${
+                          result.exam.subject.toLowerCase().includes('physics') ? 'bg-red-50 text-red-600' :
+                          result.exam.subject.toLowerCase().includes('chemistry') ? 'bg-blue-50 text-blue-600' :
+                          result.exam.subject.toLowerCase().includes('maths') || result.exam.subject.toLowerCase().includes('math') ? 'bg-purple-50 text-purple-600' :
+                          result.exam.subject.toLowerCase().includes('bio') ? 'bg-green-50 text-green-600' :
+                          'bg-amber-50 text-amber-600'
+                        }`}>
+                          {result.exam.subject.toLowerCase().includes('maths') || result.exam.subject.toLowerCase().includes('math') ? (
+                            <span className="text-xl font-bold">∑</span>
+                          ) : result.exam.subject.toLowerCase().includes('physics') ? (
+                            <span className="text-xl font-bold">⚛</span>
+                          ) : result.exam.subject.toLowerCase().includes('chemistry') ? (
+                            <span className="text-xl font-bold">⚗</span>
+                          ) : result.exam.subject.toLowerCase().includes('bio') ? (
+                            <span className="text-xl font-bold">🧬</span>
+                          ) : (
+                            <BookOpen className="w-7 h-7" />
+                          )}
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+                                  {result.exam.subject}
+                                </span>
+                                <span className="text-xs text-slate-400">
+                                  {new Date(result.submitted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                </span>
+                                {!isExamEnded && (
+                                  <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    Rank Pending
+                                  </span>
+                                )}
+                              </div>
+                              <h4 className="text-lg font-bold text-slate-900 group-hover:text-[#eb1b23] transition-colors">
+                                {result.exam.title}
+                              </h4>
+                            </div>
+                          </div>
+
+                          {/* Score Stats */}
+                          <div className="grid grid-cols-3 gap-3 mt-4">
+                            <div className="bg-slate-50 rounded-lg p-3">
+                              <div className="text-xs text-slate-500 mb-1">Score</div>
+                              <div className="text-xl font-bold text-slate-900">{result.score}/{result.exam.total_marks}</div>
+                            </div>
+                            <div className="bg-slate-50 rounded-lg p-3">
+                              <div className="text-xs text-slate-500 mb-1">Percentage</div>
+                              <div className={`text-xl font-bold ${
+                                percentage >= 75 ? 'text-green-600' :
+                                percentage >= 50 ? 'text-amber-600' :
+                                'text-red-600'
+                              }`}>{percentage}%</div>
+                            </div>
+                            <div className="bg-slate-50 rounded-lg p-3">
+                              <div className="text-xs text-slate-500 mb-1">Rank</div>
+                              <div className="text-xl font-bold text-[#eb1b23]">
+                                {isExamEnded ? `#${result.rank || 'N/A'}` : 'Pending'}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Action */}
+                          <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+                            {!isExamEnded ? (
+                              <div className="flex items-center text-amber-600 text-sm">
+                                <AlertCircle className="w-4 h-4 mr-1.5" />
+                                Rankings hidden until {endTime.toLocaleDateString()}
+                              </div>
+                            ) : <div />}
+                            <button
+                              onClick={() => viewResultDetails(result)}
+                              className="flex items-center gap-2 px-5 py-2 bg-white border-2 border-gray-200 text-slate-700 hover:border-[#eb1b23] hover:text-[#eb1b23] font-medium rounded-xl transition"
+                            >
+                              <FileText className="w-4 h-4" />
+                              Review Answers
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
           )}
         </div>
-      ) : (
-        <div className="space-y-4">
-          {results.length === 0 ? (
-            <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-              <Award className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No results yet</h3>
-              <p className="text-gray-600">Complete exams to see your results here</p>
+      </div>
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed bottom-6 right-6 z-[100] transition-all duration-300 transform ${
+          toast.visible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+        }`}>
+          <div className={`flex items-center gap-3 px-5 py-4 rounded-xl shadow-2xl border-l-4 min-w-[320px] max-w-[480px] ${
+            toast.type === 'success' ? 'bg-white border-green-500 text-slate-800' :
+            toast.type === 'error' ? 'bg-white border-red-500 text-slate-800' :
+            toast.type === 'warning' ? 'bg-white border-amber-500 text-slate-800' :
+            'bg-white border-blue-500 text-slate-800'
+          }`}>
+            <div className={`p-2 rounded-lg ${
+              toast.type === 'success' ? 'bg-green-100' :
+              toast.type === 'error' ? 'bg-red-100' :
+              toast.type === 'warning' ? 'bg-amber-100' :
+              'bg-blue-100'
+            }`}>
+              {toast.type === 'success' ? <Check className="w-5 h-5 text-green-600" /> :
+               toast.type === 'error' ? <AlertTriangle className="w-5 h-5 text-red-600" /> :
+               toast.type === 'warning' ? <AlertTriangle className="w-5 h-5 text-amber-600" /> :
+               <Info className="w-5 h-5 text-blue-600" />}
             </div>
-          ) : (
-            results.map((result) => {
-              const endTime = new Date(result.exam.end_time);
-              const now = new Date();
-              const isExamEnded = now > endTime;
-
-              return (
-                <div key={result.id} className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
-                          {result.exam.subject}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          Submitted on {new Date(result.submitted_at).toLocaleDateString()}
-                        </span>
-                        {!isExamEnded && (
-                          <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-semibold flex items-center">
-                            <Clock className="w-3 h-3 mr-1" />
-                            Rank Pending
-                          </span>
-                        )}
-                      </div>
-                      <h3 className="text-xl font-bold text-gray-900 mb-4">{result.exam.title}</h3>
-
-                        <div className="grid grid-cols-3 gap-4 mb-4">
-                          <div className="bg-gray-50 rounded-lg p-4 transition hover:bg-gray-100 border border-transparent hover:border-gray-200">
-                            <div className="text-sm text-gray-600 mb-1 font-semibold uppercase tracking-wider">Score</div>
-                            <div className="text-2xl font-bold text-gray-900">
-                              {result.score}/{result.exam.total_marks}
-                            </div>
-                          </div>
-                          <div className="bg-gray-50 rounded-lg p-4 transition hover:bg-gray-100 border border-transparent hover:border-gray-200">
-                            <div className="text-sm text-gray-600 mb-1 font-semibold uppercase tracking-wider">Percentage</div>
-                            <div className={`text-2xl font-bold ${
-                              (result.score / result.exam.total_marks) >= 0.75 ? 'text-green-600' :
-                              (result.score / result.exam.total_marks) >= 0.5 ? 'text-amber-600' :
-                              'text-red-600'
-                            }`}>
-                              {Math.round((result.score / result.exam.total_marks) * 100)}%
-                            </div>
-                          </div>
-                          <div className="bg-gray-50 rounded-lg p-4 transition hover:bg-gray-100 border border-transparent hover:border-gray-200">
-                            <div className="text-sm text-gray-600 mb-1 font-semibold uppercase tracking-wider">Rank</div>
-                            <div className="text-2xl font-bold text-[#eb1b23]">
-                              {isExamEnded ? `#${result.rank || 'N/A'}` : 'Pending'}
-                            </div>
-                          </div>
-                        </div>
-
-                      {/* Action Buttons */}
-                      <div className="flex flex-col sm:flex-row items-center justify-between pt-4 border-t border-gray-100 gap-4 mt-6">
-                        {!isExamEnded ? (
-                          <div className="flex items-center text-amber-600 bg-amber-50 px-4 py-2 rounded-lg text-sm font-semibold border border-amber-100">
-                            <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0" />
-                            Rankings hidden until {endTime.toLocaleDateString()}
-                          </div>
-                        ) : <div />}
-                        <button
-                          onClick={() => viewResultDetails(result)}
-                          className="w-full sm:w-auto px-8 py-3.5 bg-white border-2 border-gray-200 text-gray-700 hover:border-[#eb1b23] hover:text-[#eb1b23] font-bold rounded-xl transition shadow-sm"
-                        >
-                          Review Answers
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })
-          )}
+            <div className="flex-1">
+              <p className="text-sm font-medium">{toast.message}</p>
+            </div>
+            <button
+              onClick={() => setToast(prev => prev ? { ...prev, visible: false } : null)}
+              className="text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
     </div>

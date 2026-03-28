@@ -3,12 +3,26 @@ import { useAuth } from '../../contexts/AuthContext';
 import { db } from '../../lib/database';
 import { payHereService } from '../../lib/payhere';
 import {
+  Search,
+  BookOpen,
+  Video,
+  Lock,
+  X,
+  Download,
+  Calendar,
+  User,
+  PlayCircle,
+  FileText as FileIcon,
+  Play,
+  FileText,
+  Check,
+  AlertTriangle,
+  Info,
   Loader,
   AlertCircle,
   CheckCircle,
   LayoutGrid,
   List,
-  BookOpen,
   ChevronDown,
 } from 'lucide-react';
 

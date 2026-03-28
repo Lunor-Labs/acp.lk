@@ -15,7 +15,10 @@ import {
   PlayCircle,
   FileText as FileIcon,
   Play,
-  FileText
+  FileText,
+  Check,
+  AlertTriangle,
+  Info
 } from 'lucide-react';
 
 interface Class {
@@ -226,6 +229,17 @@ export default function MyClasses() {
   // Modal state: classId + optional default week index
   const [modalState, setModalState] = useState<{ classId: string; weekIndex: number | null } | null>(null);
 
+  // Toast notification state
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info'; visible: boolean } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
+    setToast({ message, type, visible: true });
+    setTimeout(() => {
+      setToast(prev => prev ? { ...prev, visible: false } : null);
+      setTimeout(() => setToast(null), 300);
+    }, 4000);
+  };
+
   useEffect(() => {
     fetchClasses();
   }, [profile?.id]);
@@ -348,7 +362,7 @@ export default function MyClasses() {
       if (paymentError || !payment) throw paymentError || new Error('Failed to create payment');
 
       if (!payHereService.isPayHereLoaded()) {
-        alert('Payment gateway is loading. Please try again in a moment.');
+        showToast('Payment gateway is loading. Please try again in a moment.', 'warning');
         setProcessingPayment(null);
         return;
       }
@@ -401,7 +415,7 @@ export default function MyClasses() {
       });
     } catch (error) {
       console.error('Error initiating payment:', error);
-      alert('Failed to initiate payment. Please try again.');
+      showToast('Failed to initiate payment. Please try again.', 'error');
       setProcessingPayment(null);
     }
   }
@@ -553,6 +567,41 @@ export default function MyClasses() {
             defaultWeekIndex={modalState!.weekIndex}
             onClose={() => setModalState(null)}
           />
+        )}
+
+        {/* Toast Notification */}
+        {toast && (
+          <div className={`fixed bottom-6 right-6 z-[100] transition-all duration-300 transform ${
+            toast.visible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+          }`}>
+            <div className={`flex items-center gap-3 px-5 py-4 rounded-xl shadow-2xl border-l-4 min-w-[320px] max-w-[480px] ${
+              toast.type === 'success' ? 'bg-white border-green-500 text-slate-800' :
+              toast.type === 'error' ? 'bg-white border-red-500 text-slate-800' :
+              toast.type === 'warning' ? 'bg-white border-amber-500 text-slate-800' :
+              'bg-white border-blue-500 text-slate-800'
+            }`}>
+              <div className={`p-2 rounded-lg ${
+                toast.type === 'success' ? 'bg-green-100' :
+                toast.type === 'error' ? 'bg-red-100' :
+                toast.type === 'warning' ? 'bg-amber-100' :
+                'bg-blue-100'
+              }`}>
+                {toast.type === 'success' ? <Check className="w-5 h-5 text-green-600" /> :
+                 toast.type === 'error' ? <AlertTriangle className="w-5 h-5 text-red-600" /> :
+                 toast.type === 'warning' ? <AlertTriangle className="w-5 h-5 text-amber-600" /> :
+                 <Info className="w-5 h-5 text-blue-600" />}
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium">{toast.message}</p>
+              </div>
+              <button
+                onClick={() => setToast(prev => prev ? { ...prev, visible: false } : null)}
+                className="text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>

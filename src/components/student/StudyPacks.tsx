@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { Package, Play, Lock, Check, Filter, Search, Video, X, ChevronRight, FileText, Clock } from 'lucide-react';
+import { Package, Play, Lock, Check, Filter, Search, Video, X, ChevronRight, FileText, Clock, AlertTriangle, Info } from 'lucide-react';
 
 interface VideoLesson {
   id: string;
@@ -42,6 +42,17 @@ export default function StudyPacks() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'free' | 'paid' | 'purchased'>('all');
   const [activeVideo, setActiveVideo] = useState<string | null>(null);
+
+  // Toast notification state
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info'; visible: boolean } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
+    setToast({ message, type, visible: true });
+    setTimeout(() => {
+      setToast(prev => prev ? { ...prev, visible: false } : null);
+      setTimeout(() => setToast(null), 300);
+    }, 4000);
+  };
 
   const getYoutubeId = (url: string) => {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
@@ -141,7 +152,7 @@ export default function StudyPacks() {
   };
 
   const handlePurchase = (pack: StudyPack) => {
-    alert(`Payment integration for "${pack.title}" - LKR ${pack.price}`);
+    showToast(`Payment integration for "${pack.title}" - LKR ${pack.price}`, 'info');
   };
 
   const filteredPacks = studyPacks.filter(pack => {
@@ -322,6 +333,41 @@ export default function StudyPacks() {
                 title="Study Session"
               ></iframe>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed bottom-6 right-6 z-[100] transition-all duration-300 transform ${
+          toast.visible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+        }`}>
+          <div className={`flex items-center gap-3 px-5 py-4 rounded-xl shadow-2xl border-l-4 min-w-[320px] max-w-[480px] ${
+            toast.type === 'success' ? 'bg-white border-green-500 text-slate-800' :
+            toast.type === 'error' ? 'bg-white border-red-500 text-slate-800' :
+            toast.type === 'warning' ? 'bg-white border-amber-500 text-slate-800' :
+            'bg-white border-blue-500 text-slate-800'
+          }`}>
+            <div className={`p-2 rounded-lg ${
+              toast.type === 'success' ? 'bg-green-100' :
+              toast.type === 'error' ? 'bg-red-100' :
+              toast.type === 'warning' ? 'bg-amber-100' :
+              'bg-blue-100'
+            }`}>
+              {toast.type === 'success' ? <Check className="w-5 h-5 text-green-600" /> :
+               toast.type === 'error' ? <AlertTriangle className="w-5 h-5 text-red-600" /> :
+               toast.type === 'warning' ? <AlertTriangle className="w-5 h-5 text-amber-600" /> :
+               <Info className="w-5 h-5 text-blue-600" />}
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium">{toast.message}</p>
+            </div>
+            <button
+              onClick={() => setToast(prev => prev ? { ...prev, visible: false } : null)}
+              className="text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
         </div>
       )}
