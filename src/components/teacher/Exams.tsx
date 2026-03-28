@@ -87,7 +87,7 @@ export default function Exams() {
   const [editedAnswers, setEditedAnswers] = useState<Record<string, string | number>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [isEditingExamDetails, setIsEditingExamDetails] = useState(false);
-  const [editExamData, setEditExamData] = useState({ title: '', description: '', exam_date: '', exam_time: '', duration_minutes: 0 });
+  const [editExamData, setEditExamData] = useState({ title: '', description: '', exam_date: '', exam_time: '', end_date: '', end_time: '', duration_minutes: 0 });
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -128,6 +128,8 @@ export default function Exams() {
     description: '',
     exam_date: '',
     exam_time: '',
+    end_date: '',
+    end_time: '',
     duration_minutes: 60,
     exam_type: 'manual', // 'manual' or 'pdf'
   });
@@ -311,11 +313,15 @@ export default function Exams() {
     if (!selectedExamDetail) return;
     const startDate = new Date(selectedExamDetail.start_time);
     const startTime = startDate.toISOString().slice(0, 16).split('T');
+    const endDate = new Date(selectedExamDetail.end_time);
+    const endTime = endDate.toISOString().slice(0, 16).split('T');
     setEditExamData({
       title: selectedExamDetail.title,
       description: selectedExamDetail.description,
       exam_date: startTime[0],
       exam_time: startTime[1],
+      end_date: endTime[0],
+      end_time: endTime[1],
       duration_minutes: selectedExamDetail.duration_minutes,
     });
     setIsEditingExamDetails(true);
@@ -327,7 +333,13 @@ export default function Exams() {
     try {
       setIsSaving(true);
       const startTime = new Date(`${editExamData.exam_date}T${editExamData.exam_time}`);
-      const endTime = new Date(startTime.getTime() + editExamData.duration_minutes * 60000);
+      const endTime = new Date(`${editExamData.end_date}T${editExamData.end_time}`);
+
+      if (endTime <= startTime) {
+        showToast('End time must be after start time', 'warning');
+        setIsSaving(false);
+        return;
+      }
 
       await examRepo.update(selectedExamDetail.id, {
         title: editExamData.title,
@@ -572,7 +584,7 @@ export default function Exams() {
         return;
       }
 
-      if (!formData.class_id || !formData.title || !formData.exam_date || !formData.exam_time) {
+      if (!formData.class_id || !formData.title || !formData.exam_date || !formData.exam_time || !formData.end_date || !formData.end_time) {
         showToast('Please fill in all required fields', 'warning');
         return;
       }
@@ -584,10 +596,16 @@ export default function Exams() {
         showToast('Please add at least one question', 'warning');
         return;
       }
+      
+      const startTime = new Date(`${formData.exam_date}T${formData.exam_time}`);
+      const endTime = new Date(`${formData.end_date}T${formData.end_time}`);
+
+      if (endTime <= startTime) {
+        showToast('End time must be after start time', 'warning');
+        return;
+      }
 
       setIsCreatingExam(true);
-      const startTime = new Date(`${formData.exam_date}T${formData.exam_time}`);
-      const endTime = new Date(startTime.getTime() + formData.duration_minutes * 60000);
 
       // Upload images and prepare questions - sequential upload to avoid filename collision
       const questionsToInsert: any[] = [];
@@ -711,6 +729,8 @@ export default function Exams() {
       description: '',
       exam_date: '',
       exam_time: '',
+      end_date: '',
+      end_time: '',
       duration_minutes: 60,
       exam_type: 'manual',
     });
@@ -850,14 +870,20 @@ export default function Exams() {
         return;
       }
 
-      if (!formData.class_id || !formData.title || !formData.exam_date || !formData.exam_time) {
+      if (!formData.class_id || !formData.title || !formData.exam_date || !formData.exam_time || !formData.end_date || !formData.end_time) {
         showToast('Please fill in all required fields', 'warning');
         return;
       }
 
       // Create exam first with type indicator
       const startTime = new Date(`${formData.exam_date}T${formData.exam_time}`);
-      const endTime = new Date(startTime.getTime() + formData.duration_minutes * 60000);
+      const endTime = new Date(`${formData.end_date}T${formData.end_time}`);
+
+      if (endTime <= startTime) {
+        showToast('End time must be after start time', 'warning');
+        setPdfUploading(false);
+        return;
+      }
 
       const exam = await examRepo.create({
         teacher_id: teacher.id,
@@ -1196,7 +1222,7 @@ export default function Exams() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Date
+                    Active From Date
                   </label>
                   <input
                     type="date"
@@ -1207,12 +1233,37 @@ export default function Exams() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Time
+                    Active From Time
                   </label>
                   <input
                     type="time"
                     value={formData.exam_time}
                     onChange={(e) => setFormData({ ...formData, exam_time: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#eb1b23] focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Active Until Date
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.end_date}
+                    onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#eb1b23] focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Active Until Time
+                  </label>
+                  <input
+                    type="time"
+                    value={formData.end_time}
+                    onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#eb1b23] focus:border-transparent"
                   />
                 </div>
@@ -1483,7 +1534,7 @@ export default function Exams() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium mb-1">Date</label>
+                        <label className="block text-sm font-medium mb-1">Active From Date</label>
                         <input
                           type="date"
                           value={editExamData.exam_date}
@@ -1492,11 +1543,29 @@ export default function Exams() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium mb-1">Time</label>
+                        <label className="block text-sm font-medium mb-1">Active From Time</label>
                         <input
                           type="time"
                           value={editExamData.exam_time}
                           onChange={(e) => setEditExamData({ ...editExamData, exam_time: e.target.value })}
+                          className="w-full px-3 py-2 bg-red-50 border border-red-200 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Active Until Date</label>
+                        <input
+                          type="date"
+                          value={editExamData.end_date}
+                          onChange={(e) => setEditExamData({ ...editExamData, end_date: e.target.value })}
+                          className="w-full px-3 py-2 bg-red-50 border border-red-200 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Active Until Time</label>
+                        <input
+                          type="time"
+                          value={editExamData.end_time}
+                          onChange={(e) => setEditExamData({ ...editExamData, end_time: e.target.value })}
                           className="w-full px-3 py-2 bg-red-50 border border-red-200 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-white"
                         />
                       </div>

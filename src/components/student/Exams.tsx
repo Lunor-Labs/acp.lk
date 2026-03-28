@@ -33,6 +33,7 @@ interface ExamAttempt {
   score: number;
   rank: number;
   submitted_at: string;
+  answers: Record<number, string | number>;
   exam: {
     title: string;
     subject: string;
@@ -54,6 +55,14 @@ interface ActiveExam {
   pdfView?: 'paper' | 'answers';
 }
 
+interface ReviewingResultData {
+  attempt: ExamAttempt;
+  isPdf: boolean;
+  pdfUrl?: string | null;
+  questions?: ExamQuestion[];
+  pdfAnswers?: { question_no: number; correct_answer: number }[];
+}
+
 export default function Exams() {
   const { profile } = useAuth();
   const [upcomingExams, setUpcomingExams] = useState<Exam[]>([]);
@@ -61,6 +70,8 @@ export default function Exams() {
   const [loading, setLoading] = useState(true);
   const [activeExam, setActiveExam] = useState<ActiveExam | null>(null);
   const [view, setView] = useState<'upcoming' | 'results'>('upcoming');
+  const [currentTime, setCurrentTime] = useState<Date>(new Date());
+  const [reviewingData, setReviewingData] = useState<ReviewingResultData | null>(null);
 
   useEffect(() => {
     if (profile?.id) {
@@ -154,7 +165,7 @@ export default function Exams() {
 
     const { data: existingAttempt } = await supabase
       .from('exam_attempts')
-      .select('id, status')
+      .select('id, status, started_at, answers')
       .eq('exam_id', exam.id)
       .eq('student_id', profile?.id)
       .maybeSingle();
@@ -205,6 +216,9 @@ export default function Exams() {
 
       // Create or get attempt
       let attemptId = existingAttempt?.id;
+      let attemptStartTime = new Date();
+      let attemptAnswers: Record<number, string | number> = {};
+
       if (!attemptId) {
         const { data: newAttempt, error: attemptError } = await supabase
           .from('exam_attempts')
@@ -220,13 +234,26 @@ export default function Exams() {
 
         if (attemptError) throw attemptError;
         attemptId = newAttempt.id;
+        if (newAttempt.started_at) {
+          attemptStartTime = new Date(newAttempt.started_at);
+        }
+      } else {
+        if (existingAttempt?.started_at) {
+          attemptStartTime = new Date(existingAttempt.started_at);
+        }
+        if (existingAttempt?.answers) {
+          // Parse Jsonb or assume it's already an object
+          attemptAnswers = typeof existingAttempt.answers === 'string' 
+            ? JSON.parse(existingAttempt.answers) 
+            : existingAttempt.answers;
+        }
       }
 
       setActiveExam({
         exam,
         currentQuestion: 0,
-        answers: {},
-        startTime: new Date(),
+        answers: attemptAnswers,
+        startTime: attemptStartTime,
         isPdf,
         pdfUrl,
         questions,
@@ -242,17 +269,50 @@ export default function Exams() {
 
   const selectAnswer = (questionIndex: number, answerValue: string | number) => {
     if (!activeExam) return;
+
+    if (activeExam.isPdf || typeof answerValue === 'number') {
+      setActiveExam({
+        ...activeExam,
+        answers: { ...activeExam.answers, [questionIndex]: answerValue },
+      });
+      return;
+    }
+
+    const question = activeExam.questions?.[questionIndex];
+    const isMultiChoice = question?.correct_answer?.includes(',');
+
+    if (!isMultiChoice) {
+      setActiveExam({
+        ...activeExam,
+        answers: { ...activeExam.answers, [questionIndex]: answerValue },
+      });
+      return;
+    }
+
+    const currentAnswerStr = (activeExam.answers[questionIndex] as string) || '';
+    let selectedArr = currentAnswerStr ? currentAnswerStr.split(',') : [];
+
+    if (selectedArr.includes(answerValue as string)) {
+      selectedArr = selectedArr.filter(a => a !== answerValue);
+    } else {
+      selectedArr.push(answerValue as string);
+      selectedArr.sort(); // Sort alphabetically (A, C) naturally
+    }
+
+    const newAnswerStr = selectedArr.join(',');
+
     setActiveExam({
       ...activeExam,
-      answers: { ...activeExam.answers, [questionIndex]: answerValue },
+      answers: { ...activeExam.answers, [questionIndex]: newAnswerStr },
     });
   };
 
-  const submitExam = async () => {
+  const submitExam = async (forceSubmit?: boolean) => {
     if (!activeExam) return;
+    const isForced = forceSubmit === true;
 
     // If not reviewing yet, switch to review mode
-    if (!activeExam.isReviewing) {
+    if (!activeExam.isReviewing && !isForced) {
       setActiveExam({ ...activeExam, isReviewing: true });
       return;
     }
@@ -269,9 +329,16 @@ export default function Exams() {
 
       if (!activeExam.isPdf && activeExam.questions) {
         activeExam.questions.forEach((q, idx) => {
-          const studentAnswer = activeExam.answers[idx];
-          if (studentAnswer !== undefined) {
-            if (studentAnswer === q.correct_answer) {
+          const studentAnswer = activeExam.answers[idx] as string;
+          if (studentAnswer !== undefined && studentAnswer !== '') {
+            const correctArr = (q.correct_answer || '').split(',');
+            const studentArr = studentAnswer.split(',');
+            
+            const isFullyCorrect = 
+              correctArr.length === studentArr.length && 
+              correctArr.every(ca => studentArr.includes(ca));
+              
+            if (isFullyCorrect) {
               score += q.marks;
               correctCount++;
             } else {
@@ -346,6 +413,47 @@ export default function Exams() {
     }
   };
 
+  useEffect(() => {
+    if (!activeExam || activeExam.isReviewing || activeExam.isSubmitting) return;
+
+    const interval = setInterval(() => {
+      const now = new Date();
+      setCurrentTime(now);
+      
+      const examEndTime = new Date(activeExam.exam.end_time);
+      const elapsedMs = now.getTime() - activeExam.startTime.getTime();
+      const elapsedMinutes = elapsedMs / 60000;
+      
+      if (elapsedMinutes >= activeExam.exam.duration_minutes || now >= examEndTime) {
+        clearInterval(interval);
+        alert('Time is up! Your exam is being automatically submitted.');
+        submitExam(true);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [activeExam]);
+
+  const getRemainingTimeDisplay = () => {
+    if (!activeExam) return { text: '0m 0s', isWarning: false };
+    
+    const maxDurationMs = activeExam.exam.duration_minutes * 60000;
+    const timerEndTime = activeExam.startTime.getTime() + maxDurationMs;
+    const examEndTime = new Date(activeExam.exam.end_time).getTime();
+    
+    // Choose the sooner closure time
+    const hardEndTime = Math.min(timerEndTime, examEndTime);
+    const msRemaining = Math.max(0, hardEndTime - currentTime.getTime());
+    
+    const m = Math.floor(msRemaining / 60000);
+    const s = Math.floor((msRemaining % 60000) / 1000);
+    
+    return {
+      text: `${m}m ${s}s`,
+      isWarning: msRemaining > 0 && msRemaining <= 300000 // Last 5 minutes
+    };
+  };
+
   if (activeExam) {
     // -------------------------------------------------------------------------
     // RENDER: REVIEW MODE
@@ -418,7 +526,7 @@ export default function Exams() {
                     Back to Exam
                   </button>
                   <button
-                    onClick={submitExam}
+                    onClick={() => submitExam()}
                     disabled={activeExam.isSubmitting}
                     className="flex-1 px-8 py-4 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 shadow-lg shadow-green-100 transition flex items-center justify-center space-x-2 disabled:opacity-50"
                   >
@@ -458,9 +566,9 @@ export default function Exams() {
               <div className="flex items-center space-x-3 text-sm text-gray-500">
                 <span>{activeExam.exam.subject}</span>
                 <span>•</span>
-                <span className="flex items-center">
+                <span className={`flex items-center ${getRemainingTimeDisplay().isWarning ? 'text-[#eb1b23] font-bold animate-pulse' : ''}`}>
                   <Clock className="w-4 h-4 mr-1" />
-                  Time Remaining: {Math.max(0, activeExam.exam.duration_minutes - Math.floor((new Date().getTime() - activeExam.startTime.getTime()) / 60000))} mins
+                  Time Remaining: {getRemainingTimeDisplay().text}
                 </span>
               </div>
             </div>
@@ -472,7 +580,7 @@ export default function Exams() {
               <p className="font-bold text-gray-900">{answeredCount} / {totalQuestions} Answered</p>
             </div>
             <button
-              onClick={submitExam}
+              onClick={() => submitExam()}
               className="bg-[#eb1b23] text-white px-6 py-2.5 rounded-lg font-bold hover:bg-red-700 transition shadow-lg shadow-red-100"
             >
               Review & Submit
@@ -545,7 +653,8 @@ export default function Exams() {
                     <div className="space-y-4">
                       {activeExam.questions[activeExam.currentQuestion].options.map((option, idx) => {
                         const letter = String.fromCharCode(65 + idx);
-                        const isSelected = activeExam.answers[activeExam.currentQuestion] === letter;
+                        const currentAnswerObj = activeExam.answers[activeExam.currentQuestion] as string;
+                        const isSelected = currentAnswerObj ? currentAnswerObj.split(',').includes(letter) : false;
                         return (
                           <button
                             key={idx}
@@ -655,6 +764,195 @@ export default function Exams() {
                 >
                   Next
                 </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const viewResultDetails = async (attempt: ExamAttempt) => {
+    try {
+      setLoading(true);
+      
+      const { data: pdfData } = await supabase
+        .from('pdf_exams')
+        .select('*')
+        .eq('exam_id', attempt.exam_id);
+
+      const isPdf = !!(pdfData && pdfData.length > 0);
+      let questions: ExamQuestion[] = [];
+      let pdfUrl: string | null = null;
+      let pdfAnswers: { question_no: number; correct_answer: number }[] = [];
+
+      if (isPdf) {
+        const pdfPath = pdfData![0].pdf_path;
+        const storagePath = pdfPath.startsWith('acp/') ? pdfPath.slice(4) : pdfPath;
+        const { data: urlData } = supabase.storage.from('acp').getPublicUrl(storagePath);
+        pdfUrl = urlData?.publicUrl || null;
+        
+        const { data: answersData } = await supabase
+          .from('pdf_exams')
+          .select('question_no, correct_answer')
+          .eq('exam_id', attempt.exam_id);
+          
+        pdfAnswers = answersData || [];
+      } else {
+        const { data: qData, error: qError } = await supabase
+          .from('exam_questions')
+          .select('*')
+          .eq('exam_id', attempt.exam_id)
+          .order('question_number', { ascending: true });
+
+        if (qError) throw qError;
+        questions = (qData || []).map(q => ({
+          id: q.id,
+          question_number: q.question_number,
+          question_text: q.question_text,
+          options: q.options || [],
+          correct_answer: q.correct_answer,
+          marks: q.marks,
+          image_path: q.image_path,
+        }));
+      }
+
+      let parsedAnswers = attempt.answers;
+      if (typeof parsedAnswers === 'string') {
+        try {
+          parsedAnswers = JSON.parse(parsedAnswers);
+        } catch (e) {
+          parsedAnswers = {};
+        }
+      }
+
+      setReviewingData({
+        attempt: { ...attempt, answers: parsedAnswers },
+        isPdf,
+        pdfUrl,
+        questions,
+        pdfAnswers
+      });
+      
+    } catch (error) {
+      console.error('Error loading result details:', error);
+      alert('Failed to load exam details');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (reviewingData) {
+    return (
+      <div className="fixed inset-0 bg-gray-100 z-50 flex flex-col">
+        <div className="bg-white border-b px-6 py-4 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-gray-900">Review: {reviewingData.attempt.exam.title}</h2>
+          <button
+            onClick={() => setReviewingData(null)}
+            className="bg-white border text-[#eb1b23] border-[#eb1b23] px-6 py-2.5 rounded-xl font-bold hover:bg-red-50 transition"
+          >
+            Close Results
+          </button>
+        </div>
+        <div className="flex-1 overflow-auto p-4 sm:p-8">
+          <div className="max-w-6xl mx-auto">
+            {reviewingData.isPdf ? (
+              <div className="flex flex-col md:flex-row gap-6 h-[calc(100vh-120px)]">
+                <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                  {reviewingData.pdfUrl ? (
+                    <iframe src={reviewingData.pdfUrl} className="w-full h-full border-none" />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-gray-400 font-bold">Paper unavailable</div>
+                  )}
+                </div>
+                <div className="w-full md:w-96 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-y-auto p-6">
+                  <h3 className="font-bold text-xl mb-6 text-gray-900">Your Marking Map</h3>
+                  <div className="space-y-4">
+                    {reviewingData.pdfAnswers?.map((ans) => {
+                      const studentChoice = (reviewingData.attempt.answers as any)?.[ans.question_no] as number;
+                      return (
+                        <div key={ans.question_no} className="flex items-center space-x-3">
+                          <span className="w-6 text-sm font-mono font-bold text-gray-500">{ans.question_no.toString().padStart(2, '0')}.</span>
+                          <div className="flex-1 flex justify-between gap-1">
+                            {[1,2,3,4,5].map(val => {
+                              const isStu = studentChoice === val;
+                              const isTrue = ans.correct_answer === val;
+                              let bClass = "bg-gray-50 border-gray-200 text-gray-400";
+                              if (isTrue) bClass = "bg-green-500 border-green-600 text-white shadow-sm z-10 scale-105";
+                              else if (isStu) bClass = "bg-red-500 border-red-600 text-white shadow-sm z-10 scale-105";
+
+                              return (
+                                <div key={val} className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all ${bClass}`}>
+                                  {val}
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {reviewingData.questions?.map((q, idx) => {
+                  const studentAnswer = (reviewingData.attempt.answers as any)?.[idx] as string;
+                  const correctAnswers = (q.correct_answer || '').split(',');
+                  const studentAnswers = studentAnswer ? studentAnswer.split(',') : [];
+
+                  const isFullyCorrect = 
+                    correctAnswers.length === studentAnswers.length && 
+                    correctAnswers.every(ca => studentAnswers.includes(ca));
+
+                  return (
+                    <div key={idx} className="p-6 sm:p-8 border border-gray-200 rounded-3xl bg-white shadow-sm transition hover:shadow-md">
+                      <div className="flex justify-between items-center mb-6 pb-6 border-b border-gray-100">
+                        <h4 className="text-xl font-bold text-gray-900 border-l-4 border-[#eb1b23] pl-3">Question {q.question_number}</h4>
+                        <div className={`font-bold px-4 py-2 rounded-full text-sm flex items-center shadow-sm border ${isFullyCorrect ? 'bg-green-50 text-green-700 border-green-100' : 'bg-red-50 text-red-700 border-red-100'}`}>
+                          {isFullyCorrect ? 'Full Marks' : 'Incorrect'} <span className="ml-2 bg-white px-2 py-0.5 rounded text-xs shadow-sm">{isFullyCorrect ? q.marks : 0}/{q.marks}</span>
+                        </div>
+                      </div>
+                      
+                      <p className="text-gray-800 text-lg mb-8 leading-relaxed whitespace-pre-wrap">{q.question_text}</p>
+                      
+                      {q.image_path && (
+                        <div className="mb-8 rounded-2xl overflow-hidden bg-gray-50 flex justify-center p-6 border border-gray-100">
+                          <img
+                            src={supabase.storage.from('acp').getPublicUrl(q.image_path.replace('acp/', '')).data.publicUrl}
+                            className="max-h-80 object-contain rounded-lg shadow-sm"
+                          />
+                        </div>
+                      )}
+
+                      <div className="space-y-3">
+                        {q.options.map((opt, optIdx) => {
+                          const letter = String.fromCharCode(65 + optIdx);
+                          const isStudentChoice = studentAnswers.includes(letter);
+                          const isTrueCorrect = correctAnswers.includes(letter);
+
+                          let bgClass = "bg-white border-gray-200 text-gray-700";
+                          if (isTrueCorrect) {
+                            bgClass = "bg-green-50 border-green-500 text-green-900 shadow-md ring-1 ring-green-100"; 
+                          } else if (isStudentChoice) {
+                            bgClass = "bg-red-50 border-red-500 text-red-900 shadow-sm";
+                          }
+                          
+                          return (
+                            <div key={optIdx} className={`p-4 sm:p-5 border-2 rounded-2xl flex items-center transition-all ${bgClass}`}>
+                              <span className={`w-10 h-10 flex items-center justify-center rounded-xl font-bold text-lg mr-4 ${isTrueCorrect ? 'bg-green-500 text-white shadow-sm' : isStudentChoice ? 'bg-red-500 text-white shadow-sm' : 'bg-gray-100 text-gray-500'}`}>
+                                {letter}
+                              </span>
+                              <span className="flex-1 font-semibold text-lg">{opt}</span>
+                              {isTrueCorrect && <span className="ml-3 text-green-700 font-bold bg-white px-3 py-1.5 rounded-lg text-sm shadow-sm border border-green-200">Yes! Correct</span>}
+                              {(!isTrueCorrect && isStudentChoice) && <span className="ml-3 text-red-700 font-bold bg-white px-3 py-1.5 rounded-lg text-sm shadow-sm border border-red-200">Your Pick</span>}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             )}
           </div>
@@ -800,22 +1098,21 @@ export default function Exams() {
                         {!isExamEnded && (
                           <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-semibold flex items-center">
                             <Clock className="w-3 h-3 mr-1" />
-                            Results Pending
+                            Rank Pending
                           </span>
                         )}
                       </div>
                       <h3 className="text-xl font-bold text-gray-900 mb-4">{result.exam.title}</h3>
 
-                      {isExamEnded ? (
-                        <div className="grid grid-cols-3 gap-4">
-                          <div className="bg-gray-50 rounded-lg p-4">
-                            <div className="text-sm text-gray-600 mb-1">Score</div>
+                        <div className="grid grid-cols-3 gap-4 mb-4">
+                          <div className="bg-gray-50 rounded-lg p-4 transition hover:bg-gray-100 border border-transparent hover:border-gray-200">
+                            <div className="text-sm text-gray-600 mb-1 font-semibold uppercase tracking-wider">Score</div>
                             <div className="text-2xl font-bold text-gray-900">
                               {result.score}/{result.exam.total_marks}
                             </div>
                           </div>
-                          <div className="bg-gray-50 rounded-lg p-4">
-                            <div className="text-sm text-gray-600 mb-1">Percentage</div>
+                          <div className="bg-gray-50 rounded-lg p-4 transition hover:bg-gray-100 border border-transparent hover:border-gray-200">
+                            <div className="text-sm text-gray-600 mb-1 font-semibold uppercase tracking-wider">Percentage</div>
                             <div className={`text-2xl font-bold ${
                               (result.score / result.exam.total_marks) >= 0.75 ? 'text-green-600' :
                               (result.score / result.exam.total_marks) >= 0.5 ? 'text-amber-600' :
@@ -824,22 +1121,29 @@ export default function Exams() {
                               {Math.round((result.score / result.exam.total_marks) * 100)}%
                             </div>
                           </div>
-                          <div className="bg-gray-50 rounded-lg p-4">
-                            <div className="text-sm text-gray-600 mb-1">Rank</div>
+                          <div className="bg-gray-50 rounded-lg p-4 transition hover:bg-gray-100 border border-transparent hover:border-gray-200">
+                            <div className="text-sm text-gray-600 mb-1 font-semibold uppercase tracking-wider">Rank</div>
                             <div className="text-2xl font-bold text-[#eb1b23]">
-                              #{result.rank || 'N/A'}
+                              {isExamEnded ? `#${result.rank || 'N/A'}` : 'Pending'}
                             </div>
                           </div>
                         </div>
-                      ) : (
-                        <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 flex items-center text-amber-800">
-                          <AlertCircle className="w-5 h-5 mr-3 flex-shrink-0" />
-                          <p className="text-sm">
-                            Your answers are safely recorded. Detailed marks and rankings will be revealed on 
-                            <strong className="ml-1">{endTime.toLocaleDateString()} at {endTime.toLocaleTimeString()}</strong> after the exam officially ends.
-                          </p>
-                        </div>
-                      )}
+
+                      {/* Action Buttons */}
+                      <div className="flex flex-col sm:flex-row items-center justify-between pt-4 border-t border-gray-100 gap-4 mt-6">
+                        {!isExamEnded ? (
+                          <div className="flex items-center text-amber-600 bg-amber-50 px-4 py-2 rounded-lg text-sm font-semibold border border-amber-100">
+                            <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0" />
+                            Rankings hidden until {endTime.toLocaleDateString()}
+                          </div>
+                        ) : <div />}
+                        <button
+                          onClick={() => viewResultDetails(result)}
+                          className="w-full sm:w-auto px-8 py-3.5 bg-white border-2 border-gray-200 text-gray-700 hover:border-[#eb1b23] hover:text-[#eb1b23] font-bold rounded-xl transition shadow-sm"
+                        >
+                          Review Answers
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
