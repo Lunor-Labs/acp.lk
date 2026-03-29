@@ -10,6 +10,7 @@ interface Exam {
   subject: string;
   duration_minutes: number;
   total_marks: number;
+  total_questions?: number;
   start_time: string;
   end_time: string;
   class: {
@@ -53,6 +54,7 @@ interface ActiveExam {
   isReviewing?: boolean;
   isSubmitting?: boolean;
   pdfView?: 'paper' | 'answers';
+  total_questions?: number;
 }
 
 interface ReviewingResultData {
@@ -269,6 +271,7 @@ export default function Exams() {
         pdfUrl,
         questions,
         pdfView: isPdf ? 'paper' : undefined,
+        total_questions: exam.total_questions,
       });
     } catch (error) {
       console.error('Error starting exam:', error);
@@ -336,7 +339,9 @@ export default function Exams() {
       let score = 0;
       let correctCount = 0;
       let incorrectCount = 0;
-      const totalQuestions = activeExam.isPdf ? 50 : (activeExam.questions?.length || 0);
+      const totalQuestions = activeExam.isPdf 
+        ? (activeExam.total_questions || activeExam.exam.total_questions || 50) 
+        : (activeExam.questions?.length || 0);
 
       if (!activeExam.isPdf && activeExam.questions) {
         activeExam.questions.forEach((q, idx) => {
@@ -470,7 +475,9 @@ export default function Exams() {
     // RENDER: REVIEW MODE
     // -------------------------------------------------------------------------
     if (activeExam.isReviewing) {
-      const totalQuestions = activeExam.isPdf ? 50 : (activeExam.questions?.length || 0);
+      const totalQuestions = activeExam.isPdf 
+        ? (activeExam.total_questions || activeExam.exam.total_questions || 50) 
+        : (activeExam.questions?.length || 0);
       const answeredCount = Object.keys(activeExam.answers).length;
 
       return (
@@ -561,7 +568,9 @@ export default function Exams() {
     // -------------------------------------------------------------------------
     // RENDER: TAKING MODE (PDF OR MANUAL)
     // -------------------------------------------------------------------------
-    const totalQuestions = activeExam.isPdf ? 50 : (activeExam.questions?.length || 0);
+    const totalQuestions = activeExam.isPdf 
+      ? (activeExam.total_questions || activeExam.exam.total_questions || 50) 
+      : (activeExam.questions?.length || 0);
     const answeredCount = Object.keys(activeExam.answers).length;
 
     return (
@@ -706,7 +715,7 @@ export default function Exams() {
               {activeExam.isPdf ? (
                 // Bubble Sheet for PDF
                 <div className="space-y-6">
-                  {Array.from({ length: 50 }).map((_, i) => {
+                  {Array.from({ length: totalQuestions }).map((_, i) => {
                     const qNo = i + 1;
                     return (
                       <div key={i} className="flex items-center space-x-3">
@@ -1228,9 +1237,9 @@ export default function Exams() {
                   return (
                     <div
                       key={result.id}
-                      className="group bg-white border border-gray-100 rounded-xl p-5 hover:shadow-lg hover:border-[#eb1b23]/30 transition-all duration-300"
+                      className="group bg-white border border-gray-100 rounded-xl p-4 sm:p-5 hover:shadow-lg hover:border-[#eb1b23]/30 transition-all duration-300"
                     >
-                      <div className="flex items-start gap-4">
+                      <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                         {/* Subject Icon */}
                         <div className={`flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center ${
                           result.exam.subject.toLowerCase().includes('physics') ? 'bg-red-50 text-red-600' :
@@ -1253,8 +1262,8 @@ export default function Exams() {
                         </div>
 
                         {/* Content */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0 w-full">
+                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                             <div className="min-w-0">
                               <div className="flex items-center gap-2 mb-1 flex-wrap">
                                 <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
@@ -1270,47 +1279,47 @@ export default function Exams() {
                                   </span>
                                 )}
                               </div>
-                              <h4 className="text-lg font-bold text-slate-900 group-hover:text-[#eb1b23] transition-colors">
+                              <h4 className="text-lg font-bold text-slate-900 group-hover:text-[#eb1b23] transition-colors line-clamp-2">
                                 {result.exam.title}
                               </h4>
                             </div>
                           </div>
 
                           {/* Score Stats */}
-                          <div className="grid grid-cols-3 gap-3 mt-4">
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mt-4">
                             <div className="bg-slate-50 rounded-lg p-3">
                               <div className="text-xs text-slate-500 mb-1">Score</div>
-                              <div className="text-xl font-bold text-slate-900">{result.score}/{result.exam.total_marks}</div>
+                              <div className="text-lg sm:text-xl font-bold text-slate-900">{result.score}/{result.exam.total_marks}</div>
                             </div>
                             <div className="bg-slate-50 rounded-lg p-3">
                               <div className="text-xs text-slate-500 mb-1">Percentage</div>
-                              <div className={`text-xl font-bold ${
+                              <div className={`text-lg sm:text-xl font-bold ${
                                 percentage >= 75 ? 'text-green-600' :
                                 percentage >= 50 ? 'text-amber-600' :
                                 'text-red-600'
                               }`}>{percentage}%</div>
                             </div>
-                            <div className="bg-slate-50 rounded-lg p-3">
+                            <div className="bg-slate-50 rounded-lg p-3 col-span-2 sm:col-span-1">
                               <div className="text-xs text-slate-500 mb-1">Rank</div>
-                              <div className="text-xl font-bold text-[#eb1b23]">
+                              <div className="text-lg sm:text-xl font-bold text-[#eb1b23]">
                                 {isExamEnded ? `#${result.rank || 'N/A'}` : 'Pending'}
                               </div>
                             </div>
                           </div>
 
                           {/* Action */}
-                          <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 pt-4 border-t border-gray-100">
                             {!isExamEnded ? (
-                              <div className="flex items-center text-amber-600 text-sm">
-                                <AlertCircle className="w-4 h-4 mr-1.5" />
-                                Rankings hidden until {endTime.toLocaleDateString()}
+                              <div className="flex items-center text-amber-600 text-xs sm:text-sm">
+                                <AlertCircle className="w-4 h-4 mr-1.5 flex-shrink-0" />
+                                <span>Rankings hidden until {endTime.toLocaleDateString()}</span>
                               </div>
                             ) : <div />}
                             <button
                               onClick={() => viewResultDetails(result)}
-                              className="flex items-center gap-2 px-5 py-2 bg-white border-2 border-gray-200 text-slate-700 hover:border-[#eb1b23] hover:text-[#eb1b23] font-medium rounded-xl transition"
+                              className="flex items-center justify-center sm:justify-start gap-2 px-5 py-2 bg-white border-2 border-gray-200 text-slate-700 hover:border-[#eb1b23] hover:text-[#eb1b23] font-medium rounded-xl transition w-full sm:w-auto"
                             >
-                              <FileText className="w-4 h-4" />
+                              <FileText className="w-4 h-4 flex-shrink-0" />
                               Review Answers
                             </button>
                           </div>
