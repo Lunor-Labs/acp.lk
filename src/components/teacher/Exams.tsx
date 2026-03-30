@@ -13,6 +13,7 @@ interface Exam {
   end_time: string;
   duration_minutes: number;
   total_marks: number;
+  total_questions?: number;
   created_at: string;
   class_title?: string;
   submission_count?: number;
@@ -135,6 +136,8 @@ export default function Exams() {
   });
 
   const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [questionCount, setQuestionCount] = useState<number | null>(null);
+  const [showQuestionCountInput, setShowQuestionCountInput] = useState(false);
   const [pdfAnswers, setPdfAnswers] = useState<PdfAnswer[]>(
     Array.from({ length: 50 }, (_, i) => ({
       question_no: i + 1,
@@ -744,6 +747,8 @@ export default function Exams() {
       },
     ]);
     setPdfFile(null);
+    setQuestionCount(null);
+    setShowQuestionCountInput(false);
     setPdfAnswers(
       Array.from({ length: 50 }, (_, i) => ({
         question_no: i + 1,
@@ -844,8 +849,24 @@ export default function Exams() {
         return;
       }
       setPdfFile(file);
-      setShowPdfAnswerSheet(true);
+      setShowQuestionCountInput(true);
     }
+  }
+
+  function handleQuestionCountSubmit() {
+    if (!questionCount || questionCount < 1 || questionCount > 500) {
+      showToast('Please enter a valid number of questions (1-500)', 'warning');
+      return;
+    }
+    // Initialize answer sheet with the specified count
+    setPdfAnswers(
+      Array.from({ length: questionCount }, (_, i) => ({
+        question_no: i + 1,
+        correct_answer: 0,
+      }))
+    );
+    setShowQuestionCountInput(false);
+    setShowPdfAnswerSheet(true);
   }
 
   async function handlePdfAnswerSheetSubmit() {
@@ -858,7 +879,7 @@ export default function Exams() {
       // Validate all answers are selected (1-5)
       const allAnswered = pdfAnswers.every(answer => answer.correct_answer > 0);
       if (!allAnswered) {
-        showToast('Please mark correct answers for all 50 questions', 'warning');
+        showToast(`Please mark correct answers for all ${questionCount} questions`, 'warning');
         return;
       }
 
@@ -872,6 +893,11 @@ export default function Exams() {
 
       if (!formData.class_id || !formData.title || !formData.exam_date || !formData.exam_time || !formData.end_date || !formData.end_time) {
         showToast('Please fill in all required fields', 'warning');
+        return;
+      }
+
+      if (!questionCount) {
+        showToast('Question count is missing', 'warning');
         return;
       }
 
@@ -894,7 +920,8 @@ export default function Exams() {
         start_time: startTime.toISOString(),
         end_time: endTime.toISOString(),
         duration_minutes: formData.duration_minutes,
-        total_marks: 50, // 50 questions
+        total_marks: questionCount,
+        total_questions: questionCount,
       });
 
       // Upload PDF to storage
@@ -1301,7 +1328,7 @@ export default function Exams() {
                 </select>
               </div>
 
-              {formData.exam_type === 'pdf' && !showPdfAnswerSheet ? (
+              {formData.exam_type === 'pdf' && !showPdfAnswerSheet && !showQuestionCountInput ? (
                 <div className="border-2 border-dashed border-[#eb1b23] rounded-lg p-6 text-center">
                   <Upload className="w-8 h-8 text-[#eb1b23] mx-auto mb-3" />
                   <label className="cursor-pointer">
@@ -1329,16 +1356,60 @@ export default function Exams() {
                 </div>
               ) : null}
 
+              {formData.exam_type === 'pdf' && showQuestionCountInput && !showPdfAnswerSheet ? (
+                <div className="fixed inset-0 z-50 flex items-center justify-center">
+                  <div className="absolute inset-0 bg-black opacity-30" onClick={() => { setShowQuestionCountInput(false); setPdfFile(null); }}></div>
+                  <div className="relative bg-white rounded-xl shadow-lg w-[90vw] max-w-md p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-semibold text-gray-900">Number of Questions</h4>
+                      <button
+                        onClick={() => {
+                          setShowQuestionCountInput(false);
+                          setPdfFile(null);
+                        }}
+                        title="Close"
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    <div className="space-y-4">
+                      <p className="text-sm text-gray-600">
+                        How many questions are in this PDF paper?
+                      </p>
+                      <input
+                        type="number"
+                        min="1"
+                        max="500"
+                        value={questionCount || ''}
+                        onChange={(e) => setQuestionCount(e.target.value ? parseInt(e.target.value) : null)}
+                        placeholder="Enter number of questions"
+                        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#eb1b23]"
+                      />
+                      <button
+                        onClick={handleQuestionCountSubmit}
+                        className="w-full bg-[#eb1b23] text-white px-6 py-3 rounded-lg font-medium hover:bg-red-700 transition-all duration-200"
+                      >
+                        Continue to Answer Sheet
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
               {formData.exam_type === 'pdf' && showPdfAnswerSheet ? (
                 <div className="fixed inset-0 z-50 flex items-center justify-center">
-                  <div className="absolute inset-0 bg-black opacity-30" onClick={() => { setShowPdfAnswerSheet(false); setPdfFile(null); }}></div>
+                  <div className="absolute inset-0 bg-black opacity-30" onClick={() => { setShowPdfAnswerSheet(false); setPdfFile(null); setQuestionCount(null); setShowQuestionCountInput(false); }}></div>
                   <div className="relative bg-white rounded-xl shadow-lg w-[90vw] max-w-3xl p-6 overflow-y-auto max-h-[90vh]">
                     <div className="flex items-center justify-between mb-4">
-                      <h4 className="font-semibold text-gray-900">MCQ Answer Sheet (50 Questions)</h4>
+                      <h4 className="font-semibold text-gray-900">MCQ Answer Sheet ({questionCount} Questions)</h4>
                       <button
                         onClick={() => {
                           setShowPdfAnswerSheet(false);
                           setPdfFile(null);
+                          setQuestionCount(null);
+                          setShowQuestionCountInput(false);
                         }}
                         title="Close answer sheet"
                         className="text-gray-400 hover:text-gray-600"
