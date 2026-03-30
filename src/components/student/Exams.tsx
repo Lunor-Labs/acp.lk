@@ -342,8 +342,8 @@ export default function Exams() {
         activeExam.questions.forEach((q, idx) => {
           const studentAnswer = activeExam.answers[idx] as string;
           if (studentAnswer !== undefined && studentAnswer !== '') {
-            const correctArr = (q.correct_answer || '').split(',');
-            const studentArr = studentAnswer.split(',');
+            const correctArr = (q.correct_answer || '').split(',').map(s => s.trim()).filter(Boolean);
+            const studentArr = studentAnswer.split(',').map(s => s.trim()).filter(Boolean);
             
             const isFullyCorrect = 
               correctArr.length === studentArr.length && 
@@ -663,13 +663,13 @@ export default function Exams() {
 
                     <div className="space-y-4">
                       {activeExam.questions[activeExam.currentQuestion].options.map((option, idx) => {
-                        const letter = String.fromCharCode(65 + idx);
+                        const optNum = String(idx + 1);
                         const currentAnswerObj = activeExam.answers[activeExam.currentQuestion] as string;
-                        const isSelected = currentAnswerObj ? currentAnswerObj.split(',').includes(letter) : false;
+                        const isSelected = currentAnswerObj ? currentAnswerObj.split(',').map(s => s.trim()).includes(optNum) : false;
                         return (
                           <button
                             key={idx}
-                            onClick={() => selectAnswer(activeExam.currentQuestion, letter)}
+                            onClick={() => selectAnswer(activeExam.currentQuestion, optNum)}
                             className={`w-full text-left p-5 rounded-xl border-2 transition-all flex items-center group ${
                               isSelected
                                 ? 'border-[#eb1b23] bg-red-50 shadow-md shadow-red-50'
@@ -679,7 +679,7 @@ export default function Exams() {
                             <span className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold mr-4 transition-colors ${
                               isSelected ? 'bg-[#eb1b23] text-white' : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'
                             }`}>
-                              {letter}
+                              {idx + 1}
                             </span>
                             <span className={`text-lg font-medium ${isSelected ? 'text-gray-900' : 'text-gray-700'}`}>
                               {option}
@@ -880,14 +880,14 @@ export default function Exams() {
                   <h3 className="font-bold text-xl mb-6 text-gray-900">Your Marking Map</h3>
                   <div className="space-y-4">
                     {reviewingData.pdfAnswers?.map((ans) => {
-                      const studentChoice = (reviewingData.attempt.answers as any)?.[ans.question_no] as number;
+                      const studentChoice = Number((reviewingData.attempt.answers as any)?.[ans.question_no]);
                       return (
                         <div key={ans.question_no} className="flex items-center space-x-3">
                           <span className="w-6 text-sm font-mono font-bold text-gray-500">{ans.question_no.toString().padStart(2, '0')}.</span>
                           <div className="flex-1 flex justify-between gap-1">
                             {[1,2,3,4,5].map(val => {
                               const isStu = studentChoice === val;
-                              const isTrue = ans.correct_answer === val;
+                              const isTrue = Number(ans.correct_answer) === val;
                               let bClass = "bg-gray-50 border-gray-200 text-gray-400";
                               if (isTrue) bClass = "bg-green-500 border-green-600 text-white shadow-sm z-10 scale-105";
                               else if (isStu) bClass = "bg-red-500 border-red-600 text-white shadow-sm z-10 scale-105";
@@ -909,8 +909,8 @@ export default function Exams() {
               <div className="space-y-6">
                 {reviewingData.questions?.map((q, idx) => {
                   const studentAnswer = (reviewingData.attempt.answers as any)?.[idx] as string;
-                  const correctAnswers = (q.correct_answer || '').split(',');
-                  const studentAnswers = studentAnswer ? studentAnswer.split(',') : [];
+                  const correctAnswers = (q.correct_answer || '').split(',').map(s => s.trim()).filter(Boolean);
+                  const studentAnswers = studentAnswer ? studentAnswer.split(',').map(s => s.trim()).filter(Boolean) : [];
 
                   const isFullyCorrect = 
                     correctAnswers.length === studentAnswers.length && 
@@ -938,9 +938,9 @@ export default function Exams() {
 
                       <div className="space-y-3">
                         {q.options.map((opt, optIdx) => {
-                          const letter = String.fromCharCode(65 + optIdx);
-                          const isStudentChoice = studentAnswers.includes(letter);
-                          const isTrueCorrect = correctAnswers.includes(letter);
+                          const optNum = String(optIdx + 1);
+                          const isStudentChoice = studentAnswers.includes(optNum.trim());
+                          const isTrueCorrect = correctAnswers.includes(optNum.trim());
 
                           let bgClass = "bg-white border-gray-200 text-gray-700";
                           if (isTrueCorrect) {
@@ -952,7 +952,7 @@ export default function Exams() {
                           return (
                             <div key={optIdx} className={`p-4 sm:p-5 border-2 rounded-2xl flex items-center transition-all ${bgClass}`}>
                               <span className={`w-10 h-10 flex items-center justify-center rounded-xl font-bold text-lg mr-4 ${isTrueCorrect ? 'bg-green-500 text-white shadow-sm' : isStudentChoice ? 'bg-red-500 text-white shadow-sm' : 'bg-gray-100 text-gray-500'}`}>
-                                {letter}
+                                {optIdx + 1}
                               </span>
                               <span className="flex-1 font-semibold text-lg">{opt}</span>
                               {isTrueCorrect && <span className="ml-3 text-green-700 font-bold bg-white px-3 py-1.5 rounded-lg text-sm shadow-sm border border-green-200">Yes! Correct</span>}

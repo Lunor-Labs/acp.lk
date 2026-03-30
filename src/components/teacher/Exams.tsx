@@ -1443,15 +1443,15 @@ export default function Exams() {
                         <input
                           type="checkbox"
                           name={`correct-${question.id}`}
-                          checked={(question.correct_answer || '').split(',').includes(String.fromCharCode(65 + optIndex))}
-                          onChange={() => handleQuestionToggleCorrectAnswer(question.id, String.fromCharCode(65 + optIndex))}
+                          checked={(question.correct_answer || '').split(',').map(s => s.trim()).includes(String(optIndex + 1))}
+                          onChange={() => handleQuestionToggleCorrectAnswer(question.id, String(optIndex + 1))}
                           className="text-[#eb1b23] focus:ring-[#eb1b23] flex-shrink-0 rounded"
                         />
                         <input
                           type="text"
                           value={option}
                           onChange={(e) => updateQuestionOption(question.id, optIndex, e.target.value)}
-                          placeholder={`Option ${String.fromCharCode(65 + optIndex)}`}
+                          placeholder={`Option ${optIndex + 1}`}
                           className="flex-1 min-w-0 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#eb1b23] focus:border-transparent"
                         />
                       </div>
@@ -1804,7 +1804,7 @@ export default function Exams() {
                                     <div className="space-y-2">
                                       {editQuestionData?.options.map((option, optIndex) => (
                                         <div key={optIndex} className="flex items-center gap-2">
-                                          <span className="font-semibold text-gray-700 w-6">{String.fromCharCode(65 + optIndex)})</span>
+                                          <span className="font-semibold text-gray-700 w-6">{optIndex + 1})</span>
                                           <input
                                             type="text"
                                             value={option}
@@ -1877,8 +1877,8 @@ export default function Exams() {
                                     
                                     <div className="space-y-2">
                                       {question.options.map((option, optIndex) => {
-                                        const optionLabel = String.fromCharCode(65 + optIndex);
-                                        const isCorrect = (question.correct_answer || '').split(',').includes(optionLabel);
+                                        const optionLabel = String(optIndex + 1);
+                                        const isCorrect = (question.correct_answer || '').split(',').map(s => s.trim()).includes(optionLabel);
                                         return (
                                           <div
                                             key={optIndex}
@@ -1888,7 +1888,7 @@ export default function Exams() {
                                                 : 'border-gray-200 bg-gray-50'
                                             }`}
                                           >
-                                            <span className="font-semibold text-gray-700">{optionLabel})</span>
+                                            <span className="font-semibold text-gray-700">{optIndex + 1})</span>
                                             <span className="text-gray-700 ml-2">{option}</span>
                                             {isCorrect && <span className="ml-2 text-xs text-green-700">✓ Correct</span>}
                                           </div>
@@ -1921,30 +1921,30 @@ export default function Exams() {
                               <div className="flex items-center justify-between mb-2">
                                 <span className="font-semibold text-gray-700">Q{question.question_number}</span>
                                 <span className="text-xs text-gray-500">
-                                  Current: {editedAnswers[question.question_number] === undefined ? question.correct_answer : editedAnswers[question.question_number]}
+                                   Current: {editedAnswers[question.question_number] === undefined ? question.correct_answer : editedAnswers[question.question_number]}
                                 </span>
                               </div>
                               
                               <div className="flex gap-1 flex-wrap">
                                 {question.options.map((_, optIndex) => {
-                                  const optLabel = String.fromCharCode(65 + optIndex);
+                                  const optLabel = String(optIndex + 1);
                                   const currentAnsString = editedAnswers[question.question_number] !== undefined 
                                     ? editedAnswers[question.question_number] as string
                                     : (question.correct_answer || '');
-                                  const isSelected = currentAnsString.split(',').includes(optLabel);
+                                  const isSelected = currentAnsString.split(',').map(s => s.trim()).includes(optLabel);
                                   
                                   return (
                                     <button
                                       key={optIndex}
                                       onClick={() => updateAnswerEdit(question.question_number, optLabel)}
-                                      title={`Option ${optLabel}`}
+                                      title={`Option ${optIndex + 1}`}
                                       className={`w-10 h-10 rounded font-bold text-sm transition ${
                                         isSelected
                                           ? 'bg-[#eb1b23] text-white'
                                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                       }`}
                                     >
-                                      {optLabel}
+                                      {optIndex + 1}
                                     </button>
                                   );
                                 })}
