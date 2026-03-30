@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { Plus, Video, DollarSign, ShoppingBag, MoreVertical, Trash2, Upload, Package } from 'lucide-react';
+import { Video, ShoppingBag, Trash2, Upload, Package, Pencil } from 'lucide-react';
 
 interface StudyPack {
   id: string;
@@ -22,6 +22,7 @@ interface VideoLesson {
   duration: string;
   size: string;
   url?: string;
+  youtube_url?: string;
 }
 
 export default function StudyPacks() {
@@ -29,6 +30,8 @@ export default function StudyPacks() {
   const [studyPacks, setStudyPacks] = useState<StudyPack[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('all');
+
+  const [editingPackId, setEditingPackId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -96,7 +99,7 @@ export default function StudyPacks() {
         return;
       }
 
-      const { error } = await supabase.from('study_packs').insert({
+      const packData = {
         teacher_id: teacher.id,
         title: formData.title,
         subject: formData.subject,
@@ -104,11 +107,17 @@ export default function StudyPacks() {
         price: formData.is_free ? 0 : parseFloat(formData.price) || 0,
         is_free: formData.is_free,
         materials: videos,
-      });
+      };
 
-      if (error) throw error;
-
-      alert(isDraft ? 'Study pack saved as draft!' : 'Study pack published successfully!');
+      if (editingPackId) {
+        const { error } = await supabase.from('study_packs').update(packData).eq('id', editingPackId);
+        if (error) throw error;
+        alert(isDraft ? 'Study pack draft updated!' : 'Study pack updated successfully!');
+      } else {
+        const { error } = await supabase.from('study_packs').insert(packData);
+        if (error) throw error;
+        alert(isDraft ? 'Study pack saved as draft!' : 'Study pack published successfully!');
+      }
       resetForm();
       fetchStudyPacks();
     } catch (error) {
@@ -118,6 +127,7 @@ export default function StudyPacks() {
   }
 
   function resetForm() {
+    setEditingPackId(null);
     setFormData({
       title: '',
       subject: 'Physics',
@@ -128,12 +138,43 @@ export default function StudyPacks() {
     setVideos([]);
   }
 
+  function handleEditPack(pack: StudyPack) {
+    setEditingPackId(pack.id);
+    setFormData({
+      title: pack.title,
+      subject: pack.subject,
+      price: pack.price.toString(),
+      description: pack.description || '',
+      is_free: pack.is_free,
+    });
+    setVideos(pack.materials || []);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  async function handleDeletePack(id: string) {
+    if (!window.confirm('Are you sure you want to delete this study pack?')) return;
+
+    try {
+      setLoading(true);
+      const { error } = await supabase.from('study_packs').delete().eq('id', id);
+      if (error) throw error;
+
+      setStudyPacks((prevPacks) => prevPacks.filter((pack) => pack.id !== id));
+      alert('Study pack deleted successfully');
+    } catch (error) {
+      console.error('Error deleting study pack:', error);
+      alert('Failed to delete study pack. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
   function addVideo() {
     const newVideo: VideoLesson = {
       id: Date.now().toString(),
       title: `Lesson ${videos.length + 1}`,
-      duration: '32 mins',
-      size: '45 MB',
+      duration: '',
+      size: '',
+      youtube_url: '',
     };
     setVideos([...videos, newVideo]);
   }
@@ -147,12 +188,12 @@ export default function StudyPacks() {
   }
 
   function getSubjectColor(subject: string): string {
-    const subjectLower = subject.toLowerCase();
-    if (subjectLower.includes('physics')) return 'bg-purple-100';
-    if (subjectLower.includes('chemistry')) return 'bg-green-100';
-    if (subjectLower.includes('maths') || subjectLower.includes('math')) return 'bg-gray-100';
-    return 'bg-teal-100';
-  }
+  const subjectLower = subject.toLowerCase();
+  if (subjectLower.includes('physics')) return 'bg-purple-50';
+  if (subjectLower.includes('chemistry')) return 'bg-emerald-50';
+  if (subjectLower.includes('maths') || subjectLower.includes('math')) return 'bg-gray-50';
+  return 'bg-red-50';
+}
 
   function getSubjectIcon(subject: string): JSX.Element {
     const subjectLower = subject.toLowerCase();
@@ -184,7 +225,7 @@ export default function StudyPacks() {
   });
 
   return (
-    <div className="p-8">
+    <div className="h-full min-h-0 overflow-y-auto p-8">
       <div className="mb-6">
         <h2 className="text-3xl font-bold text-gray-900">Study Packs</h2>
       </div>
@@ -211,7 +252,7 @@ export default function StudyPacks() {
 
             {loading ? (
               <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#eb1b23]"></div>
               </div>
             ) : filteredPacks.length === 0 ? (
               <div className="text-center py-12">
@@ -234,17 +275,16 @@ export default function StudyPacks() {
                           <div>
                             {!pack.is_free && (
                               <div className="text-lg font-bold text-gray-900 mb-2">
-                                ${pack.price.toFixed(2)}
+                                LKR {pack.price.toFixed(2)}
                               </div>
                             )}
                             <div className="flex items-center space-x-2 mb-2">
-                              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                pack.subject.toLowerCase().includes('physics')
-                                  ? 'bg-purple-100 text-purple-700'
-                                  : pack.subject.toLowerCase().includes('chemistry')
+                              <span className={`px-3 py-1 rounded-full text-xs font-medium ${pack.subject.toLowerCase().includes('physics')
+                                ? 'bg-purple-100 text-purple-700'
+                                : pack.subject.toLowerCase().includes('chemistry')
                                   ? 'bg-green-100 text-green-700'
                                   : 'bg-gray-100 text-gray-700'
-                              }`}>
+                                }`}>
                                 {pack.subject.toUpperCase()}
                               </span>
                               <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
@@ -254,9 +294,22 @@ export default function StudyPacks() {
                             <h4 className="text-lg font-bold text-gray-900">{pack.title}</h4>
                             <p className="text-sm text-gray-600 mt-1 line-clamp-2">{pack.description}</p>
                           </div>
-                          <button className="text-gray-400 hover:text-gray-600">
-                            <MoreVertical className="w-5 h-5" />
-                          </button>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => handleEditPack(pack)}
+                              title="Edit"
+                              className="text-gray-400 hover:text-blue-600 transition"
+                            >
+                              <Pencil className="w-5 h-5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeletePack(pack.id)}
+                              title="Delete"
+                              className="text-gray-400 hover:text-red-600 transition"
+                            >
+                              <Trash2 className="w-5 h-5" />
+                            </button>
+                          </div>
                         </div>
 
                         <div className="flex items-center space-x-6 text-sm text-gray-600 mt-3">
@@ -269,13 +322,12 @@ export default function StudyPacks() {
                             <span>{pack.sales_count || 0} Sales</span>
                           </div>
                           <div className="flex items-center space-x-1">
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${
-                              pack.status === 'Published'
-                                ? 'text-green-600 bg-green-50'
-                                : pack.status === 'Draft'
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${pack.status === 'Published'
+                              ? 'text-green-600 bg-green-50'
+                              : pack.status === 'Draft'
                                 ? 'text-gray-600 bg-gray-50'
                                 : 'text-blue-600 bg-blue-50'
-                            }`}>
+                              }`}>
                               {pack.status}
                             </span>
                           </div>
@@ -290,155 +342,202 @@ export default function StudyPacks() {
         </div>
 
         <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-sm p-6 sticky top-6">
-              <div className="flex items-center space-x-2 mb-6">
-                <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center">
-                  <Package className="w-4 h-4 text-teal-600" />
-                </div>
+          <div className="bg-white rounded-xl shadow-sm p-6 sticky top-6 border-t-4 border-[#eb1b23]">
+            <div className="flex items-center space-x-2 mb-6">
+              <div className="w-8 h-8 bg-red-50 rounded-full flex items-center justify-center">
+                <Package className="w-4 h-4 text-[#eb1b23]" />
+              </div>
+              <div className="flex-1 flex justify-between items-start">
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900">Create New Pack</h3>
-                  <p className="text-xs text-gray-500">Bundle videos for sale</p>
+                  <h3 className="text-lg font-bold text-slate-900">{editingPackId ? 'Edit Study Pack' : 'Create New Pack'}</h3>
+                  <p className="text-xs text-slate-500">{editingPackId ? 'Update pack details' : 'Bundle videos for sale'}</p>
+                </div>
+                {editingPackId && (
+                  <button
+                    onClick={resetForm}
+                    className="text-xs font-medium text-[#eb1b23] hover:text-red-700 bg-red-50 px-2 py-1 rounded transition"
+                  >
+                    Cancel Edit
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto pr-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Pack Title
+                </label>
+                <input
+                  type="text"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  placeholder="e.g. Mechanics Full Revision"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#eb1b23] focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Subject
+                </label>
+                <div className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 flex items-center">
+                  <span className="text-gray-900 font-medium">Physics</span>
                 </div>
               </div>
 
-              <div className="space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto pr-2">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Pack Title
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder="e.g. Mechanics Full Revision"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Subject
-                  </label>
-                  <select
-                    value={formData.subject}
-                    onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                  >
-                    <option value="Physics">Physics</option>
-                    <option value="Chemistry">Chemistry</option>
-                    <option value="Maths">Maths</option>
-                    <option value="Biology">Biology</option>
-                    <option value="Combined Maths">Combined Maths</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Price (USD)
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <DollarSign className="h-4 w-4 text-gray-400" />
-                    </div>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={formData.price}
-                      onChange={(e) => setFormData({ ...formData, price: e.target.value, is_free: false })}
-                      placeholder="0.00"
-                      disabled={formData.is_free}
-                      className="w-full border border-gray-300 rounded-lg pl-8 pr-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-transparent disabled:bg-gray-100"
-                    />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Price (LKR)
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   </div>
-                  <label className="flex items-center mt-2">
-                    <input
-                      type="checkbox"
-                      checked={formData.is_free}
-                      onChange={(e) =>
-                        setFormData({ ...formData, is_free: e.target.checked, price: '' })
-                      }
-                      className="rounded border-gray-300 text-teal-600 focus:ring-teal-500"
-                    />
-                    <span className="ml-2 text-sm text-gray-600">Make this pack free</span>
-                  </label>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Description
-                  </label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="What will students learn?"
-                    rows={3}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: e.target.value, is_free: false })}
+                    placeholder="0.00"
+                    disabled={formData.is_free}
+                    className="w-full border border-gray-300 rounded-lg pl-8 pr-3 py-2 focus:ring-2 focus:ring-[#eb1b23] focus:border-transparent disabled:bg-gray-100"
                   />
                 </div>
+                <label className="flex items-center mt-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.is_free}
+                    onChange={(e) =>
+                      setFormData({ ...formData, is_free: e.target.checked, price: '' })
+                    }
+                    className="rounded border-gray-300 text-[#eb1b23] focus:ring-[#eb1b23]"
+                  />
+                  <span className="ml-2 text-sm text-gray-600">Make this pack free</span>
+                </label>
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Video Content
-                  </label>
-                  <div className="space-y-2">
-                    {videos.map((video, index) => (
-                      <div
-                        key={video.id}
-                        className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg"
-                      >
-                        <div className="w-8 h-8 bg-teal-100 rounded flex items-center justify-center flex-shrink-0">
-                          <Video className="w-4 h-4 text-teal-600" />
-                        </div>
-                        <div className="flex-1 min-w-0">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Description
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="What will students learn?"
+                  rows={3}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#eb1b23] focus:border-transparent resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Video Content
+                </label>
+                <div className="space-y-2">
+                  {videos.map((video) => (
+                    <div
+                      key={video.id}
+                      className="p-4 bg-slate-50 rounded-lg space-y-3"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2 flex-1">
+                          <div className="w-8 h-8 bg-red-50 rounded flex items-center justify-center flex-shrink-0">
+                            <Video className="w-4 h-4 text-[#eb1b23]" />
+                          </div>
                           <input
                             type="text"
                             value={video.title}
                             onChange={(e) => updateVideo(video.id, 'title', e.target.value)}
-                            className="w-full text-sm font-medium text-gray-900 bg-transparent border-0 focus:ring-0 p-0"
+                            className="w-full text-sm font-medium text-gray-900 bg-transparent border-b border-transparent focus:border-[#eb1b23] focus:ring-0 p-0"
                             placeholder="Video title"
                           />
-                          <p className="text-xs text-gray-500">
-                            {video.duration} • {video.size}
-                          </p>
                         </div>
                         <button
                           onClick={() => removeVideo(video.id)}
-                          className="text-gray-400 hover:text-red-600 flex-shrink-0"
+                          className="text-gray-400 hover:text-red-600 flex-shrink-0 ml-2"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
-                    ))}
 
-                    <button
-                      onClick={addVideo}
-                      className="w-full border-2 border-dashed border-teal-300 text-teal-600 px-4 py-3 rounded-lg font-medium hover:bg-teal-50 transition flex items-center justify-center space-x-2"
-                    >
-                      <Upload className="w-4 h-4" />
-                      <span>Upload Video Lesson</span>
-                    </button>
-                    <p className="text-xs text-gray-400 text-center">
-                      Supports MP4, MOV up to 2GB per file
-                    </p>
-                  </div>
-                </div>
+                      <div>
+                        <label className="block text-[10px] uppercase tracking-wider font-bold text-gray-500 mb-1">
+                          YouTube URL
+                        </label>
+                        <div className="flex items-center space-x-2">
+                          <div className="bg-red-100 p-1.5 rounded">
+                            <svg className="w-3 h-3 text-red-600" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z" />
+                            </svg>
+                          </div>
+                          <input
+                            type="text"
+                            value={video.youtube_url || ''}
+                            onChange={(e) => updateVideo(video.id, 'youtube_url', e.target.value)}
+                            className="flex-1 text-xs border border-gray-300 rounded px-2 py-1.5 focus:ring-1 focus:ring-[#eb1b23] focus:border-transparent"
+                            placeholder="https://www.youtube.com/watch?v=..."
+                          />
+                        </div>
+                      </div>
 
-                <div className="flex space-x-2 pt-4">
+                      <div className="flex items-center space-x-4">
+                        <div className="flex-1">
+                          <label className="block text-[10px] uppercase tracking-wider font-bold text-gray-500 mb-1">
+                            Duration
+                          </label>
+                          <input
+                            type="text"
+                            value={video.duration}
+                            onChange={(e) => updateVideo(video.id, 'duration', e.target.value)}
+                            className="w-full text-xs border border-gray-300 rounded px-2 py-1.5 focus:ring-1 focus:ring-[#eb1b23] focus:border-transparent"
+                            placeholder="e.g. 45 mins"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="block text-[10px] uppercase tracking-wider font-bold text-gray-500 mb-1">
+                            Size/Quality
+                          </label>
+                          <input
+                            type="text"
+                            value={video.size}
+                            onChange={(e) => updateVideo(video.id, 'size', e.target.value)}
+                            className="w-full text-xs border border-gray-300 rounded px-2 py-1.5 focus:ring-1 focus:ring-[#eb1b23] focus:border-transparent"
+                            placeholder="e.g. 1080p"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
                   <button
-                    onClick={() => handleCreatePack(true)}
-                    className="flex-1 border border-gray-300 text-gray-700 px-4 py-3 rounded-lg font-medium hover:bg-gray-50 transition"
+                    onClick={addVideo}
+                    className="w-full border-2 border-dashed border-red-300 text-[#eb1b23] px-4 py-3 rounded-lg font-medium hover:bg-red-50 transition-all duration-200 flex items-center justify-center space-x-2"
                   >
-                    Save Draft
+                    <Upload className="w-4 h-4" />
+                    <span>Upload Video Lesson</span>
                   </button>
-                  <button
-                    onClick={() => handleCreatePack(false)}
-                    className="flex-1 bg-teal-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-teal-700 transition"
-                  >
-                    Publish
-                  </button>
+                  <p className="text-xs text-gray-400 text-center">
+                    Supports MP4, MOV up to 2GB per file
+                  </p>
                 </div>
               </div>
+
+              <div className="flex space-x-2 pt-4">
+                <button
+                  onClick={() => handleCreatePack(true)}
+                  className="flex-1 border border-gray-300 text-gray-700 px-4 py-3 rounded-lg font-medium hover:bg-gray-50 transition"
+                >
+                  {editingPackId ? 'Update Draft' : 'Save Draft'}
+                </button>
+                <button
+                  onClick={() => handleCreatePack(false)}
+                  className="flex-1 bg-[#eb1b23] text-white px-4 py-3 rounded-lg font-medium hover:bg-red-700 transition-all duration-200 hover:shadow-lg"
+                >
+                  {editingPackId ? 'Update & Publish' : 'Publish'}
+                </button>
+              </div>
             </div>
+          </div>
         </div>
       </div>
     </div>

@@ -1,27 +1,28 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import './Auth.css';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
-import studentBg from '../../../assets/register/student-bg.jpg';
+import ForgotPasswordForm from './ForgotPasswordForm';
+import studentBg from '../../../assets/register/student-bg.webp';
+import acpLogo from '../../../assets/acp-logo-dark.webp';
 
 interface AuthPanelProps {
   defaultMode?: 'login' | 'register';
 }
 
 const AuthPanel: React.FC<AuthPanelProps> = ({ defaultMode = 'login' }) => {
-  const [mode, setMode] = useState<'login' | 'register'>(defaultMode);
-  const { loading: authLoading } = useAuth();
+  const [mode, setMode] = useState<'login' | 'register' | 'forgot-password'>(defaultMode);
+  const { user, profile, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
 
-  const handleLoginSuccess = () => {
-    // Auth context will handle navigation through the Router component
-    console.log('Login successful');
-  };
-
-  const handleRegisterSuccess = () => {
-    console.log('Registration successful');
-    setMode('login');
-  };
+  // Redirect to dashboard after login
+  useEffect(() => {
+    if (user && profile) {
+      navigate(`/${profile.role}`, { replace: true });
+    }
+  }, [user, profile, navigate]);
 
   return (
     <div className="auth-page">
@@ -29,7 +30,7 @@ const AuthPanel: React.FC<AuthPanelProps> = ({ defaultMode = 'login' }) => {
       <div className="auth-left">
         <div className="auth-image-container">
           <img src={studentBg} alt="Student" className="auth-image" />
-          <div className="auth-image-overlay">
+          <div>
             <h2 className="auth-overlay-title">
               {mode === 'login' ? 'Welcome Back!' : 'Join Our Learning Community'}
             </h2>
@@ -45,18 +46,20 @@ const AuthPanel: React.FC<AuthPanelProps> = ({ defaultMode = 'login' }) => {
         <div className="auth-card">
           <div className="auth-header">
             <button
-              onClick={() => window.location.reload()}
+              onClick={() => navigate('/')}
               className="back-to-home"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
               Back to Home
             </button>
           </div>
 
           <div className="auth-brand">
-            <div className="logo">TOTC</div>
+            <div className="logo flex justify-center w-full">
+              <img src={acpLogo} alt="ACP Logo" className="h-16 w-auto object-contain" />
+            </div>
           </div>
 
           <div className="auth-toggle">
@@ -76,14 +79,17 @@ const AuthPanel: React.FC<AuthPanelProps> = ({ defaultMode = 'login' }) => {
                 {mode === 'login' && (
                   <LoginForm
                     onSwitchToRegister={() => setMode('register')}
-                    onLoginSuccess={handleLoginSuccess}
+                    onForgotPassword={() => setMode('forgot-password')}
                   />
                 )}
                 {mode === 'register' && (
                   <RegisterForm
                     onSwitchToLogin={() => setMode('login')}
-                    onRegisterSuccess={handleRegisterSuccess}
+                    onRegisterSuccess={() => setMode('login')}
                   />
+                )}
+                {mode === 'forgot-password' && (
+                  <ForgotPasswordForm onBack={() => setMode('login')} />
                 )}
               </>
             )}

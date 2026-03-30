@@ -1,38 +1,34 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Navbar,
   Hero,
   Success,
   Centers,
-  Process,
   Teacher,
-  Discussion,
   Topstudent,
   Gallery,
-  Reviews,
   Channels,
-  Contact,
+  Footer,
+  Reviews
 } from '../landing';
 
-interface LandingPageProps {
-  onLoginRequest?: () => void;
-}
+const LandingPage: React.FC = () => {
+  const navigate = useNavigate();
+  const handleLoginRequest = () => navigate('/login');
 
-const LandingPage: React.FC<LandingPageProps> = ({ onLoginRequest }) => {
   return (
     <>
-      <Navbar onLoginRequest={onLoginRequest} />
-      <Hero onLoginRequest={onLoginRequest} />
+      <Navbar onLoginRequest={handleLoginRequest} />
+      <Hero onLoginRequest={handleLoginRequest} />
       <Success />
-      <Centers />
-      <Process />
       <Teacher />
-      <Discussion />
-      <Topstudent />
-      <Gallery />
+      <Centers />
       <Reviews />
+      <Gallery />
+      <Topstudent />
       <Channels />
-      <Contact />
+      <Footer />
     </>
   );
 };

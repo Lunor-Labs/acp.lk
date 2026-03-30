@@ -1,74 +1,111 @@
-import React from 'react';
-import './Success.css';
-import studentImage from '../../../assets/student1.png';
-import type { Student } from '../../../types/landing';
+import React, { useEffect, useState } from 'react';
+import { successRepository, FormattedSuccessStudent } from '../../../repositories/SuccessRepository';
+import "./Success.css";
 
 const Success: React.FC = () => {
-  const students: Student[] = [
-    { name: 'Yasith Banula', year: '2024 A/L', district: 'Gampaha District', subject: 'Physics', grade: 'A' },
-    { name: 'Yasith Banula', year: '2024 A/L', district: 'Gampaha District', subject: 'Physics', grade: 'A' },
-    { name: 'Yasith Banula', year: '2024 A/L', district: 'Gampaha District', subject: 'Physics', grade: 'A' },
-    { name: 'Yasith Banula', year: '2024 A/L', district: 'Gampaha District', subject: 'Physics', grade: 'A' },
-    { name: 'Yasith Banula', year: '2024 A/L', district: 'Gampaha District', subject: 'Physics', grade: 'A' },
-    { name: 'Yasith Banula', year: '2024 A/L', district: 'Gampaha District', subject: 'Physics', grade: 'A' },
-    { name: 'Yasith Banula', year: '2024 A/L', district: 'Gampaha District', subject: 'Physics', grade: 'A' },
-    { name: 'Yasith Banula', year: '2024 A/L', district: 'Gampaha District', subject: 'Physics', grade: 'A' },
-  ];
+  const [students, setStudents] = useState<FormattedSuccessStudent[]>([]);
+  const [marqueeStudents, setMarqueeStudents] = useState<FormattedSuccessStudent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        setLoading(true);
+        // console.log('🔄 Fetching success students...');
+        const fetchedStudents = await successRepository.getSuccessStudents();
+        // console.log('✅ Fetched students:', fetchedStudents);
+        // console.log('📊 Total students:', fetchedStudents.length);
+        
+        setStudents(fetchedStudents);
+        // Duplicate for seamless loop
+        setMarqueeStudents([...fetchedStudents, ...fetchedStudents]);
+        setError(null);
+      } catch (err) {
+        // console.error('❌ Failed to fetch success students:', err);
+        // const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+        // console.error('📋 Error details:', errorMsg);
+        // setError(`Failed to load success stories: ${errorMsg}`);
+        // Show at least an empty state
+        setMarqueeStudents([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStudents();
+  }, []);
 
   return (
-    <section className="success" id="success">
-      {/* Decorative background elements */}
-      <div className="success-bg-decoration">
-        <div className="success-blob success-blob-1"></div>
-        <div className="success-blob success-blob-2"></div>
-        <div className="success-blob success-blob-3"></div>
-      </div>
-
-      {/* Upper White Section */}
-      <div className="success-header">
-        <div className="success-header-container">
-          <h2 className="success-title">Our Success</h2>
-          <p className="success-description">
-            Celebrating the achievements of our students who have excelled in their Advanced Level examinations. 
-            Join hundreds of successful students who have achieved their academic goals with us.
-          </p>
+    <section className="success-section" id="success">
+      <div className="success-container">
+        {/* Header */}
+        <div className="success-header">
+          <h2 className="success-title">
+            <span className="success-title-highlight">ජීවිතය</span> දිනු දිරිය <span className="success-title-highlight">දරුවන්</span>
+          </h2>
         </div>
       </div>
 
-      {/* Lower White Section with Cards */}
-      <div className="success-profiles">
-        <div className="success-profiles-wrapper">
-          <div className="success-profiles-container">
-            {[...students, ...students].map((student, index) => (
-              <div key={index} className="student-card" style={{ animationDelay: `${index * 0.1}s` }}>
-                <div className="student-card-inner">
-                  <div className="student-image-wrapper">
-                    <div className="student-image-glow"></div>
-                    <img 
-                      src={studentImage} 
+      {/* Loading state */}
+      {loading && (
+        <div className="success-marquee-outer">
+          <div className="success-loading-message">Loading success stories...</div>
+        </div>
+      )}
+
+      {/* Error state */}
+      {error && (
+        <div className="success-marquee-outer">
+          <div className="success-error-message">
+            {/* <div>⚠️ {error}</div> */}
+            {/* <div style={{ fontSize: '0.9rem', marginTop: '0.5rem', opacity: 0.8 }}>
+              Check browser console (F12) for detailed error information.
+            </div> */}
+          </div>
+        </div>
+      )}
+
+      {/* Full-width marquee track — same approach as Topstudent desktop */}
+      {!loading && marqueeStudents.length > 0 && (
+        <div className="success-marquee-outer">
+          <div className="success-marquee-track animate-scroll-horizontal hover:[animation-play-state:paused] will-change-transform">
+            {marqueeStudents.map((student, index) => (
+              <div key={index} className="success-card">
+                {/* Image with Badge */}
+                <div className="success-image-wrapper">
+                  <div className="success-image-container">
+                    <img
+                      src={student.image}
                       alt={student.name}
-                      className="student-profile-image"
+                      className="success-image"
+                      loading="lazy"
                     />
-                    <div className="student-grade-badge">{student.grade}</div>
                   </div>
-                  <div className="student-info">
-                    <h3 className="student-name">{student.name}</h3>
-                    <p className="student-year">{student.year}</p>
-                    <p className="student-district">{student.district}</p>
-                    <div className="student-tag">
-                      <span className="student-subject">{student.subject}</span>
-                      <span className="student-grade">{student.grade}</span>
-                    </div>
-                  </div>
+                  <div className="success-badge">{student.grade}</div>
+                </div>
+
+                {/* Student Info */}
+                <div className="success-info">
+                  <p className="success-subtitle">Index.No :{student.subtitle}</p>
+                  <h3 className="success-name">{student.name}</h3>
+                  <p className="success-faculty">{student.faculty}</p>
+                  <p className="success-university">{student.university}</p>
                 </div>
               </div>
             ))}
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Empty state */}
+      {!loading && !error && marqueeStudents.length === 0 && (
+        <div className="success-marquee-outer">
+          <div className="success-empty-message">No success stories available yet.</div>
+        </div>
+      )}
     </section>
   );
 };
 
 export default Success;
-

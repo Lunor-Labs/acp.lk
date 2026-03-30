@@ -1,84 +1,165 @@
-import React from 'react';
-import './Hero.css';
-import studentImage from '../../../assets/web mobile.png';
+import React, { useState, useEffect } from 'react';
+import heroDesktop1 from '../../../assets/hero1.webp';
+import heroDesktop2 from '../../../assets/hero2.webp';
+import heroDesktop3 from '../../../assets/hero3.webp';
+import heroMobile1 from '../../../assets/mobhero1.webp';
+import heroMobile2 from '../../../assets/mobhero2.webp';
+import heroMobile3 from '../../../assets/mobhero3.webp';
+
+import { useAuth } from '../../../contexts/AuthContext';
 
 interface HeroProps {
   onLoginRequest?: () => void;
 }
 
 const Hero: React.FC<HeroProps> = ({ onLoginRequest }) => {
+  const { user } = useAuth();
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  const slides = [
+    { desktop: heroDesktop1, mobile: heroMobile1 },
+    { desktop: heroDesktop2, mobile: heroMobile2 },
+    { desktop: heroDesktop3, mobile: heroMobile3 },
+  ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [slides.length]);
 
   return (
-    <section className="hero" id="home">
-      <div className="max-w-7xl mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center py-8 lg:py-0">
-        {/* Image Side - Moves down on mobile */}
-        <div className="relative flex justify-center lg:justify-start order-2 lg:order-1 mobile-image-container">
-          <div className="relative w-[340px] h-[440px] sm:w-[450px] sm:h-[550px] bg-primary blob-shape overflow-hidden flex items-end justify-center shadow-2xl">
-            <img
-              alt="Tutor teaching a student"
-              className="relative z-10 object-cover w-full h-full object-center transform scale-105 translate-y-4"
-              src={studentImage}
-            />
+    <>
+      {/* ── Mobile Hero (< md): portrait slider with overlay ── */}
+      <section
+        className="relative md:hidden w-full overflow-hidden bg-dark"
+        id="home"
+      >
+        {/* 9:16 container matching mobile images */}
+        <div className="relative w-full aspect-[9/16]">
+          {slides.map((slide, index) => (
+            <div
+              key={index}
+              className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentSlide ? 'opacity-100 z-0' : 'opacity-0 z-[-1]'
+                }`}
+            >
+              <img
+                src={slide.mobile}
+                alt={`Hero Slide ${index + 1}`}
+                className="w-full h-full object-cover object-center"
+              />
+            </div>
+          ))}
 
+          {/* Dark gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent z-[1]" />
+
+          {/* Bottom overlay: buttons + dots */}
+          <div className="absolute bottom-0 left-0 right-0 z-10 px-3 pb-3 flex flex-col items-center gap-3">
+            {/* Buttons row */}
+            <div className="flex flex-row gap-3 justify-center w-full">
+              <button
+                onClick={onLoginRequest}
+                className="bg-gradient-to-r from-[#eb1b23] to-[#b31219] hover:from-[#f02b33] hover:to-[#c4151d] text-white font-semibold px-5 py-2.5 rounded-full shadow-[0_8px_20px_-5px_rgba(235,27,35,0.6)] text-xs transition-all duration-300 hover:-translate-y-0.5 flex items-center justify-center gap-1.5 group whitespace-nowrap border border-red-500/30"
+              >
+                {user ? 'Go to Portal' : 'Student Portal'}
+                <div className="bg-white rounded-full p-0.5 group-hover:translate-x-1 transition-transform shadow-sm">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#eb1b23" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </button>
+              <a
+                href="#contact"
+                className="backdrop-blur-md bg-white/10 hover:bg-white/20 border border-white/30 text-white font-semibold px-5 py-2.5 rounded-full shadow-[0_8px_20px_-5px_rgba(0,0,0,0.4)] text-xs transition-all duration-300 hover:-translate-y-0.5 text-center flex items-center justify-center whitespace-nowrap"
+              >
+                Contact Us
+              </a>
+            </div>
+
+            {/* Carousel Dots */}
+            <div className="flex gap-2 justify-center w-full">
+              {slides.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentSlide(index)}
+                  className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${index === currentSlide ? 'bg-[#eb1b23] scale-125' : 'bg-white hover:bg-white/80'
+                    }`}
+                  aria-label={`Go to slide ${index + 1}`}
+                />
+              ))}
+            </div>
           </div>
-
-          {/* Dotted path background element */}
-          <svg className="absolute -z-10 top-1/2 left-0 transform -translate-y-1/2 w-full max-w-[600px] pointer-events-none opacity-20" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
-            <path d="M10 250 C 50 150, 200 100, 300 200 S 450 350, 500 250" stroke="#F49D37" fill="transparent" strokeDasharray="8 8" strokeWidth="2" />
-          </svg>
         </div>
+      </section>
 
-        {/* Text Side - Stays at top on mobile */}
-        <div className="order-1 lg:order-2 text-center lg:text-left pt-10 lg:pt-0 relative mobile-text-container">
-          <div className="absolute -top-12 right-10 lg:right-20 text-gray-200 animate-pulse">
-            <span className="material-icons text-6xl">star</span>
+      {/* ── Desktop Hero (>= md): unchanged original layout ── */}
+      <section
+        className="relative hidden md:flex min-h-screen items-center overflow-hidden bg-dark"
+        id="home"
+      >
+        {slides.map((slide, index) => (
+          <div
+            key={index}
+            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentSlide ? 'opacity-100 z-0' : 'opacity-0 z-[-1]'
+              }`}
+          >
+            <img
+              src={slide.desktop}
+              alt={`Hero Slide ${index + 1}`}
+              className="w-full h-full object-cover object-center"
+            />
           </div>
+        ))}
 
-          <h2 className="text-primary font-bold tracking-widest uppercase text-xs mb-6 block">
-            General Certificate of Education Advanced Level
-          </h2>
+        {/* Dark gradient overlay for elegant contrast */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-[1] pointer-events-none" />
 
-          <h1 className="text-6xl lg:text-8xl font-display font-bold text-text-main leading-tight mb-8">
-            Online
-            <span className="relative inline-block mt-4 lg:mt-0">
-              <span className="relative z-10 px-4">Physics</span>
-              <span className="absolute inset-0 bg-secondary rounded-full transform -rotate-2 scale-105 z-0 top-3 h-[85%] opacity-90"></span>
-            </span>
-          </h1>
+        {/* Content */}
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 pb-24 md:pb-12 pt-32 md:pt-60 flex flex-col md:flex-row items-center md:items-end justify-between min-h-screen pointer-events-none">
+          {/* Left: Buttons Area */}
+          <div className="w-full md:w-3/5 flex flex-col items-center md:items-start justify-end gap-8 md:gap-12 pb-12 pointer-events-auto mt-auto md:mt-0">
 
-          {/* Teacher Name with Gradient Effect */}
-          <div className="teacher-name-container mb-4">
-            <div className="teacher-name text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent animate-gradient relative inline-block">
-              අමිල සී.එදිරිමාන්න
-              <div className="shine-overlay"></div>
+            {/* Buttons Area */}
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 w-full max-w-xl">
+              <button
+                onClick={onLoginRequest}
+                className="bg-gradient-to-r from-[#eb1b23] to-[#b31219] hover:from-[#f02b33] hover:to-[#c4151d] text-white font-semibold tracking-wide px-8 md:px-10 py-3 md:py-4 rounded-full shadow-[0_10px_40px_-10px_rgba(235,27,35,0.7)] hover:shadow-[0_10px_40px_-5px_rgba(235,27,35,0.9)] text-lg md:text-xl transition-all duration-300 hover:-translate-y-1 w-full sm:w-auto flex items-center justify-center gap-3 group border border-red-500/30"
+              >
+                {user ? 'Go to Portal' : 'Student Portal'}
+                <div className="bg-white rounded-full p-1 group-hover:translate-x-1 transition-transform shadow-md">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#eb1b23" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </button>
+              <a
+                href="#contact"
+                className="backdrop-blur-md bg-white/10 hover:bg-white/20 border border-white/30 text-white font-semibold tracking-wide px-8 md:px-10 py-3 md:py-4 rounded-full shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] text-lg md:text-xl transition-all duration-300 hover:-translate-y-1 text-center w-full sm:w-auto flex items-center justify-center"
+              >
+                Contact Us
+              </a>
             </div>
           </div>
 
-          {/* English Tagline with Underline Effect */}
-          <div className="tagline-container mb-8">
-            <p className="tagline-english text-xl font-bold text-text-main max-w-md mx-auto lg:mx-0 leading-relaxed relative inline-block">
-              <span className="relative z-10">Excellent Results are Our Guarantee</span>
-              <span className="tagline-underline absolute bottom-0 left-0 w-full h-2 bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 transform -skew-x-12 opacity-40"></span>
-            </p>
+          {/* Right: Empty for spacing on desktop */}
+          <div className="hidden md:block w-2/5"></div>
+
+          {/* Carousel Dots */}
+          <div className="absolute bottom-6 md:bottom-12 left-1/2 transform -translate-x-1/2 flex gap-3 z-20 pointer-events-auto">
+            {slides.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentSlide(index)}
+                className={`w-3 h-3 rounded-full transition-all duration-300 ${index === currentSlide ? 'bg-[#eb1b23] scale-125' : 'bg-white hover:bg-white/80'}`}
+                aria-label={`Go to slide ${index + 1}`}
+              />
+            ))}
           </div>
-
-          {/* Sinhala Tagline with Glow Effect */}
-          <p className="tagline-sinhala text-lg font-semibold mb-12 max-w-md mx-auto lg:mx-0 leading-relaxed text-primary glow-text">
-            විශිෂ්ට ප්‍රතිඵල, අපගේ සහතිකයයි...
-          </p>
-
-          {/* Student Portal Button */}
-          <button
-            onClick={onLoginRequest}
-            className="student-portal-btn bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold px-12 py-6 rounded-2xl shadow-2xl shadow-blue-300/50 transition-all duration-300 flex items-center group transform hover:scale-110 hover:shadow-blue-400/60 inline-flex border-2 border-transparent hover:border-white/20"
-          >
-            <span className="material-icons mr-3 text-2xl group-hover:rotate-12 transition-transform duration-300">school</span>
-            Student Portal
-            <span className="material-icons ml-3 group-hover:translate-x-2 transition-transform duration-300">arrow_forward</span>
-          </button>
         </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 };
 
