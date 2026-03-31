@@ -12,6 +12,7 @@ export interface Exam {
     end_time: string;
     duration_minutes: number;
     total_marks: number;
+    total_questions?: number;
     questions?: any[];
     created_at: string;
 }
