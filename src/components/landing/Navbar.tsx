@@ -18,9 +18,20 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
       setIsScrolled(window.scrollY > 20);
 
       // Scroll spy
-      const sections = ['home', 'success', 'teacher', 'centers', 'reviews', 'gallery', 'top10', 'channels', 'contact'];
+      const sections = ['success', 'teacher', 'centers', 'reviews', 'gallery', 'top10', 'channels', 'contact'];
       const scrollPosition = window.scrollY + 100;
 
+      // Check home section first (special handling for responsive)
+      const homeElement = document.getElementById(window.innerWidth >= 768 ? 'home-desktop' : 'home-mobile');
+      if (homeElement) {
+        const { offsetTop, offsetHeight } = homeElement;
+        if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
+          setActiveSection('home');
+          return;
+        }
+      }
+
+      // Check other sections
       for (const section of sections) {
         const element = document.getElementById(section);
         if (element) {
@@ -38,7 +49,15 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
   }, []);
 
   const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
+    let element: HTMLElement | null = null;
+    
+    // Special handling for home section to support responsive design
+    if (id === 'home') {
+      element = document.getElementById(window.innerWidth >= 768 ? 'home-desktop' : 'home-mobile');
+    } else {
+      element = document.getElementById(id);
+    }
+    
     if (element) {
       const offset = 80;
       const elementPosition = element.getBoundingClientRect().top;
@@ -67,23 +86,25 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${isScrolled
-        ? 'bg-[#eb1b23]/95 backdrop-blur-md shadow-2xl'
-        : 'bg-gradient-to-b from-black/40 to-transparent'
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
+        ? 'bg-dark-900/95 backdrop-blur-lg shadow-lg border-b border-red-500/20'
+        : 'bg-gradient-to-b from-dark-900/80 to-transparent'
         } w-full`}
     >
       <div className="max-w-screen-2xl mx-auto w-full">
-        <div className="flex items-center justify-between h-16 lg:h-20 px-4 lg:px-0 relative">
+        <div className="flex items-center justify-between h-16 lg:h-20 px-4 lg:px-8 relative">
           {/* Mobile Menu Button - Left */}
           <div className="lg:hidden flex-1 flex justify-start z-10">
             <button
-              className="flex flex-col gap-1.5 p-1 bg-transparent"
+              className="p-2"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-label="Toggle menu"
             >
-              <span className={`w-7 h-0.5 bg-white transition-all ${isMobileMenuOpen ? 'rotate-45 translate-y-2' : ''}`}></span>
-              <span className={`w-7 h-0.5 bg-white transition-all ${isMobileMenuOpen ? 'opacity-0' : ''}`}></span>
-              <span className={`w-7 h-0.5 bg-white transition-all ${isMobileMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}></span>
+              <div className="space-y-1.5">
+                <span className="block w-6 h-0.5 bg-white"></span>
+                <span className="block w-6 h-0.5 bg-white"></span>
+                <span className="block w-6 h-0.5 bg-white"></span>
+              </div>
             </button>
           </div>
 
@@ -99,35 +120,41 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
             />
           </div>
 
-          <div className="hidden lg:flex items-center h-full lg:flex-1 z-10">
-            {/* Desktop Navigation links — flex-1 each so they fill all available space evenly */}
-            <div className="flex flex-1 items-center h-full">
+          <div className="hidden lg:flex items-center justify-center flex-1 z-10">
+            {/* Desktop Navigation links */}
+            <div className="flex items-center gap-8 ml-[16rem]">
               {navLinks.map((link) => (
                 <button
                   key={link.id}
                   onClick={() => scrollToSection(link.id)}
-                  className={`flex-1 h-full text-sm font-bold tracking-wide transition-all flex items-center justify-center whitespace-nowrap ${activeSection === link.id
-                    ? 'bg-white text-black'
-                    : 'text-white hover:bg-white/10'
-                    }`}
+                  className={`relative text-white text-sm font-medium transition-colors hover:text-red-400
+                    ${activeSection === link.id ? 'text-red-400' : ''}
+                  `}
                 >
                   {link.label}
+                  {activeSection === link.id && (
+                    <span className="absolute bottom-[-8px] left-0 w-full h-0.5 bg-red-400 rounded-full"></span>
+                  )}
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* CTA Button Section */}
+          <div className="hidden lg:flex items-center z-10 mr-[-3rem]">
             {user ? (
               <button
                 onClick={onLoginRequest}
-                className="mx-4 bg-white text-black font-bold px-4 xl:px-6 py-1.5 rounded-full shadow-lg transition-all duration-200 hover:bg-gray-100 text-sm whitespace-nowrap flex-shrink-0"
+                className="border border-white text-white px-6 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-white hover:text-dark-900"
               >
                 Go to Portal
               </button>
             ) : (
               <button
                 onClick={onLoginRequest}
-                className="mx-4 bg-white text-black font-bold px-4 xl:px-6 py-1.5 rounded-full shadow-lg transition-all duration-200 hover:bg-gray-100 text-sm whitespace-nowrap flex-shrink-0"
+                className="border border-white text-white px-6 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-white hover:text-dark-900"
               >
-                Student Portal
+                Login
               </button>
             )}
           </div>
@@ -137,31 +164,32 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
             {user ? (
               <button
                 onClick={onLoginRequest}
-                className="bg-white text-black font-bold px-4 py-2 rounded-full shadow-lg transition-all duration-200 hover:bg-gray-100 text-xs sm:text-sm whitespace-nowrap"
+                className="border border-white text-white px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-300 hover:bg-white hover:text-dark-900"
               >
                 Portal
               </button>
             ) : (
               <button
                 onClick={onLoginRequest}
-                className="bg-white text-black font-bold px-4 py-2 rounded-full shadow-lg transition-all duration-200 hover:bg-gray-100 text-xs sm:text-sm whitespace-nowrap"
+                className="border border-white text-white px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-300 hover:bg-white hover:text-dark-900"
               >
-                Portal
+                Login
               </button>
             )}
           </div>
         </div>
+        
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div className={`lg:hidden border-t border-white/20 shadow-xl ${isScrolled ? 'bg-[#eb1b23]' : 'bg-black/80 backdrop-blur-md'}`}>
-            <div className="flex flex-col">
+          <div className={`lg:hidden border-t border-white/20 ${isScrolled ? 'bg-dark-900/95' : 'bg-dark-900/80'}`}>
+            <div className="flex flex-col py-4">
               {navLinks.map((link) => (
                 <button
                   key={link.id}
                   onClick={() => scrollToSection(link.id)}
-                  className={`text-left py-4 px-8 font-bold transition-colors ${activeSection === link.id
-                    ? 'bg-white text-black'
-                    : 'text-white hover:bg-white/10'
+                  className={`text-left py-3 px-8 font-medium transition-colors ${activeSection === link.id
+                    ? 'text-red-400'
+                    : 'text-white hover:text-red-400'
                     }`}
                 >
                   {link.label}

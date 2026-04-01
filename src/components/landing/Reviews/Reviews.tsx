@@ -225,19 +225,23 @@ const Reviews: React.FC = () => {
               {[prevReview, currentReview, nextReview].map((review, index) => (
                 <div
                   key={review.id + '-' + index}
-                  className="flex-shrink-0 w-[22rem] lg:w-[26rem] flex flex-col items-center"
+                  className="flex-shrink-0 w-[18rem] lg:w-[25rem] flex flex-col items-center"
                 >
-                  <div className="relative w-full bg-gradient-to-b from-neutral-800 to-neutral-900 border border-white/60 rounded-[32px] px-6 py-10 md:px-8 md:py-12 lg:px-10 lg:py-14 text-center text-white shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col items-center justify-between min-h-[380px] md:min-h-[420px] lg:min-h-[440px]">
+                  <div className="relative w-full bg-gradient-to-b from-neutral-800 to-neutral-900 border border-white/60 rounded-[32px] px-6 py-10 md:px-8 md:py-12 lg:px-10 lg:py-14 text-center text-white shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col items-center justify-between h-[440px] md:h-[480px] lg:h-[500px]">
                     <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-20 h-20 rounded-full border-4 border-white bg-black/80 overflow-hidden flex items-center justify-center">
                       <ReviewAvatar review={review} className="w-full h-full object-cover" />
                     </div>
 
                     <h4 className="mt-8 text-xl md:text-2xl font-bold">{review.name}</h4>
-                    <p className="mt-6 text-sm md:text-base leading-relaxed md:leading-8 text-gray-100 max-w-2xl mx-auto">
-                      {review.text}
-                    </p>
+                    
+                    <div className="flex-1 overflow-y-auto overscroll-contain rounded-lg px-1 mt-6 mb-6"
+                      style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.2) transparent' }}>
+                      <p className="text-sm md:text-base leading-relaxed md:leading-8 text-gray-100">
+                        {review.text}
+                      </p>
+                    </div>
 
-                    <div className="mt-6 flex justify-center gap-1 text-yellow-400">
+                    <div className="flex justify-center gap-1 text-yellow-400">
                       {[...Array(5)].map((_, i) => (
                         <span key={i} className={i < review.rating ? "text-yellow-400" : "text-gray-400"}>
                           {i < review.rating ? '★' : '☆'}

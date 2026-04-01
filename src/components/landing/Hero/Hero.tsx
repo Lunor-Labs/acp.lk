@@ -34,7 +34,7 @@ const Hero: React.FC<HeroProps> = ({ onLoginRequest }) => {
       {/* ── Mobile Hero (< md): portrait slider with overlay ── */}
       <section
         className="relative md:hidden w-full overflow-hidden bg-dark"
-        id="home"
+        id="home-mobile"
       >
         {/* 9:16 container matching mobile images */}
         <div className="relative w-full aspect-[9/16]">
@@ -97,7 +97,7 @@ const Hero: React.FC<HeroProps> = ({ onLoginRequest }) => {
       {/* ── Desktop Hero (>= md): unchanged original layout ── */}
       <section
         className="relative hidden md:flex min-h-screen items-center overflow-hidden bg-dark"
-        id="home"
+        id="home-desktop"
       >
         {slides.map((slide, index) => (
           <div
