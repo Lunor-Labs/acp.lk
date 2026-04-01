@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { FileText, Clock, Trophy, Award, Calendar, PlayCircle, AlertCircle, Save, Check, AlertTriangle, Info, X, FileQuestion, CheckCircle2, BookOpen } from 'lucide-react';
@@ -72,6 +72,8 @@ export default function Exams() {
   const [view, setView] = useState<'upcoming' | 'results'>('upcoming');
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [reviewingData, setReviewingData] = useState<ReviewingResultData | null>(null);
+  const [mobileVisibleQuestion, setMobileVisibleQuestion] = useState<number>(0);
+  const questionRefsRef = useRef<(HTMLDivElement | null)[]>([]);
 
   // Toast notification state
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info'; visible: boolean } | null>(null);
@@ -445,6 +447,33 @@ export default function Exams() {
     return () => clearInterval(interval);
   }, [activeExam]);
 
+  // IntersectionObserver for mobile question visibility tracking
+  useEffect(() => {
+    if (!activeExam || activeExam.isPdf || activeExam.isReviewing) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const index = parseInt(entry.target.getAttribute('data-question-index') || '0');
+            setMobileVisibleQuestion(index);
+          }
+        });
+      },
+      { threshold: 0.3 }
+    );
+
+    questionRefsRef.current.forEach((ref) => {
+      if (ref) observer.observe(ref);
+    });
+
+    return () => {
+      questionRefsRef.current.forEach((ref) => {
+        if (ref) observer.unobserve(ref);
+      });
+    };
+  }, [activeExam?.questions?.length, activeExam?.isPdf, activeExam?.isReviewing]);
+
   const getRemainingTimeDisplay = () => {
     if (!activeExam) return { text: '0m 0s', isWarning: false };
     
@@ -568,7 +597,7 @@ export default function Exams() {
       <div className="fixed inset-0 bg-gray-100 z-50 flex flex-col">
         {/* Exam Header */}
         <div className="bg-white border-b px-3 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
-          <div className="flex items-center space-x-2 sm:space-x-4 min-w-0">
+          <div className="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
             <div className="bg-red-50 p-2 rounded-lg flex-shrink-0">
               <FileText className="w-5 sm:w-6 h-5 sm:h-6 text-[#eb1b23]" />
             </div>
@@ -582,6 +611,12 @@ export default function Exams() {
                   {getRemainingTimeDisplay().text}
                 </span>
               </div>
+              {/* Mobile Progress Indicator */}
+              {!activeExam.isPdf && (
+                <p className="md:hidden text-xs font-bold text-[#eb1b23] mt-1">
+                  Question {mobileVisibleQuestion + 1} of {activeExam.questions?.length || 0}
+                </p>
+              )}
             </div>
           </div>
 
@@ -640,63 +675,130 @@ export default function Exams() {
                 </div>
               )
             ) : (
-              <div className="p-3 sm:p-6 lg:p-8 max-w-3xl mx-auto w-full">
-                {activeExam.questions && activeExam.questions[activeExam.currentQuestion] && (
-                  <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-8 shadow-sm">
-                    <div className="text-xs sm:text-sm font-bold text-[#eb1b23] mb-3 sm:mb-4 uppercase tracking-widest">
-                      Question {activeExam.currentQuestion + 1}
-                    </div>
-                    <h3 className="text-lg sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-8 leading-relaxed">
-                      {activeExam.questions[activeExam.currentQuestion].question_text}
-                    </h3>
-
-                    {/* Display image if present */}
-                    {activeExam.questions[activeExam.currentQuestion].image_path && (
-                      <div className="mb-4 sm:mb-8 rounded-lg overflow-hidden bg-gray-50 border border-gray-200 flex items-center justify-center p-3 sm:p-4">
-                        <img
-                          src={supabase.storage.from('acp').getPublicUrl(activeExam.questions[activeExam.currentQuestion].image_path!.replace('acp/', '')).data.publicUrl}
-                          alt={`Question ${activeExam.currentQuestion + 1}`}
-                          className="max-w-full max-h-72 sm:max-h-96 object-contain"
-                        />
+              <>
+                {/* Desktop View: Single Question */}
+                <div className="hidden md:block p-6 lg:p-8 max-w-3xl mx-auto w-full h-full overflow-auto">
+                  {activeExam.questions && activeExam.questions[activeExam.currentQuestion] && (
+                    <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-8 shadow-sm">
+                      <div className="text-xs sm:text-sm font-bold text-[#eb1b23] mb-3 sm:mb-4 uppercase tracking-widest">
+                        Question {activeExam.currentQuestion + 1}
                       </div>
-                    )}
+                      <h3 className="text-lg sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-8 leading-relaxed">
+                        {activeExam.questions[activeExam.currentQuestion].question_text}
+                      </h3>
 
-                    <div className="space-y-3 sm:space-y-4">
-                      {activeExam.questions[activeExam.currentQuestion].options.map((option, idx) => {
-                        const optNum = String(idx + 1);
-                        const currentAnswerObj = activeExam.answers[activeExam.currentQuestion] as string;
-                        const isSelected = currentAnswerObj ? currentAnswerObj.split(',').map(s => s.trim()).includes(optNum) : false;
-                        return (
-                          <button
-                            key={idx}
-                            onClick={() => selectAnswer(activeExam.currentQuestion, optNum)}
-                            className={`w-full text-left p-3 sm:p-5 rounded-lg sm:rounded-xl border-2 transition-all flex items-center group ${
-                              isSelected
-                                ? 'border-[#eb1b23] bg-red-50 shadow-md shadow-red-50'
-                                : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'
-                            }`}
-                          >
-                            <span className={`w-8 sm:w-10 h-8 sm:h-10 rounded-lg flex items-center justify-center font-bold mr-2 sm:mr-4 text-sm sm:text-base transition-colors flex-shrink-0 ${
-                              isSelected ? 'bg-[#eb1b23] text-white' : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'
-                            }`}>
-                              {idx + 1}
-                            </span>
-                            <span className={`text-base sm:text-lg font-medium ${isSelected ? 'text-gray-900' : 'text-gray-700'} break-words`}>
-                              {option}
-                            </span>
-                          </button>
-                        );
-                      })}
+                      {/* Display image if present */}
+                      {activeExam.questions[activeExam.currentQuestion].image_path && (
+                        <div className="mb-4 sm:mb-8 rounded-lg overflow-hidden bg-gray-50 border border-gray-200 flex items-center justify-center p-3 sm:p-4">
+                          <img
+                            src={supabase.storage.from('acp').getPublicUrl(activeExam.questions[activeExam.currentQuestion].image_path!.replace('acp/', '')).data.publicUrl}
+                            alt={`Question ${activeExam.currentQuestion + 1}`}
+                            className="max-w-full max-h-72 sm:max-h-96 object-contain"
+                          />
+                        </div>
+                      )}
+
+                      <div className="space-y-3 sm:space-y-4">
+                        {activeExam.questions[activeExam.currentQuestion].options.map((option, idx) => {
+                          const optNum = String(idx + 1);
+                          const currentAnswerObj = activeExam.answers[activeExam.currentQuestion] as string;
+                          const isSelected = currentAnswerObj ? currentAnswerObj.split(',').map(s => s.trim()).includes(optNum) : false;
+                          return (
+                            <button
+                              key={idx}
+                              onClick={() => selectAnswer(activeExam.currentQuestion, optNum)}
+                              className={`w-full text-left p-3 sm:p-5 rounded-lg sm:rounded-xl border-2 transition-all flex items-center group ${
+                                isSelected
+                                  ? 'border-[#eb1b23] bg-red-50 shadow-md shadow-red-50'
+                                  : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'
+                              }`}
+                            >
+                              <span className={`w-8 sm:w-10 h-8 sm:h-10 rounded-lg flex items-center justify-center font-bold mr-2 sm:mr-4 text-sm sm:text-base transition-colors flex-shrink-0 ${
+                                isSelected ? 'bg-[#eb1b23] text-white' : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'
+                              }`}>
+                                {idx + 1}
+                              </span>
+                              <span className={`text-base sm:text-lg font-medium ${isSelected ? 'text-gray-900' : 'text-gray-700'} break-words`}>
+                                {option}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
+                  )}
+                </div>
+
+                {/* Mobile View: Vertical Flow of All Questions */}
+                <div className="md:hidden p-3 sm:p-6 w-full h-full overflow-auto scroll-smooth">
+                  <div className="space-y-6">
+                    {activeExam.questions?.map((question, qIdx) => {
+                      const answeredCount = Object.keys(activeExam.answers).length;
+                      const totalQuestions = activeExam.questions?.length || 0;
+                      return (
+                        <div
+                          key={qIdx}
+                          ref={(el) => { questionRefsRef.current[qIdx] = el; }}
+                          data-question-index={qIdx}
+                          className="bg-white rounded-xl p-4 sm:p-6 shadow-sm"
+                        >
+                          <div className="text-xs sm:text-sm font-bold text-[#eb1b23] mb-3 sm:mb-4 uppercase tracking-widest flex justify-between items-center">
+                            <span>Question {qIdx + 1}</span>
+                            <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                              {answeredCount} / {totalQuestions}
+                            </span>
+                          </div>
+                          <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6 leading-relaxed">
+                            {question.question_text}
+                          </h3>
+
+                          {/* Display image if present */}
+                          {question.image_path && (
+                            <div className="mb-4 sm:mb-6 rounded-lg overflow-hidden bg-gray-50 border border-gray-200 flex items-center justify-center p-3 sm:p-4">
+                              <img
+                                src={supabase.storage.from('acp').getPublicUrl(question.image_path!.replace('acp/', '')).data.publicUrl}
+                                alt={`Question ${qIdx + 1}`}
+                                className="max-w-full max-h-72 object-contain"
+                              />
+                            </div>
+                          )}
+
+                          <div className="flex flex-wrap gap-2">
+                            {question.options.map((option, idx) => {
+                              const optNum = String(idx + 1);
+                              const currentAnswerObj = activeExam.answers[qIdx] as string;
+                              const isSelected = currentAnswerObj ? currentAnswerObj.split(',').map(s => s.trim()).includes(optNum) : false;
+                              return (
+                                <button
+                                  key={idx}
+                                  onClick={() => selectAnswer(qIdx, optNum)}
+                                  className={`flex-1 min-w-[calc(50%-0.25rem)] p-2 rounded-lg border-2 transition-all flex items-center group justify-center ${
+                                    isSelected
+                                      ? 'border-[#eb1b23] bg-red-50 shadow-md shadow-red-50'
+                                      : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'
+                                  }`}
+                                >
+                                  <span className={`text-xs sm:text-sm font-medium text-center ${isSelected ? 'text-gray-900' : 'text-gray-700'} break-words`}>
+                                    {option}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                )}
-              </div>
+                  {/* Bottom Spacing for Mobile to Accommodate Fixed Footer */}
+                  <div className="h-24"></div>
+                </div>
+              </>
             )}
           </div>
 
-          {/* Right Panel: Navigation / Bubble Sheet */}
+          {/* Right Panel: Navigation / Bubble Sheet - Hidden on Mobile for Manual Exams */}
           <div className={`w-full md:w-80 lg:w-96 bg-white border-l flex flex-col flex-1 md:flex-none min-h-0 ${
-            activeExam.isPdf && activeExam.pdfView === 'paper' ? 'hidden md:flex' : 'flex'
+            !activeExam.isPdf ? 'hidden md:flex' : (activeExam.isPdf && activeExam.pdfView === 'paper' ? 'hidden md:flex' : 'flex')
           }`}>
             <div className="p-3 sm:p-6 border-b bg-gray-50 font-bold text-gray-700 text-sm sm:text-base">
               {activeExam.isPdf ? 'Answer Sheet' : 'Question Map'}
@@ -760,7 +862,7 @@ export default function Exams() {
             </div>
 
             {!activeExam.isPdf && (
-              <div className="p-3 sm:p-6 border-t bg-gray-50 grid grid-cols-2 gap-2 sm:gap-4">
+              <div className="hidden md:grid p-3 sm:p-6 border-t bg-gray-50 grid-cols-2 gap-2 sm:gap-4">
                 <button
                   onClick={() => setActiveExam({ ...activeExam, currentQuestion: Math.max(0, activeExam.currentQuestion - 1) })}
                   disabled={activeExam.currentQuestion === 0}
@@ -779,6 +881,26 @@ export default function Exams() {
             )}
           </div>
         </div>
+
+        {/* Mobile Bottom Action Buttons - Fixed Footer */}
+        {!activeExam.isPdf && (
+          <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 sm:p-4 shadow-lg shadow-gray-300">
+            <div className="flex gap-3 sm:gap-4">
+              <button
+                onClick={() => submitExam()}
+                className="flex-1 bg-white border border-gray-300 text-gray-700 px-4 py-3 rounded-lg font-bold text-sm sm:text-base hover:bg-gray-100 transition"
+              >
+                Review
+              </button>
+              <button
+                onClick={() => submitExam()}
+                className="flex-1 bg-[#eb1b23] text-white px-4 py-3 rounded-lg font-bold text-sm sm:text-base hover:bg-red-700 transition shadow-lg shadow-red-100"
+              >
+                Submit
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -856,11 +978,11 @@ export default function Exams() {
   if (reviewingData) {
     return (
       <div className="fixed inset-0 bg-gray-100 z-50 flex flex-col">
-        <div className="bg-white border-b px-6 py-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900">Review: {reviewingData.attempt.exam.title}</h2>
+        <div className="bg-white border-b px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2">
+          <h2 className="text-base sm:text-xl font-bold text-gray-900 truncate">Review: {reviewingData.attempt.exam.title}</h2>
           <button
             onClick={() => setReviewingData(null)}
-            className="bg-white border text-[#eb1b23] border-[#eb1b23] px-6 py-2.5 rounded-xl font-bold hover:bg-red-50 transition"
+            className="bg-white border text-[#eb1b23] border-[#eb1b23] px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-bold text-xs sm:text-base hover:bg-red-50 transition whitespace-nowrap flex-shrink-0"
           >
             Close Results
           </button>
@@ -921,7 +1043,8 @@ export default function Exams() {
                       <div className="flex justify-between items-center mb-6 pb-6 border-b border-gray-100">
                         <h4 className="text-xl font-bold text-gray-900 border-l-4 border-[#eb1b23] pl-3">Question {q.question_number}</h4>
                         <div className={`font-bold px-4 py-2 rounded-full text-sm flex items-center shadow-sm border ${isFullyCorrect ? 'bg-green-50 text-green-700 border-green-100' : 'bg-red-50 text-red-700 border-red-100'}`}>
-                          {isFullyCorrect ? 'Full Marks' : 'Incorrect'} <span className="ml-2 bg-white px-2 py-0.5 rounded text-xs shadow-sm">{isFullyCorrect ? q.marks : 0}/{q.marks}</span>
+                          {isFullyCorrect ? 'Correct' : 'Incorrect'}
+                           {/* <span className="ml-2 bg-white px-2 py-0.5 rounded text-xs shadow-sm">{isFullyCorrect ? q.marks : 0}/{q.marks}</span> */}
                         </div>
                       </div>
                       
@@ -936,7 +1059,8 @@ export default function Exams() {
                         </div>
                       )}
 
-                      <div className="space-y-3">
+                      {/* Desktop Answer View */}
+                      <div className="hidden md:block space-y-3">
                         {q.options.map((opt, optIdx) => {
                           const optNum = String(optIdx + 1);
                           const isStudentChoice = studentAnswers.includes(optNum.trim());
@@ -957,6 +1081,48 @@ export default function Exams() {
                               <span className="flex-1 font-semibold text-lg">{opt}</span>
                               {isTrueCorrect && <span className="ml-3 text-green-700 font-bold bg-white px-3 py-1.5 rounded-lg text-sm shadow-sm border border-green-200">Yes! Correct</span>}
                               {(!isTrueCorrect && isStudentChoice) && <span className="ml-3 text-red-700 font-bold bg-white px-3 py-1.5 rounded-lg text-sm shadow-sm border border-red-200">Your Pick</span>}
+                            </div>
+                          )
+                        })}
+                      </div>
+
+                      {/* Mobile Answer View - Compact Layout */}
+                      <div className="md:hidden flex flex-wrap gap-2">
+                        {q.options.map((opt, optIdx) => {
+                          const optNum = String(optIdx + 1);
+                          const isStudentChoice = studentAnswers.includes(optNum.trim());
+                          const isTrueCorrect = correctAnswers.includes(optNum.trim());
+
+                          let containerClass = "border-gray-100 bg-gray-50";
+                          let statusIcon = null;
+
+                          if (isTrueCorrect && isStudentChoice) {
+                            // Marked right - green with checkmark
+                            containerClass = "border-green-500 bg-green-100";
+                            statusIcon = "✓";
+                          } else if (isStudentChoice && !isTrueCorrect) {
+                            // Marked wrong - red with X
+                            containerClass = "border-red-500 bg-red-100";
+                            statusIcon = "✕";
+                          } else if (isTrueCorrect) {
+                            // Correct but not marked - green without mark
+                            containerClass = "border-green-500 bg-green-100";
+                            statusIcon = null;
+                          }
+                          
+                          return (
+                            <div
+                              key={optIdx}
+                              className={`flex-1 min-w-[calc(50%-0.25rem)] p-2 rounded-lg border-2 transition-all flex items-center group justify-center relative ${containerClass}`}
+                            >
+                              <span className={`text-xs sm:text-sm font-medium text-center flex-1 ${isTrueCorrect || isStudentChoice ? 'text-gray-900 font-semibold' : 'text-gray-700'} break-words`}>
+                                {opt}
+                              </span>
+                              {statusIcon && (
+                                <span className={`absolute top-1 right-1 text-xs font-bold ${isTrueCorrect && isStudentChoice ? 'text-green-600' : 'text-red-600'}`}>
+                                  {statusIcon}
+                                </span>
+                              )}
                             </div>
                           )
                         })}
