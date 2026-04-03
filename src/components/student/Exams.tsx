@@ -176,17 +176,31 @@ export default function Exams() {
       return;
     }
 
-    const { data: existingAttempt } = await supabase
+    // Check for a submitted attempt first (any row with status=submitted)
+    const { data: submittedRows } = await supabase
       .from('exam_attempts')
-      .select('id, status, started_at, answers')
+      .select('id')
       .eq('exam_id', exam.id)
       .eq('student_id', profile?.id)
-      .maybeSingle();
+      .eq('status', 'submitted')
+      .limit(1);
 
-    if (existingAttempt && existingAttempt.status === 'submitted') {
+    if (submittedRows && submittedRows.length > 0) {
       showToast('You have already completed this exam', 'warning');
       return;
     }
+
+    // Check for an in-progress (started) attempt to resume
+    const { data: startedRows } = await supabase
+      .from('exam_attempts')
+      .select('id, started_at, answers')
+      .eq('exam_id', exam.id)
+      .eq('student_id', profile?.id)
+      .eq('status', 'started')
+      .order('started_at', { ascending: false })
+      .limit(1);
+
+    const existingAttempt = startedRows && startedRows.length > 0 ? startedRows[0] : null;
 
     try {
       setLoading(true);
@@ -227,7 +241,7 @@ export default function Exams() {
         }));
       }
 
-      // Create or get attempt
+      // Create or resume attempt
       let attemptId = existingAttempt?.id;
       let attemptStartTime = new Date();
       let attemptAnswers: Record<number, string | number> = {};
@@ -256,8 +270,8 @@ export default function Exams() {
         }
         if (existingAttempt?.answers) {
           // Parse Jsonb or assume it's already an object
-          attemptAnswers = typeof existingAttempt.answers === 'string' 
-            ? JSON.parse(existingAttempt.answers) 
+          attemptAnswers = typeof existingAttempt.answers === 'string'
+            ? JSON.parse(existingAttempt.answers)
             : existingAttempt.answers;
         }
       }
@@ -383,7 +397,18 @@ export default function Exams() {
         }
       }
 
-      // Update attempt
+      // Fetch the specific in-progress attempt id to update (avoid updating multiple rows)
+      const { data: attemptToUpdate } = await supabase
+        .from('exam_attempts')
+        .select('id')
+        .eq('exam_id', activeExam.exam.id)
+        .eq('student_id', profile?.id)
+        .eq('status', 'started')
+        .order('started_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      // Update attempt by specific id only
       const { error: attemptError } = await supabase
         .from('exam_attempts')
         .update({
@@ -392,8 +417,7 @@ export default function Exams() {
           status: 'submitted',
           submitted_at: new Date().toISOString(),
         })
-        .eq('exam_id', activeExam.exam.id)
-        .eq('student_id', profile?.id);
+        .eq('id', attemptToUpdate?.id ?? '');
 
       if (attemptError) throw attemptError;
 
