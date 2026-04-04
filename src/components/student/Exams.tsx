@@ -307,16 +307,17 @@ export default function Exams() {
 
     const question = activeExam.questions?.[questionIndex];
     const isMultiChoice = question?.correct_answer?.includes(',');
+    const answerKey = question?.question_number ?? questionIndex;
 
     if (!isMultiChoice) {
       setActiveExam({
         ...activeExam,
-        answers: { ...activeExam.answers, [questionIndex]: answerValue },
+        answers: { ...activeExam.answers, [answerKey]: answerValue },
       });
       return;
     }
 
-    const currentAnswerStr = (activeExam.answers[questionIndex] as string) || '';
+    const currentAnswerStr = (activeExam.answers[answerKey] as string) || '';
     let selectedArr = currentAnswerStr ? currentAnswerStr.split(',') : [];
 
     if (selectedArr.includes(answerValue as string)) {
@@ -330,7 +331,7 @@ export default function Exams() {
 
     setActiveExam({
       ...activeExam,
-      answers: { ...activeExam.answers, [questionIndex]: newAnswerStr },
+      answers: { ...activeExam.answers, [answerKey]: newAnswerStr },
     });
   };
 
@@ -356,7 +357,7 @@ export default function Exams() {
 
       if (!activeExam.isPdf && activeExam.questions) {
         activeExam.questions.forEach((q, idx) => {
-          const studentAnswer = activeExam.answers[idx] as string;
+          const studentAnswer = (activeExam.answers[q.question_number] ?? activeExam.answers[idx]) as string;
           if (studentAnswer !== undefined && studentAnswer !== '') {
             const correctArr = (q.correct_answer || '').split(',').map(s => s.trim()).filter(Boolean);
             const studentArr = studentAnswer.split(',').map(s => s.trim()).filter(Boolean);
@@ -561,8 +562,9 @@ export default function Exams() {
                 <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 gap-2 sm:gap-3 mb-6 sm:mb-8">
                   {Array.from({ length: totalQuestions }).map((_, i) => {
                     const questionNo = i + 1;
-                    const idx = activeExam.isPdf ? questionNo : i;
-                    const answer = activeExam.answers[idx];
+                    const qData = activeExam.questions?.[i];
+                    const answerKey = activeExam.isPdf ? questionNo : (qData?.question_number ?? i);
+                    const answer = activeExam.answers[answerKey] ?? activeExam.answers[i];
                     const hasAnswer = answer !== undefined;
 
                     return (
@@ -725,7 +727,8 @@ export default function Exams() {
                       <div className="space-y-3 sm:space-y-4">
                         {activeExam.questions[activeExam.currentQuestion].options.map((option, idx) => {
                           const optNum = String(idx + 1);
-                          const currentAnswerObj = activeExam.answers[activeExam.currentQuestion] as string;
+                          const currentQuestionData = activeExam.questions![activeExam.currentQuestion];
+                          const currentAnswerObj = (activeExam.answers[currentQuestionData.question_number] ?? activeExam.answers[activeExam.currentQuestion]) as string;
                           const isSelected = currentAnswerObj ? currentAnswerObj.split(',').map(s => s.trim()).includes(optNum) : false;
                           return (
                             <button
@@ -790,7 +793,7 @@ export default function Exams() {
                           <div className="flex flex-wrap gap-2">
                             {question.options.map((option, idx) => {
                               const optNum = String(idx + 1);
-                              const currentAnswerObj = activeExam.answers[qIdx] as string;
+                              const currentAnswerObj = (activeExam.answers[question.question_number] ?? activeExam.answers[qIdx]) as string;
                               const isSelected = currentAnswerObj ? currentAnswerObj.split(',').map(s => s.trim()).includes(optNum) : false;
                               return (
                                 <button
@@ -862,9 +865,9 @@ export default function Exams() {
               ) : (
                 // Question grid for Manual
                 <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 sm:gap-3">
-                  {activeExam.questions?.map((_, i) => {
+                  {activeExam.questions?.map((q, i) => {
                     const isSelected = activeExam.currentQuestion === i;
-                    const isAnswered = activeExam.answers[i] !== undefined;
+                    const isAnswered = (activeExam.answers[q.question_number] ?? activeExam.answers[i]) !== undefined;
                     return (
                       <button
                         key={i}
@@ -1054,7 +1057,7 @@ export default function Exams() {
             ) : (
               <div className="space-y-6">
                 {reviewingData.questions?.map((q, idx) => {
-                  const studentAnswer = (reviewingData.attempt.answers as any)?.[idx] as string;
+                  const studentAnswer = ((reviewingData.attempt.answers as any)?.[q.question_number] ?? (reviewingData.attempt.answers as any)?.[idx]) as string;
                   const correctAnswers = (q.correct_answer || '').split(',').map(s => s.trim()).filter(Boolean);
                   const studentAnswers = studentAnswer ? studentAnswer.split(',').map(s => s.trim()).filter(Boolean) : [];
 
