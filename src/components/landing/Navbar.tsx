@@ -17,6 +17,12 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
 
+      // Force Home active when at the very top
+      if (window.scrollY < 50) {
+        setActiveSection('home');
+        return;
+      }
+
       // Scroll spy
       const sections = ['home', 'success', 'teacher', 'centers', 'reviews', 'gallery', 'top10', 'channels', 'contact'];
       const scrollPosition = window.scrollY + 100;
@@ -25,7 +31,8 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
         const element = document.getElementById(section);
         if (element) {
           const { offsetTop, offsetHeight } = element;
-          if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
+          // Only consider elements that have an actual height (visible)
+          if (offsetHeight > 0 && scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
             setActiveSection(section);
             break;
           }
@@ -38,6 +45,16 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginRequest }) => {
   }, []);
 
   const scrollToSection = (id: string) => {
+    if (id === 'home') {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+      setActiveSection('home');
+      setIsMobileMenuOpen(false);
+      return;
+    }
+
     const element = document.getElementById(id);
     if (element) {
       const offset = 80;
