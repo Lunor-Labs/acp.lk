@@ -871,7 +871,7 @@ export default function Exams() {
                 <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 sm:gap-3">
                   {activeExam.questions?.map((q, i) => {
                     const isSelected = activeExam.currentQuestion === i;
-                    const isAnswered = (activeExam.answers[q.question_number] ?? activeExam.answers[i]) !== undefined;
+                    const isAnswered = activeExam.answers[q.question_number] !== undefined;
                     return (
                       <button
                         key={i}
@@ -1061,7 +1061,7 @@ export default function Exams() {
             ) : (
               <div className="space-y-6">
                 {reviewingData.questions?.map((q, idx) => {
-                  const studentAnswer = ((reviewingData.attempt.answers as any)?.[q.question_number] ?? (reviewingData.attempt.answers as any)?.[idx]) as string;
+                  const studentAnswer = (reviewingData.attempt.answers as any)?.[q.question_number] as string;
                   const correctAnswers = (q.correct_answer || '').split(',').map(s => s.trim()).filter(Boolean);
                   const studentAnswers = studentAnswer ? studentAnswer.split(',').map(s => s.trim()).filter(Boolean) : [];
 
