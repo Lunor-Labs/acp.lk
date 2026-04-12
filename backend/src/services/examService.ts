@@ -170,4 +170,21 @@ export class ExamService {
 
     return enriched;
   }
+
+  async getExamReviewData(examId: string) {
+    const pdfRecords = await this.db.select().from(pdfExams).where(eq(pdfExams.exam_id, examId));
+    const isPdf = pdfRecords.length > 0;
+    
+    let questions: ExamQuestion[] = [];
+    let pdfUrl: string | null = null;
+    let pdfAnswers: { question_no: number; correct_answer: number }[] = [];
+
+    if (isPdf) {
+      pdfUrl = pdfRecords[0].pdf_path;
+      pdfAnswers = pdfRecords.map(r => ({ question_no: r.question_no, correct_answer: r.correct_answer }));
+    } else {
+      questions = await this.examRepo.getQuestions(examId);
+    }
+    return { isPdf, pdfUrl, questions, pdfAnswers };
+  }
 }

@@ -58,6 +58,20 @@ examsRouter.get('/teacher', async (req: Request, res: Response, next: NextFuncti
   }
 });
 
+// GET /api/exams/:id/review
+examsRouter.get('/:id/review', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const studentId = (req as any).user?.id;
+    const { id: examId } = req.params;
+    if (!studentId) throw AppError.unauthorized();
+
+    const reviewData = await getExamService().getExamReviewData(examId);
+    sendSuccess(res, reviewData);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // POST /api/exams/:id/start
 examsRouter.post('/:id/start', async (req: Request, res: Response, next: NextFunction) => {
   try {

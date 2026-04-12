@@ -44,10 +44,18 @@ export interface ExamStartResponse {
   questions?: ExamQuestion[];
 }
 
+export interface ExamReviewResponse {
+  isPdf: boolean;
+  pdfUrl?: string | null;
+  questions?: ExamQuestion[];
+  pdfAnswers?: { question_no: number; correct_answer: number }[];
+}
+
 export const ExamsApi = {
   getUpcoming: () => apiClient.get<Exam[]>('/exams/upcoming'),
   getResults: () => apiClient.get<(ExamAttempt & { exam: Exam })[]>('/exams/results'),
   getTeacherExams: () => apiClient.get<Exam[]>('/exams/teacher'),
+  getReview: (examId: string) => apiClient.get<ExamReviewResponse>(`/exams/${examId}/review`),
   startAttempt: (examId: string) => apiClient.post<ExamStartResponse>(`/exams/${examId}/start`, {}),
   submitAttempt: (examId: string, answers: Record<number, string | number>) => 
     apiClient.post<ExamAttempt>(`/exams/${examId}/submit`, { answers }),

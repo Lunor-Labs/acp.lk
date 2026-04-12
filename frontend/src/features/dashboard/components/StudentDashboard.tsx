@@ -13,8 +13,8 @@ import acpLogo from '@/assets/acp-logo.webp';
 // Stub components until we port the actual UI
 import MyClasses from './student/StudentMyClasses';
 import BrowseClasses from './student/BrowseClasses';
+import StudentExams from './student/StudentExams';
 const StudyPacks = () => <div className="p-8 font-bold text-xl">Study Packs (Porting in progress)</div>;
-const Exams = () => <div className="p-8 font-bold text-xl">Exams (Porting in progress)</div>;
 const ProfileMenu = ({ onProfileClick }: any) => <button onClick={onProfileClick} className="w-8 h-8 rounded-full bg-red-100"></button>;
 const ProfilePage = () => <div className="p-8 font-bold text-xl">Profile Page (Porting in progress)</div>;
 
@@ -201,7 +201,7 @@ export default function StudentDashboard() {
           <Route path="browse" element={<BrowseClasses />} />
           <Route path="classes" element={<MyClasses />} />
           <Route path="studypacks" element={<StudyPacks />} />
-          <Route path="exams" element={<Exams />} />
+          <Route path="exams" element={<StudentExams />} />
           <Route path="profile" element={<ProfilePage />} />
         </Routes>
       </main>
