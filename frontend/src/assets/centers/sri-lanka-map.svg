@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" fill="none">
+  <!-- Sri Lanka Map Shape -->
+  <defs>
+    <linearGradient id="mapGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4A90E2;stop-opacity:0.8" />
+      <stop offset="50%" style="stop-color:#5BA3F5;stop-opacity:0.9" />
+      <stop offset="100%" style="stop-color:#6BB6FF;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Main Island Shape -->
+  <path d="M 180 80 
+           Q 190 75, 200 80
+           L 220 100
+           Q 230 110, 235 125
+           L 245 150
+           Q 250 170, 250 190
+           L 250 220
+           Q 250 240, 245 260
+           L 240 290
+           Q 235 320, 225 340
+           L 210 370
+           Q 200 390, 185 410
+           L 170 430
+           Q 160 440, 150 445
+           L 140 450
+           Q 130 452, 120 450
+           L 110 445
+           Q 100 438, 95 430
+           L 85 410
+           Q 75 390, 70 370
+           L 65 340
+           Q 60 310, 60 280
+           L 62 250
+           Q 65 220, 72 195
+           L 80 170
+           Q 90 145, 105 125
+           L 125 100
+           Q 140 85, 160 80
+           L 180 80 Z"
+        fill="url(#mapGradient)"
+        filter="url(#glow)"
+        stroke="#2E5C8A"
+        stroke-width="2"/>
+  
+  <!-- Location Pins -->
+  <circle cx="155" cy="200" r="6" fill="#FF6B6B" opacity="0.9"/>
+  <circle cx="155" cy="200" r="3" fill="#FFFFFF"/>
+  
+  <circle cx="175" cy="280" r="6" fill="#FF6B6B" opacity="0.9"/>
+  <circle cx="175" cy="280" r="3" fill="#FFFFFF"/>
+  
+  <circle cx="140" cy="330" r="6" fill="#FF6B6B" opacity="0.9"/>
+  <circle cx="140" cy="330" r="3" fill="#FFFFFF"/>
+  
+  <!-- Network Lines -->
+  <line x1="155" y1="200" x2="175" y2="280" stroke="#FFD93D" stroke-width="2" opacity="0.6" stroke-dasharray="5,5"/>
+  <line x1="175" y1="280" x2="140" y2="330" stroke="#FFD93D" stroke-width="2" opacity="0.6" stroke-dasharray="5,5"/>
+  <line x1="140" y1="330" x2="155" y2="200" stroke="#FFD93D" stroke-width="2" opacity="0.6" stroke-dasharray="5,5"/>
+  
+  <!-- WiFi Signals -->
+  <g transform="translate(155, 200)">
+    <path d="M -15 -20 Q 0 -30, 15 -20" stroke="#4A90E2" stroke-width="2" fill="none" opacity="0.7"/>
+    <path d="M -20 -25 Q 0 -40, 20 -25" stroke="#4A90E2" stroke-width="2" fill="none" opacity="0.5"/>
+    <path d="M -25 -30 Q 0 -50, 25 -30" stroke="#4A90E2" stroke-width="2" fill="none" opacity="0.3"/>
+  </g>
+  
+  <!-- Decorative Elements -->
+  <circle cx="210" cy="130" r="4" fill="#FFD93D" opacity="0.6">
+    <animate attributeName="opacity" values="0.3;0.8;0.3" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="90" cy="250" r="3" fill="#FFD93D" opacity="0.6">
+    <animate attributeName="opacity" values="0.3;0.8;0.3" dur="2.5s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="180" cy="370" r="3.5" fill="#FFD93D" opacity="0.6">
+    <animate attributeName="opacity" values="0.3;0.8;0.3" dur="3s" repeatCount="indefinite"/>
+  </circle>
+</svg>
