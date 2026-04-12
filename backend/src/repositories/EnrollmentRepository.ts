@@ -2,6 +2,7 @@ import { eq, and, gte } from 'drizzle-orm';
 import { BaseRepository } from './BaseRepository.js';
 import { enrollments, Enrollment, NewEnrollment } from './schema/index.js';
 import type { DrizzleDb } from '../providers/db/drizzle.js';
+import crypto from 'crypto';
 
 export class EnrollmentRepository extends BaseRepository {
   constructor(db: DrizzleDb) {
@@ -40,7 +41,7 @@ export class EnrollmentRepository extends BaseRepository {
   async enroll(studentId: string, classId: string): Promise<Enrollment> {
     const result = await this.db
       .insert(enrollments)
-      .values({ student_id: studentId, class_id: classId, is_active: true })
+      .values({ id: crypto.randomUUID(), student_id: studentId, class_id: classId, is_active: true })
       .returning();
     if (!result[0]) throw new Error('Failed to enroll student');
     return result[0];

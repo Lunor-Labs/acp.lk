@@ -36,3 +36,24 @@ export class AppError extends Error {
     return new AppError(500, message, 'INTERNAL_ERROR');
   }
 }
+
+import { Response } from 'express';
+
+export function handleError(error: unknown, res: Response) {
+  if (error instanceof AppError) {
+    res.status(error.statusCode).json({
+      success: false,
+      message: error.message,
+      code: error.code,
+    });
+    return;
+  }
+
+  console.error('Unhandled Error:', error);
+  res.status(500).json({
+    success: false,
+    message: 'Internal server error',
+    code: 'INTERNAL_ERROR',
+  });
+}
+

@@ -1,8 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../../utils/errors.js';
 import { SupabaseAuthProvider } from '../../providers/auth/SupabaseAuthProvider.js';
+import { env } from '../../config/env.js';
 
-const authProvider = new SupabaseAuthProvider();
+const authProvider = new SupabaseAuthProvider(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY);
 
 export interface AuthenticatedRequest extends Request {
   user?: {

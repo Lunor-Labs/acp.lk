@@ -1,6 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { IAuthProvider, AuthUser } from './IAuthProvider.js';
-import { unauthorized } from '../../utils/errors.js';
+import { AppError } from '../../utils/errors.js';
 
 /**
  * Supabase Auth Provider
@@ -28,7 +28,7 @@ export class SupabaseAuthProvider implements IAuthProvider {
   async verifyToken(token: string): Promise<AuthUser> {
     const { data, error } = await this.client.auth.getUser(token);
     if (error || !data.user) {
-      throw unauthorized('Invalid or expired token');
+      throw AppError.unauthorized('Invalid or expired token');
     }
     return {
       id: data.user.id,
@@ -39,7 +39,7 @@ export class SupabaseAuthProvider implements IAuthProvider {
   async signIn(email: string, password: string): Promise<{ token: string; user: AuthUser }> {
     const { data, error } = await this.client.auth.signInWithPassword({ email, password });
     if (error || !data.session || !data.user) {
-      throw unauthorized(error?.message || 'Invalid credentials');
+      throw AppError.unauthorized(error?.message || 'Invalid credentials');
     }
     return {
       token: data.session.access_token,
@@ -62,7 +62,7 @@ export class SupabaseAuthProvider implements IAuthProvider {
       type: 'email',
     });
     if (error || !data.user) {
-      throw unauthorized(error?.message || 'Invalid OTP');
+      throw AppError.unauthorized(error?.message || 'Invalid OTP');
     }
     return { id: data.user.id, email: data.user.email ?? '' };
   }
