@@ -6,6 +6,7 @@ import { coursesRouter } from './routes/courses.routes.js';
 import { dashboardRouter } from './routes/dashboard.routes.js';
 import { usersRouter } from './routes/users.routes.js';
 import { enrollmentRouter } from './routes/enrollments.routes.js';
+import { examsRouter } from './routes/exams.routes.js';
 import cors from 'cors';
 
 const app = express();
@@ -30,6 +31,7 @@ app.use('/api/courses', coursesRouter);
 app.use('/api/enrollments', enrollmentRouter);
 app.use('/api/dashboard', dashboardRouter);
 app.use('/api/users', usersRouter);
+app.use('/api/exams', examsRouter);
 
 // ─── Health check ─────────────────────────────────────────────────────────────
 app.get('/health', (_req: Request, res: Response) => {
