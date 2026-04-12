@@ -10,7 +10,14 @@ const app = express();
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
 app.use(cors({
-  origin: [env.FRONTEND_URL, 'http://localhost:5173'],
+  origin: function (origin, callback) {
+    // Allow any localhost origin or the configured FRONTEND_URL in development
+    if (!origin || origin.startsWith('http://localhost:') || origin === env.FRONTEND_URL) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
 }));
 app.use(express.json());
