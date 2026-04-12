@@ -11,8 +11,8 @@ import { DashboardApi } from '../api';
 import acpLogo from '@/assets/acp-logo.webp';
 
 // Stub components until we port the actual UI
-const MyClasses = () => <div className="p-8 font-bold text-xl">My Classes (Porting in progress)</div>;
-const BrowseClasses = () => <div className="p-8 font-bold text-xl">Browse Classes (Porting in progress)</div>;
+import MyClasses from './student/StudentMyClasses';
+import BrowseClasses from './student/BrowseClasses';
 const StudyPacks = () => <div className="p-8 font-bold text-xl">Study Packs (Porting in progress)</div>;
 const Exams = () => <div className="p-8 font-bold text-xl">Exams (Porting in progress)</div>;
 const ProfileMenu = ({ onProfileClick }: any) => <button onClick={onProfileClick} className="w-8 h-8 rounded-full bg-red-100"></button>;

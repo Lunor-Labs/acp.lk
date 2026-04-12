@@ -1,4 +1,5 @@
 import { ClassRepository } from '../repositories/ClassRepository.js';
+import crypto from 'crypto';
 import { AppError } from '../utils/errors.js';
 import { getDb } from '../providers/db/drizzle.js';
 
@@ -40,8 +41,9 @@ export class CourseService {
   /**
    * Create a new course
    */
-  async createCourse(data: Parameters<ClassRepository['create']>[0]) {
-    return this.classRepo.create(data);
+  async createCourse(data: Omit<Parameters<ClassRepository['create']>[0], 'id'>) {
+    const id = crypto.randomUUID();
+    return this.classRepo.create({ ...data, id });
   }
 
   /**

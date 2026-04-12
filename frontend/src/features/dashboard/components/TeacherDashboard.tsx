@@ -11,8 +11,7 @@ import type { TeacherDashboardStats as DashboardStats, TeacherOnboardingData as 
 import { DashboardApi as api } from '../api';
 import acpLogo from '@/assets/acp-logo.webp';
 
-// Stub components until we port the actual UI
-const MyClasses = () => <div className="p-8 font-bold text-xl">My Classes (Porting in progress)</div>;
+import MyClasses from './teacher/MyClasses';
 const Exams = () => <div className="p-8 font-bold text-xl">Exams (Porting in progress)</div>;
 const StudyPacks = () => <div className="p-8 font-bold text-xl">Study Packs (Porting in progress)</div>;
 const GalleryManager = () => <div className="p-8 font-bold text-xl">Gallery Manager (Porting in progress)</div>;
