@@ -1,0 +1,41 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Diagnostic reports (https://nodejs.org/api/report.html)
+node_modules/
+dist/
+build/
+out/
+coverage/
+
+# Environment variables
+.env
+.env.test
+.env.development
+.env.production
+.env.local
+
+# Dependency directories
+node_modules/
+jspm_packages/
+.npm
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# TypeScript
+tsbuildinfo
+*.tsbuildinfo
+
+# Drizzle
+.drizzle/
