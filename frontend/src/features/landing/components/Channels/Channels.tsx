@@ -1,4 +1,4 @@
-import type { TelegramChannel } from '../../../types/landing';
+import type { TelegramChannel } from '@/types/landing';
 import ChannelCard from './ChannelCard';
 import "./Channels.css";
 

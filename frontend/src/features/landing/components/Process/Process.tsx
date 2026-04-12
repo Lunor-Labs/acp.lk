@@ -1,4 +1,5 @@
-import type { ProcessStep } from '../../../types/landing';
+import React from 'react';
+import type { ProcessStep } from '@/types/landing';
 
 const Process: React.FC = () => {
   const steps: ProcessStep[] = [

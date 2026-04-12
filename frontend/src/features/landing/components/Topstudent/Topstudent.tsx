@@ -68,7 +68,6 @@ const Topstudent: React.FC = () => {
   const [isDesktop, setIsDesktop] = useState<boolean>(
     typeof window !== 'undefined' ? window.innerWidth >= 1024 : true
   );
-  const touchStartXRef = useRef<number | null>(null);
   const isAnimatingRef = useRef<boolean>(false);
   const autoScrollTimerRef = useRef<number | null>(null);
 
@@ -78,16 +77,6 @@ const Topstudent: React.FC = () => {
     [allStudents, activeFilter]
   );
 
-  // display list with 5 full sets of clones at either end for seamless looping
-  const displayStudents = useMemo(() => {
-    if (filteredStudents.length <= 1) return filteredStudents;
-
-    const cloneSets = 5;
-    const leftClones = Array.from({ length: cloneSets }, () => filteredStudents).flat();
-    const rightClones = Array.from({ length: cloneSets }, () => filteredStudents).flat();
-
-    return [...leftClones, ...filteredStudents, ...rightClones];
-  }, [filteredStudents]);
 
   // simple duplicated list for CSS-based marquee animation (desktop)
   const marqueeStudents = useMemo(
@@ -95,107 +84,6 @@ const Topstudent: React.FC = () => {
     [filteredStudents]
   );
 
-  const SMOOTH_SCROLL_DURATION = 800; // milliseconds
-  const AUTO_SCROLL_INTERVAL = 2000; // milliseconds
-  const AUTO_SCROLL_MIN_ITEMS = 7; // disable auto-scroll if items <= this
-
-  // Clone count for proper display index calculation (5 full sets)
-  const cloneCount = useMemo(() => filteredStudents.length * 5, [filteredStudents.length]);
-
-  const getDisplayIndex = (normalizedIndex: number, len: number, isWrappingBackward: boolean = false): number => {
-    if (len <= 1) return 0;
-
-    // Normal case: item N maps to display index N + cloneCount
-    let displayIndex = normalizedIndex + cloneCount;
-
-    // If wrapping backward (going to last from 0), use left clones area
-    if (isWrappingBackward && normalizedIndex === len - 1) {
-      displayIndex = cloneCount - 1;
-    }
-
-    return displayIndex;
-  };
-
-  // Scroll smoothly to a display index, return promise when done
-  const scrollToDisplayIndex = (displayIndex: number, useSmooth: boolean = true): Promise<void> => {
-    return new Promise<void>((resolve) => {
-      const container = carouselRef.current;
-      if (!container) {
-        resolve();
-        return;
-      }
-
-      const target = container.children[displayIndex] as HTMLElement | undefined;
-      if (!target) {
-        resolve();
-        return;
-      }
-
-      const containerRect = container.getBoundingClientRect();
-      const targetRect = target.getBoundingClientRect();
-      const delta = targetRect.left - containerRect.left;
-      const scrollLeft = container.scrollLeft + delta;
-
-      container.scrollTo({
-        left: scrollLeft,
-        behavior: useSmooth ? 'smooth' : 'auto',
-      });
-
-      // Wait for animation to complete
-      const duration = useSmooth ? SMOOTH_SCROLL_DURATION : 50;
-      setTimeout(resolve, duration);
-    });
-  };
-
-  // Navigate to a specific normalized index (0 to len-1)
-  const navigateToIndex = async (nextNormalizedIndex: number, isWrappingBackward: boolean = false) => {
-    const len = filteredStudents.length;
-    if (len === 0 || isAnimatingRef.current) return;
-
-    isAnimatingRef.current = true;
-
-    try {
-      const displayIndex = getDisplayIndex(nextNormalizedIndex, len, isWrappingBackward);
-
-      // Scroll smoothly to target
-      await scrollToDisplayIndex(displayIndex, true);
-
-      // If we used a clone area, snap back to real item instantly
-      // Left clone area: displayIndex < cloneCount
-      // Right clone area: displayIndex >= cloneCount + len
-      if ((displayIndex < cloneCount || displayIndex >= cloneCount + len) && len > 1) {
-        const realDisplayIndex = nextNormalizedIndex + cloneCount;
-        await scrollToDisplayIndex(realDisplayIndex, false);
-      }
-
-      // Update current index for next navigation
-      currentIndexRef.current = nextNormalizedIndex;
-    } finally {
-      isAnimatingRef.current = false;
-    }
-  };
-
-  const handlePrev = () => {
-    if (isAnimatingRef.current) return;
-
-    const len = filteredStudents.length;
-    if (len === 0) return;
-
-    const nextIndex = (currentIndexRef.current - 1 + len) % len;
-    const isWrappingBack = nextIndex === len - 1 && currentIndexRef.current === 0;
-
-    navigateToIndex(nextIndex, isWrappingBack);
-  };
-
-  const handleNext = () => {
-    if (isAnimatingRef.current) return;
-
-    const len = filteredStudents.length;
-    if (len === 0) return;
-
-    const nextIndex = (currentIndexRef.current + 1) % len;
-    navigateToIndex(nextIndex, false);
-  };
 
   // detect viewport size so we can change behaviour/interval
   useEffect(() => {
@@ -239,19 +127,26 @@ const Topstudent: React.FC = () => {
     currentIndexRef.current = 0;
     isAnimatingRef.current = false;
 
-    // Clear any pending auto-scroll timer
     if (autoScrollTimerRef.current) {
       clearTimeout(autoScrollTimerRef.current);
       autoScrollTimerRef.current = null;
     }
 
-    // Brief delay to ensure DOM is updated before scrolling
+    const cloneCount = filteredStudents.length * 5;
+
     const timeout = setTimeout(() => {
-      scrollToDisplayIndex(cloneCount, false);
+      const container = carouselRef.current;
+      if (!container) return;
+      const target = container.children[cloneCount] as HTMLElement | undefined;
+      if (!target) return;
+      const containerRect = container.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      const delta = targetRect.left - containerRect.left;
+      container.scrollTo({ left: container.scrollLeft + delta, behavior: 'auto' });
     }, 50);
 
     return () => clearTimeout(timeout);
-  }, [activeFilter, cloneCount]);
+  }, [activeFilter, filteredStudents.length]);
 
 
 

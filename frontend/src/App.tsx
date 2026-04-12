@@ -5,8 +5,8 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LandingPage from './pages/LandingPage';
 import AuthPanel from './features/landing/components/Auth/AuthPanel';
 
-// Stub components until we port the actual UI
-const DashboardPage = () => <div className="p-10 font-bold text-2xl">Dashboard (Ported Soon)</div>;
+import StudentDashboard from './features/dashboard/components/StudentDashboard';
+import TeacherDashboard from './features/dashboard/components/TeacherDashboard';
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -25,10 +25,18 @@ function AppRoutes() {
       <Route path="/login" element={<AuthPanel defaultMode="login" />} />
       <Route path="/register" element={<AuthPanel defaultMode="register" />} />
       <Route 
-        path="/dashboard/*" 
+        path="/student/*" 
         element={
           <ProtectedRoute>
-            <DashboardPage />
+            <StudentDashboard />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/teacher/*" 
+        element={
+          <ProtectedRoute>
+            <TeacherDashboard />
           </ProtectedRoute>
         } 
       />

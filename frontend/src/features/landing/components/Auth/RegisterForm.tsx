@@ -6,7 +6,6 @@ import { Button } from '../../../../components/ui/Button';
 
 interface Props {
   onSwitchToLogin: () => void;
-  onRegisterSuccess?: () => void;
 }
 
 const AL_YEARS = [2026, 2027, 2028];
@@ -15,7 +14,7 @@ const CENTERS: ClassCenter[] = ['online', 'riochem', 'vision'];
 
 type Step = 'form' | 'otp' | 'done';
 
-const RegisterForm: React.FC<Props> = ({ onSwitchToLogin, onRegisterSuccess }) => {
+const RegisterForm: React.FC<Props> = ({ onSwitchToLogin }) => {
   // ─── Form fields ─────────────────────────────────────────────────────────
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');

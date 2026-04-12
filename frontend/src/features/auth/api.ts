@@ -8,6 +8,7 @@ export interface UserProfile {
   center: 'online' | 'riochem' | 'vision';
   role: 'student' | 'teacher' | 'admin';
   is_active: boolean;
+  avatar_url?: string;
 }
 
 export interface PendingRegisterData {

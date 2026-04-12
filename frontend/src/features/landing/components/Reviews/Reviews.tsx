@@ -107,7 +107,7 @@ const Reviews: React.FC = () => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [offset, setOffset] = useState(0); // percentage translateX for desktop row
   const [enableTransition, setEnableTransition] = useState(false);
-  const [reviews, setReviews] = useState<Review[]>(STATIC_REVIEWS);
+  const reviews = STATIC_REVIEWS;
 
   useEffect(() => {
     // TODO: fetch from /api/reviews once backend route is available

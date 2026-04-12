@@ -13,9 +13,6 @@ type AwardCardProps = {
 const AwardCard: React.FC<AwardCardProps> = ({
   name,
   school,
-  award,
-  subject,
-  score,
   image,
   review,
 }) => {

@@ -1,4 +1,4 @@
-import type { TelegramChannel } from '../../../types/landing';
+import type { TelegramChannel } from '@/types/landing';
 
 type ChannelCardProps = Pick<TelegramChannel, 'image'>;
 

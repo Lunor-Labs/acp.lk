@@ -1,5 +1,5 @@
 import React from 'react';
-import type { ClassCenter } from '../../../types/landing';
+import type { ClassCenter } from '@/types/landing';
 
 type CenterCardProps = ClassCenter;
 

@@ -85,7 +85,6 @@ const AuthPanel: React.FC<AuthPanelProps> = ({ defaultMode = 'login' }) => {
                 {mode === 'register' && (
                   <RegisterForm
                     onSwitchToLogin={() => setMode('login')}
-                    onRegisterSuccess={() => setMode('login')}
                   />
                 )}
                 {mode === 'forgot-password' && (

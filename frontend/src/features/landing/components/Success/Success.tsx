@@ -12,10 +12,9 @@ interface FormattedSuccessStudent {
 import "./Success.css";
 
 const Success: React.FC = () => {
-  const [students, setStudents] = useState<FormattedSuccessStudent[]>([]);
   const [marqueeStudents, setMarqueeStudents] = useState<FormattedSuccessStudent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     const fetchStudents = async () => {
@@ -23,8 +22,8 @@ const Success: React.FC = () => {
         setLoading(true);
         // TODO: fetch from /api/success once backend route is available
         setMarqueeStudents([]);
-        setError(null);
       } catch {
+        setHasError(true);
         setMarqueeStudents([]);
       } finally {
         setLoading(false);
@@ -52,7 +51,7 @@ const Success: React.FC = () => {
       )}
 
       {/* Error state */}
-      {error && (
+      {hasError && (
         <div className="success-marquee-outer">
           <div className="success-error-message">
             {/* <div>⚠️ {error}</div> */}
@@ -96,7 +95,7 @@ const Success: React.FC = () => {
       )}
 
       {/* Empty state */}
-      {!loading && !error && marqueeStudents.length === 0 && (
+      {!loading && !hasError && marqueeStudents.length === 0 && (
         <div className="success-marquee-outer">
           <div className="success-empty-message">No success stories available yet.</div>
         </div>

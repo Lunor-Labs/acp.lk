@@ -10,7 +10,7 @@ import bg4 from '@/assets/bg4.webp';
 const FALLBACK_IMAGES = [bgImage, bg2, bg3, bg4];
 
 const Gallery: React.FC = () => {
-  const [galleryImages, setGalleryImages] = useState<string[]>(FALLBACK_IMAGES);
+  const galleryImages = FALLBACK_IMAGES;
   const [activeIndex, setActiveIndex] = useState(0);
   const [loading, setLoading] = useState(true);
 
