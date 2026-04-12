@@ -3,6 +3,7 @@ import { env } from '../../config/env.js';
 import { handleError } from '../../utils/errors.js';
 import { authRouter } from './routes/auth.routes.js';
 import { coursesRouter } from './routes/courses.routes.js';
+import { dashboardRouter } from './routes/dashboard.routes.js';
 import { usersRouter } from './routes/users.routes.js';
 import cors from 'cors';
 
@@ -25,6 +26,7 @@ app.use(express.json());
 // ─── Routes ───────────────────────────────────────────────────────────────────
 app.use('/api/auth', authRouter);
 app.use('/api/courses', coursesRouter);
+app.use('/api/dashboard', dashboardRouter);
 app.use('/api/users', usersRouter);
 
 // ─── Health check ─────────────────────────────────────────────────────────────
