@@ -1,6 +1,6 @@
 import { eq, and, gte, inArray, count, sum } from 'drizzle-orm';
 import { BaseRepository } from './BaseRepository.js';
-import { profiles, enrollments, classes, feePayments, exams, testResults } from './schema/index.js';
+import { profiles, enrollments, classes, feePayments, exams, examAttempts } from './schema/index.js';
 import type { DrizzleDb } from '../providers/db/drizzle.js';
 
 export interface DashboardStats {
@@ -172,10 +172,13 @@ export class DashboardRepository extends BaseRepository {
   }
 
   async getStudentPerformanceTrend(studentId: string): Promise<{ month: string, percentage: number }[]> {
-    // Collect average test results by month
-    const results = await this.db.select({ date: testResults.date, percentage: testResults.percentage })
-      .from(testResults)
-      .where(eq(testResults.student_id, studentId));
+    // Collect average exam attempts percentage by month
+    const results = await this.db.select({ 
+        date: examAttempts.submitted_at, 
+        percentage: examAttempts.score 
+      })
+      .from(examAttempts)
+      .where(and(eq(examAttempts.student_id, studentId), eq(examAttempts.status, 'submitted')));
       
     // Simplified stub to mock an array based on Drizzle data:
     // This could group by month and average the percentages.
