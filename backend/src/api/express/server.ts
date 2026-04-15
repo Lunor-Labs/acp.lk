@@ -44,8 +44,18 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 });
 
 // ─── Boot ────────────────────────────────────────────────────────────────────
-if (import.meta.url === `file://${process.argv[1]}`) {
-  const PORT = env.PORT || 3001;
+// if (import.meta.url === `file://${process.argv[1]}`) {
+//   const PORT = env.PORT || 3001;
+//   app.listen(PORT, () => {
+//     console.log(`🚀 API Server running on http://localhost:${PORT}`);
+//     console.log(`   Auth:    /api/auth/signin | /api/auth/me`);
+//     console.log(`   Signup:  /api/auth/signup/otp | /api/auth/signup/verify`);
+//     console.log(`   Reset:   /api/auth/reset/otp  | /api/auth/reset/verify`);
+//     console.log(`   Courses: /api/courses`);
+//     console.log(`   Users:   /api/users/me`);
+//   });
+// }
+const PORT = env.PORT || 3001;
   app.listen(PORT, () => {
     console.log(`🚀 API Server running on http://localhost:${PORT}`);
     console.log(`   Auth:    /api/auth/signin | /api/auth/me`);
@@ -54,6 +64,5 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.log(`   Courses: /api/courses`);
     console.log(`   Users:   /api/users/me`);
   });
-}
 
 export default app;
