@@ -64,5 +64,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 //     console.log(`   Courses: /api/courses`);
 //     console.log(`   Users:   /api/users/me`);
 //   });
+//nikn gehuwe 1
 
 export default app;
