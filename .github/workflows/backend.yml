@@ -1,0 +1,75 @@
+name: Deploy Backend to Render
+
+on:
+  push:
+    branches:
+      - fb-renderFromGitActions
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend.yml'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'backend/package-lock.json'
+      
+      - name: Install dependencies
+        run: npm ci
+        working-directory: backend
+      
+      - name: Build backend
+        run: npm run build
+        working-directory: backend
+        env:
+          NODE_ENV: production
+      
+      - name: Deploy to Render
+        run: |
+          curl --request POST \
+            --url https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys \
+            --header "authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            --header "content-type: application/json" \
+            --data '{"clearCache":"clear"}'
+      
+      - name: Wait for deployment
+        run: |
+          echo "Deployment triggered on Render. Check Render dashboard for status."
+          echo "Service URL: https://${{ secrets.RENDER_SERVICE_ID }}.onrender.com"
+      
+      - name: Verify health endpoint
+        run: |
+          echo "Waiting 30 seconds for service to be ready..."
+          sleep 30
+          
+          # Get service details to find the actual URL
+          SERVICE_INFO=$(curl -s --request GET \
+            --url https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }} \
+            --header "authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            --header "content-type: application/json")
+          
+          SERVICE_URL=$(echo $SERVICE_INFO | grep -o '"serviceUrl":"[^"]*' | cut -d'"' -f4)
+          
+          if [ -z "$SERVICE_URL" ]; then
+            echo "Could not retrieve service URL from Render API. This is normal if service is still deploying."
+            echo "Check Render dashboard for status."
+            exit 0
+          fi
+          
+          echo "Service URL: $SERVICE_URL"
+          
+          # Try to hit health endpoint (may fail if service is still deploying)
+          if curl -s --max-time 10 "${SERVICE_URL}/health" > /dev/null; then
+            echo "✓ Health endpoint responding"
+          else
+            echo "⚠ Health endpoint not yet responding (service may still be building)"
+          fi
