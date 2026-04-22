@@ -13,10 +13,14 @@ export class ExamService {
   private enrollmentRepo: EnrollmentRepository;
   private db: DrizzleDb;
 
+  private teacherRepo: any; // We'll import TeacherRepository
+
   constructor(db: DrizzleDb) {
     this.db = db;
     this.examRepo = new ExamRepository(db);
     this.enrollmentRepo = new EnrollmentRepository(db);
+    const { TeacherRepository } = require('../repositories/TeacherRepository.js');
+    this.teacherRepo = new TeacherRepository(db);
   }
 
   async listUpcomingExams(studentId: string) {
@@ -29,16 +33,40 @@ export class ExamService {
     return upcoming.filter(exam => exam.class_id && classIds.includes(exam.class_id));
   }
 
-  async listTeacherExams(teacherId: string) {
-    return this.examRepo.findByTeacherId(teacherId);
+  async listTeacherExams(profileId: string) {
+    const teacher = await this.teacherRepo.findByProfileId(profileId);
+    if (!teacher) throw AppError.notFound('Teacher profile not found');
+    return this.examRepo.findByTeacherId(teacher.id);
   }
 
   async getExamDetails(examId: string) {
     return this.examRepo.findById(examId);
   }
 
-  async createExam(data: NewExam) {
-    return this.examRepo.create(data);
+  async createExam(profileId: string, data: Omit<NewExam, 'teacher_id'>) {
+    const teacher = await this.teacherRepo.findByProfileId(profileId);
+    if (!teacher) throw AppError.notFound('Teacher profile not found');
+    return this.examRepo.create({ ...data, teacher_id: teacher.id });
+  }
+
+  async createExamWithQuestions(profileId: string, data: Omit<NewExam, 'teacher_id'>, questions: Omit<NewExamQuestion, 'exam_id' | 'id'>[]) {
+    const teacher = await this.teacherRepo.findByProfileId(profileId);
+    if (!teacher) throw AppError.notFound('Teacher profile not found');
+    return this.examRepo.createWithQuestions({ ...data, teacher_id: teacher.id }, questions);
+  }
+
+  async createExamWithPdf(profileId: string, data: Omit<NewExam, 'teacher_id'>, pdfPath: string, answers: { question_no: number, correct_answer: number }[]) {
+    const teacher = await this.teacherRepo.findByProfileId(profileId);
+    if (!teacher) throw AppError.notFound('Teacher profile not found');
+    return this.examRepo.createWithPdf({ ...data, teacher_id: teacher.id }, pdfPath, answers);
+  }
+
+  async updateExam(examId: string, data: Partial<NewExam>) {
+    return this.examRepo.update(examId, data);
+  }
+
+  async deleteExam(examId: string) {
+    return this.examRepo.delete(examId);
   }
 
   async getAttempt(attemptId: string) {

@@ -7,6 +7,8 @@ import { dashboardRouter } from './routes/dashboard.routes.js';
 import { usersRouter } from './routes/users.routes.js';
 import { enrollmentRouter } from './routes/enrollments.routes.js';
 import { examsRouter } from './routes/exams.routes.js';
+import { studyPacksRouter } from './routes/studypacks.routes.js';
+import { filesRouter } from './routes/files.routes.js';
 import cors from 'cors';
 
 const app = express();
@@ -32,6 +34,8 @@ app.use('/api/enrollments', enrollmentRouter);
 app.use('/api/dashboard', dashboardRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/exams', examsRouter);
+app.use('/api/studypacks', studyPacksRouter);
+app.use('/api/files', filesRouter);
 
 // ─── Health check ─────────────────────────────────────────────────────────────
 app.get('/health', (_req: Request, res: Response) => {

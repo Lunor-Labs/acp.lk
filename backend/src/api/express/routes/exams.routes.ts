@@ -46,13 +46,68 @@ examsRouter.get('/results', async (req: Request, res: Response, next: NextFuncti
 // GET /api/exams/teacher (Teacher)
 examsRouter.get('/teacher', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const teacherId = (req as any).user?.id;
+    const profileId = (req as any).user?.id;
     const role = (req as any).user?.role;
     if (role !== 'teacher' && role !== 'admin') throw AppError.forbidden();
-    if (!teacherId) throw AppError.unauthorized();
+    if (!profileId) throw AppError.unauthorized();
 
-    const exams = await getExamService().listTeacherExams(teacherId);
+    const exams = await getExamService().listTeacherExams(profileId);
     sendSuccess(res, exams);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/exams/teacher
+examsRouter.post('/teacher', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const profileId = (req as any).user?.id;
+    const role = (req as any).user?.role;
+    if (role !== 'teacher' && role !== 'admin') throw AppError.forbidden();
+    if (!profileId) throw AppError.unauthorized();
+
+    const { type, questions, pdfPath, pdfAnswers, ...examData } = req.body;
+    let result;
+    if (type === 'pdf') {
+      result = await getExamService().createExamWithPdf(profileId, examData, pdfPath, pdfAnswers);
+    } else if (type === 'manual') {
+      result = await getExamService().createExamWithQuestions(profileId, examData, questions || []);
+    } else {
+      result = await getExamService().createExam(profileId, examData);
+    }
+    sendSuccess(res, result, 201);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /api/exams/teacher/:id
+examsRouter.patch('/teacher/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const profileId = (req as any).user?.id;
+    const role = (req as any).user?.role;
+    const { id } = req.params;
+    if (role !== 'teacher' && role !== 'admin') throw AppError.forbidden();
+    if (!profileId) throw AppError.unauthorized();
+
+    const result = await getExamService().updateExam(id, req.body);
+    sendSuccess(res, result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /api/exams/teacher/:id
+examsRouter.delete('/teacher/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const profileId = (req as any).user?.id;
+    const role = (req as any).user?.role;
+    const { id } = req.params;
+    if (role !== 'teacher' && role !== 'admin') throw AppError.forbidden();
+    if (!profileId) throw AppError.unauthorized();
+
+    await getExamService().deleteExam(id);
+    sendSuccess(res, { success: true });
   } catch (err) {
     next(err);
   }

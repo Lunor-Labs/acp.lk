@@ -7,3 +7,4 @@ export * from './teachers.js';
 export * from './gallery.js';
 export * from './other.js';
 export * from './payments.js';
+export * from './studyPacks.js';

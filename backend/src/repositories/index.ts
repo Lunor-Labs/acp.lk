@@ -7,3 +7,4 @@ export * from './ExamRepository.js';
 export * from './TeacherRepository.js';
 export * from './GalleryRepository.js';
 export * from './DashboardRepository.js';
+export * from './StudyPackRepository.js';

@@ -48,6 +48,15 @@ export class SupabaseStorageProvider implements IStorageProvider {
     return data.signedUrl;
   }
 
+  async createSignedUploadUrl(bucket: string, path: string): Promise<{ signedUrl: string; token: string; path: string }> {
+    const { data, error } = await this.client.storage.from(bucket).createSignedUploadUrl(path);
+
+    if (error || !data) {
+      throw new Error(error?.message || 'Failed to create signed upload URL');
+    }
+    return data;
+  }
+
   getPublicUrl(bucket: string, path: string): string {
     const { data } = this.client.storage.from(bucket).getPublicUrl(path);
     return data.publicUrl;

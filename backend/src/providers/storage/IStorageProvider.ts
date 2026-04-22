@@ -29,6 +29,11 @@ export interface IStorageProvider {
   getSignedUrl(bucket: string, path: string, expiresIn: number): Promise<string>;
 
   /**
+   * Generate a signed URL for uploading a file directly to storage.
+   */
+  createSignedUploadUrl(bucket: string, path: string): Promise<{ signedUrl: string; token: string; path: string }>;
+
+  /**
    * Get a permanent public URL for a file in a public bucket.
    */
   getPublicUrl(bucket: string, path: string): string;

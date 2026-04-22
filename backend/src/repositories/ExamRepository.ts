@@ -68,12 +68,46 @@ export class ExamRepository extends BaseRepository {
     return this.db.insert(examQuestions).values(questions).returning();
   }
 
-  async createWithQuestions(examData: NewExam, questions: Omit<NewExamQuestion, 'exam_id'>[]): Promise<Exam> {
-    const exam = await this.create(examData);
-    if (questions.length > 0) {
-      await this.createQuestions(questions.map(q => ({ ...q, exam_id: exam.id })));
-    }
-    return exam;
+  async createWithQuestions(examData: NewExam, questions: Omit<NewExamQuestion, 'exam_id' | 'id'>[]): Promise<Exam> {
+    return this.db.transaction(async (tx) => {
+      const [exam] = await tx.insert(exams).values({
+        ...examData,
+        id: examData.id || crypto.randomUUID()
+      }).returning();
+
+      if (questions.length > 0) {
+        const questionsToInsert = questions.map(q => ({
+          ...q,
+          id: crypto.randomUUID(),
+          exam_id: exam.id
+        }));
+        await tx.insert(examQuestions).values(questionsToInsert);
+      }
+
+      return exam;
+    });
+  }
+
+  async createWithPdf(examData: NewExam, pdfPath: string, answers: { question_no: number, correct_answer: number }[]): Promise<Exam> {
+    return this.db.transaction(async (tx) => {
+      const [exam] = await tx.insert(exams).values({
+        ...examData,
+        id: examData.id || crypto.randomUUID()
+      }).returning();
+
+      if (answers.length > 0) {
+        const { pdfExams } = await import('./schema/other.js');
+        const pdfAnswersToInsert = answers.map(a => ({
+          ...a,
+          id: crypto.randomUUID(),
+          exam_id: exam.id,
+          pdf_path: pdfPath
+        }));
+        await tx.insert(pdfExams).values(pdfAnswersToInsert);
+      }
+
+      return exam;
+    });
   }
 
   // ── Attempts ─────────────────────────────────────────────────────────────

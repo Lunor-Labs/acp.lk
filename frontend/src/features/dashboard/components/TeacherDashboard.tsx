@@ -12,8 +12,9 @@ import { DashboardApi as api } from '../api';
 import acpLogo from '@/assets/acp-logo.webp';
 
 import MyClasses from './teacher/MyClasses';
+import TeacherStudyPacks from './teacher/TeacherStudyPacks';
+
 const Exams = () => <div className="p-8 font-bold text-xl">Exams (Porting in progress)</div>;
-const StudyPacks = () => <div className="p-8 font-bold text-xl">Study Packs (Porting in progress)</div>;
 const GalleryManager = () => <div className="p-8 font-bold text-xl">Gallery Manager (Porting in progress)</div>;
 const ReviewsManager = () => <div className="p-8 font-bold text-xl">Reviews Manager (Porting in progress)</div>;
 const TestResultsManager = () => <div className="p-8 font-bold text-xl">Test Results (Porting in progress)</div>;
@@ -236,7 +237,7 @@ export default function TeacherDashboard() {
           } />
           <Route path="classes" element={<MyClasses />} />
           <Route path="exams" element={<Exams />} />
-          <Route path="study-packs" element={<StudyPacks />} />
+          <Route path="study-packs" element={<TeacherStudyPacks />} />
           <Route path="gallery" element={teacherLoading ? <LoadingSpinner /> : teacherId ? <GalleryManager /> : <TeacherProfileMissing />} />
           <Route path="reviews" element={teacherLoading ? <LoadingSpinner /> : teacherId ? <ReviewsManager /> : <TeacherProfileMissing />} />
           <Route path="test-results" element={teacherLoading ? <LoadingSpinner /> : teacherId ? <TestResultsManager /> : <TeacherProfileMissing />} />
