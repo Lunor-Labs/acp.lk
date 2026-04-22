@@ -25,3 +25,15 @@ filesRouter.post('/signed-upload-url', async (req: Request, res: Response, next:
     next(err);
   }
 });
+
+// GET /api/files/public-url?bucket=acp&path=pdf/papers/file.pdf
+filesRouter.get('/public-url', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { bucket, path } = req.query as { bucket: string; path: string };
+    if (!bucket || !path) throw AppError.badRequest('bucket and path are required');
+    const url = getFileService().getPublicUrl(bucket, path);
+    sendSuccess(res, { url });
+  } catch (err) {
+    next(err);
+  }
+});

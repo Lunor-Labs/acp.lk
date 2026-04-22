@@ -113,6 +113,58 @@ examsRouter.delete('/teacher/:id', async (req: Request, res: Response, next: Nex
   }
 });
 
+// GET /api/exams/teacher/:id/detail
+examsRouter.get('/teacher/:id/detail', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const profileId = (req as any).user?.id;
+    const role = (req as any).user?.role;
+    const { id } = req.params;
+    if (role !== 'teacher' && role !== 'admin') throw AppError.forbidden();
+    if (!profileId) throw AppError.unauthorized();
+
+    const detail = await getExamService().getExamReviewData(id);
+    sendSuccess(res, detail);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /api/exams/teacher/:id/answers  – update PDF or manual answers in bulk
+examsRouter.patch('/teacher/:id/answers', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const profileId = (req as any).user?.id;
+    const role = (req as any).user?.role;
+    const { id } = req.params;
+    if (role !== 'teacher' && role !== 'admin') throw AppError.forbidden();
+    if (!profileId) throw AppError.unauthorized();
+
+    const { changes, isPdfExam } = req.body as {
+      changes: Record<string, string | number>;
+      isPdfExam: boolean;
+    };
+    await getExamService().updateExamAnswers(id, changes, isPdfExam);
+    sendSuccess(res, { success: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /api/exams/teacher/:id/questions/:questionId
+examsRouter.patch('/teacher/:id/questions/:questionId', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const profileId = (req as any).user?.id;
+    const role = (req as any).user?.role;
+    const { questionId } = req.params;
+    if (role !== 'teacher' && role !== 'admin') throw AppError.forbidden();
+    if (!profileId) throw AppError.unauthorized();
+
+    const result = await getExamService().updateExamQuestion(questionId, req.body);
+    sendSuccess(res, result);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /api/exams/:id/review
 examsRouter.get('/:id/review', async (req: Request, res: Response, next: NextFunction) => {
   try {

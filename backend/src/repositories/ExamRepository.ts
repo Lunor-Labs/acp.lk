@@ -63,6 +63,12 @@ export class ExamRepository extends BaseRepository {
       .orderBy(asc(examQuestions.question_number));
   }
 
+  async updateQuestion(questionId: string, data: Partial<NewExamQuestion>): Promise<ExamQuestion> {
+    const result = await this.db.update(examQuestions).set(data).where(eq(examQuestions.id, questionId)).returning();
+    if (!result[0]) throw new Error('Question not found');
+    return result[0];
+  }
+
   async createQuestions(questions: NewExamQuestion[]): Promise<ExamQuestion[]> {
     if (questions.length === 0) return [];
     return this.db.insert(examQuestions).values(questions).returning();

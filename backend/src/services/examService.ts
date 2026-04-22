@@ -69,6 +69,28 @@ export class ExamService {
     return this.examRepo.delete(examId);
   }
 
+  async updateExamAnswers(examId: string, changes: Record<string, string | number>, isPdfExam: boolean) {
+    if (isPdfExam) {
+      for (const [questionNo, newAnswer] of Object.entries(changes)) {
+        await this.db.update(pdfExams)
+          .set({ correct_answer: Number(newAnswer) })
+          .where(and(eq(pdfExams.exam_id, examId), eq(pdfExams.question_no, Number(questionNo))));
+      }
+    } else {
+      const questions = await this.examRepo.getQuestions(examId);
+      for (const [questionNumber, newAnswer] of Object.entries(changes)) {
+        const question = questions.find(q => q.question_number === Number(questionNumber));
+        if (question) {
+          await this.examRepo.updateQuestion(question.id, { correct_answer: String(newAnswer) });
+        }
+      }
+    }
+  }
+
+  async updateExamQuestion(questionId: string, data: { question_text?: string; options?: string[]; marks?: number; image_path?: string | null }) {
+    return this.examRepo.updateQuestion(questionId, data as any);
+  }
+
   async getAttempt(attemptId: string) {
     const attempts = await this.db.query.examAttempts.findFirst({
       where: (table, { eq }) => eq(table.id, attemptId)

@@ -88,7 +88,11 @@ export const FilesApi = {
     }
     // Return storage path to save to DB
     return path;
-  }
+  },
+
+  // Get a public URL for a stored file (path should NOT include bucket prefix)
+  getPublicUrl: (bucket: string, path: string): Promise<string> =>
+    apiClient.get<{ data: { url: string } }>(`/files/public-url?bucket=${encodeURIComponent(bucket)}&path=${encodeURIComponent(path)}`).then(r => r.data.url),
 };
 
 export const TeacherExamsApi = {
@@ -96,4 +100,13 @@ export const TeacherExamsApi = {
   createExam: (data: any) => apiClient.post<{ data: any }>('/exams/teacher', data).then(r => r.data),
   updateExam: (id: string, data: any) => apiClient.patch<{ data: any }>(`/exams/teacher/${id}`, data).then(r => r.data),
   deleteExam: (id: string) => apiClient.delete(`/exams/teacher/${id}`),
+  getExamDetail: (id: string) => apiClient.get<{ data: any }>(`/exams/teacher/${id}/detail`).then(r => r.data),
+  updateAnswers: (id: string, changes: Record<string, string | number>, isPdfExam: boolean) =>
+    apiClient.patch(`/exams/teacher/${id}/answers`, { changes, isPdfExam }),
+  updateQuestion: (examId: string, questionId: string, data: any) =>
+    apiClient.patch<{ data: any }>(`/exams/teacher/${examId}/questions/${questionId}`, data).then(r => r.data),
+};
+
+export const TeacherCoursesApi = {
+  getMyClasses: () => apiClient.get<{ data: any[] }>('/courses/teacher/me').then(r => r.data),
 };
