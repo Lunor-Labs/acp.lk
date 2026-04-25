@@ -5,7 +5,7 @@ export interface PdfPaper {
     id: number;
     exam_id: string;
     question_no: number;
-    correct_answer: number;
+    correct_answer: string;
     pdf_path: string;
     created_at: string;
 }
@@ -40,7 +40,7 @@ export class PdfPaperRepository extends BaseRepository<PdfPaper> {
     async createPdfAnswers(
         examId: string,
         pdfPath: string,
-        answers: Array<{ question_no: number; correct_answer: number }>
+        answers: Array<{ question_no: number; correct_answer: string }>
     ): Promise<PdfPaper[]> {
         const answersToInsert = answers.map(answer => ({
             exam_id: examId,
@@ -101,7 +101,7 @@ export class PdfPaperRepository extends BaseRepository<PdfPaper> {
     /**
      * Update a single answer for a question
      */
-    async updateAnswer(examId: string, questionNo: number, correctAnswer: number): Promise<PdfPaper> {
+    async updateAnswer(examId: string, questionNo: number, correctAnswer: string): Promise<PdfPaper> {
         const { data, error } = await db.from<PdfPaper>(this.tableName)
             .update({ correct_answer: correctAnswer })
             .eq('exam_id', examId)
@@ -120,7 +120,7 @@ export class PdfPaperRepository extends BaseRepository<PdfPaper> {
      */
     async updateMultipleAnswers(
         examId: string,
-        answers: Array<{ question_no: number; correct_answer: number }>
+        answers: Array<{ question_no: number; correct_answer: string }>
     ): Promise<PdfPaper[]> {
         if (answers.length === 0) {
             return [];
