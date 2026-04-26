@@ -78,7 +78,7 @@ export default function Exams() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreatingExam, setIsCreatingExam] = useState(false);
-  
+
   // State for exam detail modal
   const [selectedExamDetail, setSelectedExamDetail] = useState<ExamDetail | null>(null);
   const [loadingExamDetail, setLoadingExamDetail] = useState(false);
@@ -210,7 +210,7 @@ export default function Exams() {
   async function handleExamCardClick(exam: Exam) {
     try {
       setLoadingExamDetail(true);
-      
+
       // Step 1: Check if exam_id exists in pdf_exams table
       const { data: pdfAnswersData, error: pdfError } = await supabase
         .from('pdf_exams')
@@ -223,7 +223,7 @@ export default function Exams() {
       // If exam exists in pdf_exams, it's a PDF exam
       if (pdfAnswersData && pdfAnswersData.length > 0) {
         const pdfPath = pdfAnswersData[0]?.pdf_path || null;
-        
+
         let pdfUrl = null;
         if (pdfPath) {
           // Remove 'acp/' prefix to get the correct path within the bucket
@@ -232,16 +232,16 @@ export default function Exams() {
           pdfUrl = data?.publicUrl || null;
           console.log('PDF Path from DB:', pdfPath, 'Storage Path:', storagePath, 'Public URL:', pdfUrl);
         }
-        
+
         const formattedAnswers: PdfAnswer[] = pdfAnswersData.map(a => ({
           question_no: a.question_no,
           correct_answer: a.correct_answer,
         }));
-        
+
         setMarkedAnswers(formattedAnswers);
         setManualQuestions([]);
         setEditedAnswers({});
-        
+
         setSelectedExamDetail({
           id: exam.id,
           title: exam.title,
@@ -277,17 +277,17 @@ export default function Exams() {
         marks: q.marks,
         image_path: q.image_path,
       }));
-      
+
       // Create answer sheet for manual exam
       const manualAnswers = formattedQuestions.map(q => ({
         question_no: q.question_number,
         correct_answer: q.correct_answer, // A, B, C, D as string
       }));
-      
+
       setManualQuestions(formattedQuestions);
       setMarkedAnswers(manualAnswers);
       setEditedAnswers({});
-      
+
       setSelectedExamDetail({
         id: exam.id,
         title: exam.title,
@@ -329,7 +329,7 @@ export default function Exams() {
 
   async function handleUpdateExamDetails() {
     if (!selectedExamDetail) return;
-    
+
     try {
       setIsSaving(true);
       const startTime = new Date(`${editExamData.exam_date}T${editExamData.exam_time}`);
@@ -352,7 +352,7 @@ export default function Exams() {
       showToast('Exam details updated successfully!', 'success');
       setIsEditingExamDetails(false);
       fetchExams();
-      
+
       // Update the selected exam detail
       setSelectedExamDetail({
         ...selectedExamDetail,
@@ -376,7 +376,7 @@ export default function Exams() {
     try {
       setIsDeleting(true);
       await examRepo.delete(selectedExamDetail.id);
-      
+
       showToast('Exam deleted successfully!', 'success');
       setSelectedExamDetail(null);
       setShowDeleteConfirm(false);
@@ -433,7 +433,7 @@ export default function Exams() {
 
   async function handleUpdateQuestion() {
     if (!editQuestionData) return;
-    
+
     try {
       setIsUpdatingQuestion(true);
       let finalImagePath: string | null = editQuestionData.image_path || null;
@@ -470,12 +470,12 @@ export default function Exams() {
 
       if (error) throw error;
 
-      setManualQuestions(manualQuestions.map(q => 
-        q.id === editQuestionData.id ? { 
-          ...q, 
-          question_text: editQuestionData.question_text, 
-          options: filteredOptions, 
-          marks: editQuestionData.marks, 
+      setManualQuestions(manualQuestions.map(q =>
+        q.id === editQuestionData.id ? {
+          ...q,
+          question_text: editQuestionData.question_text,
+          options: filteredOptions,
+          marks: editQuestionData.marks,
           image_path: finalImagePath || undefined
         } : q
       ));
@@ -493,7 +493,7 @@ export default function Exams() {
 
   async function handleSaveAnswerChanges() {
     if (!selectedExamDetail) return;
-    
+
     try {
       const changes = Object.entries(editedAnswers);
       if (changes.length === 0) {
@@ -558,7 +558,7 @@ export default function Exams() {
       setEditedAnswers(prev => {
         const originalQuestion = manualQuestions.find(q => q.question_number === Number(identifier));
         const startingAnswer = prev[identifier] !== undefined ? prev[identifier] as string : (originalQuestion?.correct_answer || '');
-        
+
         let currentAnswers = startingAnswer ? startingAnswer.split(',') : [];
         if (currentAnswers.includes(answer as string)) {
           currentAnswers = currentAnswers.filter(a => a !== answer);
@@ -566,7 +566,7 @@ export default function Exams() {
           currentAnswers.push(answer as string);
           currentAnswers.sort();
         }
-        
+
         return {
           ...prev,
           [identifier]: currentAnswers.join(',')
@@ -591,12 +591,12 @@ export default function Exams() {
 
       const validQuestions = questions.filter(q => q.question_text.trim() || q.image_file || q.image_path);
       // console.log(`[EXAM] Starting exam creation with ${validQuestions.length} questions`);
-      
+
       if (validQuestions.length === 0) {
         showToast('Please add at least one question', 'warning');
         return;
       }
-      
+
       const startTime = new Date(`${formData.exam_date}T${formData.exam_time}`);
       const endTime = new Date(`${formData.end_date}T${formData.end_time}`);
 
@@ -668,7 +668,7 @@ export default function Exams() {
           image_path: imagePath,
         };
 
-        
+
         questionsToInsert.push(questionData);
       }
 
@@ -709,7 +709,7 @@ export default function Exams() {
         questionsToInsert
       );
 
-    //  console.log(`[EXAM] ✅ Exam created successfully! Exam ID:`, createdExam.id);
+      //  console.log(`[EXAM] ✅ Exam created successfully! Exam ID:`, createdExam.id);
       showToast('Exam created successfully!', 'success');
       resetForm();
       fetchExams();
@@ -814,10 +814,10 @@ export default function Exams() {
           questions.map((q) =>
             q.id === questionId
               ? {
-                  ...q,
-                  image_file: file,
-                  image_preview: event.target?.result as string,
-                }
+                ...q,
+                image_file: file,
+                image_preview: event.target?.result as string,
+              }
               : q
           )
         );
@@ -955,8 +955,8 @@ export default function Exams() {
   }
 
   const filteredExams = exams.filter((exam) => {
-    const matchesSearch = exam.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         exam.subject.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = exam.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      exam.subject.toLowerCase().includes(searchQuery.toLowerCase());
     if (filterStatus === 'all') return matchesSearch;
     const status = getExamStatus(exam);
     return status.label.toLowerCase() === filterStatus && matchesSearch;
@@ -1050,16 +1050,14 @@ export default function Exams() {
                   <button
                     key={tab.id}
                     onClick={() => setFilterStatus(tab.id)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                      filterStatus === tab.id
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${filterStatus === tab.id
                         ? 'bg-[#eb1b23] text-white shadow-md'
                         : 'text-slate-600 hover:bg-slate-50'
-                    }`}
+                      }`}
                   >
                     {tab.label}
-                    <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
-                      filterStatus === tab.id ? 'bg-white/20' : 'bg-slate-100'
-                    }`}>
+                    <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${filterStatus === tab.id ? 'bg-white/20' : 'bg-slate-100'
+                      }`}>
                       {tab.count}
                     </span>
                   </button>
@@ -1082,8 +1080,8 @@ export default function Exams() {
                     {searchQuery ? 'No exams found' : 'No exams yet'}
                   </h3>
                   <p className="text-slate-500 text-sm max-w-sm mx-auto">
-                    {searchQuery 
-                      ? 'Try adjusting your search terms or filters to find what you are looking for.' 
+                    {searchQuery
+                      ? 'Try adjusting your search terms or filters to find what you are looking for.'
                       : 'Create your first exam to get started with assessments.'}
                   </p>
                 </div>
@@ -1100,13 +1098,12 @@ export default function Exams() {
                       >
                         <div className="flex items-start gap-4">
                           {/* Icon */}
-                          <div className={`flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center ${
-                            exam.subject.toLowerCase().includes('physics') ? 'bg-red-50 text-red-600' :
-                            exam.subject.toLowerCase().includes('chemistry') ? 'bg-blue-50 text-blue-600' :
-                            exam.subject.toLowerCase().includes('maths') || exam.subject.toLowerCase().includes('math') ? 'bg-purple-50 text-purple-600' :
-                            exam.subject.toLowerCase().includes('bio') ? 'bg-green-50 text-green-600' :
-                            'bg-amber-50 text-amber-600'
-                          }`}>
+                          <div className={`flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center ${exam.subject.toLowerCase().includes('physics') ? 'bg-red-50 text-red-600' :
+                              exam.subject.toLowerCase().includes('chemistry') ? 'bg-blue-50 text-blue-600' :
+                                exam.subject.toLowerCase().includes('maths') || exam.subject.toLowerCase().includes('math') ? 'bg-purple-50 text-purple-600' :
+                                  exam.subject.toLowerCase().includes('bio') ? 'bg-green-50 text-green-600' :
+                                    'bg-amber-50 text-amber-600'
+                            }`}>
                             {isPdfExam ? <FileText className="w-7 h-7" /> : <BookOpen className="w-7 h-7" />}
                           </div>
 
@@ -1130,7 +1127,7 @@ export default function Exams() {
                                 <h4 className="text-lg font-bold text-slate-900 group-hover:text-[#eb1b23] transition-colors truncate">
                                   {exam.title}
                                 </h4>
-                                <p className="text-sm text-slate-500 mt-1 line-clamp-1">{exam.description || 'No description'}</p>
+                                {/* <p className="text-sm text-slate-500 mt-1 line-clamp-1">{exam.description || 'No description'}</p> */}
                               </div>
                               <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-[#eb1b23] transition-colors flex-shrink-0 mt-1" />
                             </div>
@@ -1280,7 +1277,7 @@ export default function Exams() {
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#eb1b23] focus:border-transparent"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Exam Creation Type
@@ -1358,11 +1355,10 @@ export default function Exams() {
                               <button
                                 key={option}
                                 onClick={() => updatePdfAnswer(answer.question_no, option)}
-                                className={`w-8 h-8 rounded font-semibold text-sm transition ${
-                                  answer.correct_answer === option
+                                className={`w-8 h-8 rounded font-semibold text-sm transition ${answer.correct_answer === option
                                     ? 'bg-[#eb1b23] text-white'
                                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                }`}
+                                  }`}
                               >
                                 {option}
                               </button>
@@ -1386,105 +1382,105 @@ export default function Exams() {
               {formData.exam_type === 'manual' ? (
                 <>
                   {questions.map((question, qIndex) => (
-                <div key={question.id} className="border border-gray-200 rounded-lg p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-gray-900">
-                      QUESTION {qIndex + 1}
-                    </span>
-                    <span className="text-xs text-gray-500">{question.marks} Point</span>
-                  </div>
-
-                  <input
-                    type="text"
-                    value={question.question_text}
-                    onChange={(e) => updateQuestion(question.id, 'question_text', e.target.value)}
-                    placeholder="Enter your question here..."
-                    className="w-full border-0 border-b border-gray-200 px-0 py-2 focus:ring-0 focus:border-[#eb1b23] text-sm"
-                  />
-
-                  {/* Image Upload Section */}
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    {question.image_preview ? (
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-semibold text-gray-600">Image Attached</span>
-                          <button
-                            onClick={() => removeQuestionImage(question.id)}
-                            className="text-xs text-red-600 hover:text-red-700 font-medium"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                        <img
-                          src={question.image_preview}
-                          alt="Question"
-                          className="w-full h-40 object-contain bg-white rounded border border-gray-200"
-                        />
-                      </div>
-                    ) : (
-                      <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#eb1b23] transition">
-                        <Image className="w-5 h-5 text-gray-400 mb-1" />
-                        <span className="text-xs text-gray-600 text-center">
-                          Add image (optional)
+                    <div key={question.id} className="border border-gray-200 rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold text-gray-900">
+                          QUESTION {qIndex + 1}
                         </span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => handleQuestionImageSelect(question.id, e)}
-                          className="hidden"
-                        />
-                      </label>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    {question.options.map((option, optIndex) => (
-                      <div key={optIndex} className="flex items-center space-x-2 min-w-0">
-                        <input
-                          type="checkbox"
-                          name={`correct-${question.id}`}
-                          checked={(question.correct_answer || '').split(',').map(s => s.trim()).includes(String(optIndex + 1))}
-                          onChange={() => handleQuestionToggleCorrectAnswer(question.id, String(optIndex + 1))}
-                          className="text-[#eb1b23] focus:ring-[#eb1b23] flex-shrink-0 rounded"
-                        />
-                        <input
-                          type="text"
-                          value={option}
-                          onChange={(e) => updateQuestionOption(question.id, optIndex, e.target.value)}
-                          placeholder={`Option ${optIndex + 1}`}
-                          className="flex-1 min-w-0 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#eb1b23] focus:border-transparent"
-                        />
+                        <span className="text-xs text-gray-500">{question.marks} Point</span>
                       </div>
-                    ))}
-                    <p className="text-xs text-gray-400 italic mt-2">
-                      select the checkboxes to mark correct answers
-                    </p>
-                  </div>
-                </div>
-              ))}
 
-              <button
-                onClick={addQuestion}
-                className="w-full border-2 border-dashed border-red-300 text-[#eb1b23] px-4 py-3 rounded-lg font-medium hover:bg-red-50 transition-all duration-200 flex items-center justify-center space-x-2"
-              >
-                <Plus className="w-5 h-5" />
-                <span>Add Another Question</span>
-              </button>
+                      <input
+                        type="text"
+                        value={question.question_text}
+                        onChange={(e) => updateQuestion(question.id, 'question_text', e.target.value)}
+                        placeholder="Enter your question here..."
+                        className="w-full border-0 border-b border-gray-200 px-0 py-2 focus:ring-0 focus:border-[#eb1b23] text-sm"
+                      />
 
-              <button
-                onClick={handleCreateExam}
-                disabled={isCreatingExam}
-                className="w-full bg-[#eb1b23] text-white px-6 py-3 rounded-lg font-medium hover:bg-red-700 transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-              >
-                {isCreatingExam ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>Uploading & Publishing...</span>
-                  </>
-                ) : (
-                  <span>Publish Exam</span>
-                )}
-              </button>
+                      {/* Image Upload Section */}
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        {question.image_preview ? (
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-xs font-semibold text-gray-600">Image Attached</span>
+                              <button
+                                onClick={() => removeQuestionImage(question.id)}
+                                className="text-xs text-red-600 hover:text-red-700 font-medium"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                            <img
+                              src={question.image_preview}
+                              alt="Question"
+                              className="w-full h-40 object-contain bg-white rounded border border-gray-200"
+                            />
+                          </div>
+                        ) : (
+                          <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#eb1b23] transition">
+                            <Image className="w-5 h-5 text-gray-400 mb-1" />
+                            <span className="text-xs text-gray-600 text-center">
+                              Add image (optional)
+                            </span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handleQuestionImageSelect(question.id, e)}
+                              className="hidden"
+                            />
+                          </label>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        {question.options.map((option, optIndex) => (
+                          <div key={optIndex} className="flex items-center space-x-2 min-w-0">
+                            <input
+                              type="checkbox"
+                              name={`correct-${question.id}`}
+                              checked={(question.correct_answer || '').split(',').map(s => s.trim()).includes(String(optIndex + 1))}
+                              onChange={() => handleQuestionToggleCorrectAnswer(question.id, String(optIndex + 1))}
+                              className="text-[#eb1b23] focus:ring-[#eb1b23] flex-shrink-0 rounded"
+                            />
+                            <input
+                              type="text"
+                              value={option}
+                              onChange={(e) => updateQuestionOption(question.id, optIndex, e.target.value)}
+                              placeholder={`Option ${optIndex + 1}`}
+                              className="flex-1 min-w-0 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#eb1b23] focus:border-transparent"
+                            />
+                          </div>
+                        ))}
+                        <p className="text-xs text-gray-400 italic mt-2">
+                          select the checkboxes to mark correct answers
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+
+                  <button
+                    onClick={addQuestion}
+                    className="w-full border-2 border-dashed border-red-300 text-[#eb1b23] px-4 py-3 rounded-lg font-medium hover:bg-red-50 transition-all duration-200 flex items-center justify-center space-x-2"
+                  >
+                    <Plus className="w-5 h-5" />
+                    <span>Add Another Question</span>
+                  </button>
+
+                  <button
+                    onClick={handleCreateExam}
+                    disabled={isCreatingExam}
+                    className="w-full bg-[#eb1b23] text-white px-6 py-3 rounded-lg font-medium hover:bg-red-700 transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  >
+                    {isCreatingExam ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>Uploading & Publishing...</span>
+                      </>
+                    ) : (
+                      <span>Publish Exam</span>
+                    )}
+                  </button>
                 </>
               ) : null}
             </div>
@@ -1648,330 +1644,327 @@ export default function Exams() {
                   {selectedExamDetail.isPdfExam ? (
                     <>
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      {/* PDF Viewer */}
-                      <div className="border-2 border-gray-200 rounded-xl overflow-hidden bg-gray-50">
-                        <div className="bg-gray-100 px-4 py-3 border-b flex items-center space-x-2">
-                          <FileText className="w-5 h-5 text-[#eb1b23]" />
-                          <span className="font-semibold text-gray-700">Exam Paper</span>
-                        </div>
-                        {selectedExamDetail.pdfPath ? (
-                          <iframe
-                            src={selectedExamDetail.pdfPath}
-                            className="w-full h-[500px]"
-                            title="Exam PDF"
-                          />
-                        ) : (
-                          <div className="h-[500px] flex items-center justify-center text-gray-500">
-                            <p>PDF not available</p>
+                        {/* PDF Viewer */}
+                        <div className="border-2 border-gray-200 rounded-xl overflow-hidden bg-gray-50">
+                          <div className="bg-gray-100 px-4 py-3 border-b flex items-center space-x-2">
+                            <FileText className="w-5 h-5 text-[#eb1b23]" />
+                            <span className="font-semibold text-gray-700">Exam Paper</span>
                           </div>
-                        )}
-                      </div>
-
-                      {/* Answer Sheet */}
-                      <div className="border-2 border-gray-200 rounded-xl overflow-hidden flex flex-col">
-                        <div className="bg-gray-100 px-4 py-3 border-b flex items-center space-x-2">
-                          <FileText className="w-5 h-5 text-[#eb1b23]" />
-                          <span className="font-semibold text-gray-700">Marked Answer Sheet</span>
-                        </div>
-                        
-                        <div className="p-4 space-y-2">
-                          {markedAnswers.map((answer) => (
-                            <div
-                              key={answer.question_no}
-                              className="bg-white border border-gray-200 rounded-lg p-3 hover:border-[#eb1b23] transition"
-                            >
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="font-semibold text-gray-700">
-                                  Q{answer.question_no}
-                                </span>
-                                <span className="text-xs text-gray-500">
-                                  {answer.correct_answer === 0 ? 'Not marked' : `Answer: ${answer.correct_answer}`}
-                                </span>
-                              </div>
-                              
-                              <div className="flex gap-1 flex-wrap">
-                                {[1, 2, 3, 4, 5].map((option) => (
-                                  <button
-                                    key={option}
-                                    onClick={() => updateAnswerEdit(answer.question_no, option)}
-                                    className={`px-3 py-1 rounded text-sm font-semibold transition ${
-                                      editedAnswers[answer.question_no] === option ||
-                                      (editedAnswers[answer.question_no] === undefined &&
-                                        answer.correct_answer === option)
-                                        ? 'bg-[#eb1b23] text-white'
-                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                    }`}
-                                  >
-                                    {option}
-                                  </button>
-                                ))}
-                              </div>
+                          {selectedExamDetail.pdfPath ? (
+                            <iframe
+                              src={selectedExamDetail.pdfPath}
+                              className="w-full h-[500px]"
+                              title="Exam PDF"
+                            />
+                          ) : (
+                            <div className="h-[500px] flex items-center justify-center text-gray-500">
+                              <p>PDF not available</p>
                             </div>
-                          ))}
+                          )}
+                        </div>
+
+                        {/* Answer Sheet */}
+                        <div className="border-2 border-gray-200 rounded-xl overflow-hidden flex flex-col">
+                          <div className="bg-gray-100 px-4 py-3 border-b flex items-center space-x-2">
+                            <FileText className="w-5 h-5 text-[#eb1b23]" />
+                            <span className="font-semibold text-gray-700">Marked Answer Sheet</span>
+                          </div>
+
+                          <div className="p-4 space-y-2">
+                            {markedAnswers.map((answer) => (
+                              <div
+                                key={answer.question_no}
+                                className="bg-white border border-gray-200 rounded-lg p-3 hover:border-[#eb1b23] transition"
+                              >
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="font-semibold text-gray-700">
+                                    Q{answer.question_no}
+                                  </span>
+                                  <span className="text-xs text-gray-500">
+                                    {answer.correct_answer === 0 ? 'Not marked' : `Answer: ${answer.correct_answer}`}
+                                  </span>
+                                </div>
+
+                                <div className="flex gap-1 flex-wrap">
+                                  {[1, 2, 3, 4, 5].map((option) => (
+                                    <button
+                                      key={option}
+                                      onClick={() => updateAnswerEdit(answer.question_no, option)}
+                                      className={`px-3 py-1 rounded text-sm font-semibold transition ${editedAnswers[answer.question_no] === option ||
+                                          (editedAnswers[answer.question_no] === undefined &&
+                                            answer.correct_answer === option)
+                                          ? 'bg-[#eb1b23] text-white'
+                                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                        }`}
+                                    >
+                                      {option}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="mt-6 border-t pt-4">
-                      <button
-                        onClick={handleSaveAnswerChanges}
-                        disabled={isSaving || Object.keys(editedAnswers).length === 0}
-                        title="Save changes to answer sheet"
-                        className="w-full bg-[#eb1b23] text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-                      >
-                        {isSaving ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            <span>Saving...</span>
-                          </>
-                        ) : (
-                          <span>Update Answers</span>
-                        )}
-                      </button>
-                    </div>
+                      <div className="mt-6 border-t pt-4">
+                        <button
+                          onClick={handleSaveAnswerChanges}
+                          disabled={isSaving || Object.keys(editedAnswers).length === 0}
+                          title="Save changes to answer sheet"
+                          className="w-full bg-[#eb1b23] text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                        >
+                          {isSaving ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                              <span>Saving...</span>
+                            </>
+                          ) : (
+                            <span>Update Answers</span>
+                          )}
+                        </button>
+                      </div>
                     </>
                   ) : (
                     <>
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      {/* Questions/Instructions */}
-                      <div className="border-2 border-gray-200 rounded-xl overflow-hidden bg-gray-50">
-                        <div className="bg-gray-100 px-4 py-3 border-b flex items-center space-x-2">
-                          <FileText className="w-5 h-5 text-[#eb1b23]" />
-                          <span className="font-semibold text-gray-700">Questions</span>
-                        </div>
-                        <div className="p-4 space-y-4">
-                          {manualQuestions.length > 0 ? (
-                            manualQuestions.map((question) => (
-                              <div key={question.id} className="bg-white border border-gray-200 rounded-lg p-4">
-                                {editingQuestionId === question.id ? (
-                                  <div className="space-y-4">
-                                    <div className="flex items-center justify-between mb-3">
-                                      <span className="font-bold text-gray-900">Edit Q{question.question_number}</span>
-                                      <div className="flex items-center gap-2">
-                                        <label className="text-sm text-gray-600">Marks:</label>
-                                        <input 
-                                          type="number" 
-                                          value={editQuestionData?.marks || 1} 
-                                          onChange={e => setEditQuestionData({...editQuestionData!, marks: parseInt(e.target.value) || 1})}
-                                          className="w-16 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#eb1b23]"
-                                        />
+                        {/* Questions/Instructions */}
+                        <div className="border-2 border-gray-200 rounded-xl overflow-hidden bg-gray-50">
+                          <div className="bg-gray-100 px-4 py-3 border-b flex items-center space-x-2">
+                            <FileText className="w-5 h-5 text-[#eb1b23]" />
+                            <span className="font-semibold text-gray-700">Questions</span>
+                          </div>
+                          <div className="p-4 space-y-4">
+                            {manualQuestions.length > 0 ? (
+                              manualQuestions.map((question) => (
+                                <div key={question.id} className="bg-white border border-gray-200 rounded-lg p-4">
+                                  {editingQuestionId === question.id ? (
+                                    <div className="space-y-4">
+                                      <div className="flex items-center justify-between mb-3">
+                                        <span className="font-bold text-gray-900">Edit Q{question.question_number}</span>
+                                        <div className="flex items-center gap-2">
+                                          <label className="text-sm text-gray-600">Marks:</label>
+                                          <input
+                                            type="number"
+                                            value={editQuestionData?.marks || 1}
+                                            onChange={e => setEditQuestionData({ ...editQuestionData!, marks: parseInt(e.target.value) || 1 })}
+                                            className="w-16 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#eb1b23]"
+                                          />
+                                        </div>
                                       </div>
-                                    </div>
-                                    
-                                    <textarea
-                                      value={editQuestionData?.question_text || ''}
-                                      onChange={e => setEditQuestionData({...editQuestionData!, question_text: e.target.value})}
-                                      className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#eb1b23] min-h-[80px]"
-                                      rows={3}
-                                      placeholder="Question text..."
-                                    />
-                                    
-                                    {/* Image Section */}
-                                    <div className="bg-gray-50 rounded-lg p-3">
-                                      {editQuestionData?.image_preview || (editQuestionData?.image_path && !editQuestionData?.remove_image) ? (
-                                        <div className="space-y-2">
-                                          <div className="flex items-center justify-between mb-2">
-                                            <span className="text-xs font-semibold text-gray-600">Image Attached</span>
-                                            <button
-                                              onClick={handleEditQuestionRemoveImage}
-                                              className="text-xs text-red-600 hover:text-red-700 font-medium"
-                                            >
-                                              Remove
-                                            </button>
+
+                                      <textarea
+                                        value={editQuestionData?.question_text || ''}
+                                        onChange={e => setEditQuestionData({ ...editQuestionData!, question_text: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#eb1b23] min-h-[80px]"
+                                        rows={3}
+                                        placeholder="Question text..."
+                                      />
+
+                                      {/* Image Section */}
+                                      <div className="bg-gray-50 rounded-lg p-3">
+                                        {editQuestionData?.image_preview || (editQuestionData?.image_path && !editQuestionData?.remove_image) ? (
+                                          <div className="space-y-2">
+                                            <div className="flex items-center justify-between mb-2">
+                                              <span className="text-xs font-semibold text-gray-600">Image Attached</span>
+                                              <button
+                                                onClick={handleEditQuestionRemoveImage}
+                                                className="text-xs text-red-600 hover:text-red-700 font-medium"
+                                              >
+                                                Remove
+                                              </button>
+                                            </div>
+                                            <img
+                                              src={editQuestionData.image_preview || supabase.storage.from('acp').getPublicUrl((editQuestionData.image_path || '').replace('acp/', '')).data.publicUrl}
+                                              alt={`Edit Question ${question.question_number}`}
+                                              className="w-full h-40 object-contain bg-white rounded border border-gray-200"
+                                            />
                                           </div>
-                                          <img
-                                            src={editQuestionData.image_preview || supabase.storage.from('acp').getPublicUrl((editQuestionData.image_path || '').replace('acp/', '')).data.publicUrl}
-                                            alt={`Edit Question ${question.question_number}`}
-                                            className="w-full h-40 object-contain bg-white rounded border border-gray-200"
-                                          />
-                                        </div>
-                                      ) : (
-                                        <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#eb1b23] transition bg-white">
-                                          <Image className="w-5 h-5 text-gray-400 mb-1" />
-                                          <span className="text-xs text-gray-600 text-center">
-                                            Add image (optional)
-                                          </span>
-                                          <input
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={handleEditQuestionImageSelect}
-                                            className="hidden"
-                                          />
-                                        </label>
-                                      )}
-                                    </div>
-                                    
-                                    <div className="space-y-2">
-                                      {editQuestionData?.options.map((option, optIndex) => (
-                                        <div key={optIndex} className="flex items-center gap-2">
-                                          <span className="font-semibold text-gray-700 w-6">{optIndex + 1})</span>
-                                          <input
-                                            type="text"
-                                            value={option}
-                                            onChange={e => {
-                                              if (!editQuestionData) return;
-                                              const newOptions = [...editQuestionData.options];
-                                              newOptions[optIndex] = e.target.value;
-                                              setEditQuestionData({...editQuestionData, options: newOptions});
-                                            }}
-                                            className="flex-1 px-3 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#eb1b23]"
-                                          />
-                                        </div>
-                                      ))}
-                                    </div>
-                                    
-                                    <div className="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
-                                      <button
-                                        onClick={() => { setEditingQuestionId(null); setEditQuestionData(null); }}
-                                        className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg transition bg-white hover:bg-gray-50"
-                                      >
-                                        Cancel
-                                      </button>
-                                      <button
-                                        onClick={handleUpdateQuestion}
-                                        disabled={isUpdatingQuestion}
-                                        className="px-4 py-2 text-sm font-medium text-white bg-[#eb1b23] rounded-lg hover:bg-red-700 transition disabled:opacity-50 flex items-center gap-2"
-                                      >
-                                        {isUpdatingQuestion ? (
-                                          <>
-                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                            <span>Saving...</span>
-                                          </>
                                         ) : (
-                                          <span>Save Changes</span>
+                                          <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#eb1b23] transition bg-white">
+                                            <Image className="w-5 h-5 text-gray-400 mb-1" />
+                                            <span className="text-xs text-gray-600 text-center">
+                                              Add image (optional)
+                                            </span>
+                                            <input
+                                              type="file"
+                                              accept="image/*"
+                                              onChange={handleEditQuestionImageSelect}
+                                              className="hidden"
+                                            />
+                                          </label>
                                         )}
-                                      </button>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <>
-                                    <div className="flex items-start justify-between mb-3">
-                                      <div className="flex items-center gap-3">
-                                        <span className="font-bold text-gray-900">Q{question.question_number}</span>
-                                        <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded">
-                                          {question.marks} mark{question.marks > 1 ? 's' : ''}
-                                        </span>
                                       </div>
-                                      
-                                      <button
-                                        onClick={() => handleStartEditQuestion(question)}
-                                        className="text-gray-400 hover:text-[#eb1b23] p-1.5 rounded-lg hover:bg-red-50 transition"
-                                        title="Edit Question"
-                                      >
-                                        <Edit className="w-4 h-4" />
-                                      </button>
-                                    </div>
-                                    
-                                    <p className="text-sm font-medium text-gray-800 mb-3">{question.question_text}</p>
 
-                                    {/* Display image if present */}
-                                    {question.image_path && (
-                                      <div className="mb-4 rounded-lg overflow-hidden bg-gray-50 border border-gray-200">
-                                        <img
-                                          src={supabase.storage.from('acp').getPublicUrl(question.image_path.replace('acp/', '')).data.publicUrl}
-                                          alt={`Question ${question.question_number}`}
-                                          className="w-full h-48 object-contain"
-                                        />
-                                      </div>
-                                    )}
-                                    
-                                    <div className="space-y-2">
-                                      {question.options.map((option, optIndex) => {
-                                        const optionLabel = String(optIndex + 1);
-                                        const isCorrect = (question.correct_answer || '').split(',').map(s => s.trim()).includes(optionLabel);
-                                        return (
-                                          <div
-                                            key={optIndex}
-                                            className={`p-2 rounded text-sm border ${
-                                              isCorrect
-                                                ? 'border-green-500 bg-green-50'
-                                                : 'border-gray-200 bg-gray-50'
-                                            }`}
-                                          >
-                                            <span className="font-semibold text-gray-700">{optIndex + 1})</span>
-                                            <span className="text-gray-700 ml-2">{option}</span>
-                                            {isCorrect && <span className="ml-2 text-xs text-green-700">✓ Correct</span>}
+                                      <div className="space-y-2">
+                                        {editQuestionData?.options.map((option, optIndex) => (
+                                          <div key={optIndex} className="flex items-center gap-2">
+                                            <span className="font-semibold text-gray-700 w-6">{optIndex + 1})</span>
+                                            <input
+                                              type="text"
+                                              value={option}
+                                              onChange={e => {
+                                                if (!editQuestionData) return;
+                                                const newOptions = [...editQuestionData.options];
+                                                newOptions[optIndex] = e.target.value;
+                                                setEditQuestionData({ ...editQuestionData, options: newOptions });
+                                              }}
+                                              className="flex-1 px-3 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#eb1b23]"
+                                            />
                                           </div>
-                                        );
-                                      })}
+                                        ))}
+                                      </div>
+
+                                      <div className="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
+                                        <button
+                                          onClick={() => { setEditingQuestionId(null); setEditQuestionData(null); }}
+                                          className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg transition bg-white hover:bg-gray-50"
+                                        >
+                                          Cancel
+                                        </button>
+                                        <button
+                                          onClick={handleUpdateQuestion}
+                                          disabled={isUpdatingQuestion}
+                                          className="px-4 py-2 text-sm font-medium text-white bg-[#eb1b23] rounded-lg hover:bg-red-700 transition disabled:opacity-50 flex items-center gap-2"
+                                        >
+                                          {isUpdatingQuestion ? (
+                                            <>
+                                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                              <span>Saving...</span>
+                                            </>
+                                          ) : (
+                                            <span>Save Changes</span>
+                                          )}
+                                        </button>
+                                      </div>
                                     </div>
-                                  </>
-                                )}
+                                  ) : (
+                                    <>
+                                      <div className="flex items-start justify-between mb-3">
+                                        <div className="flex items-center gap-3">
+                                          <span className="font-bold text-gray-900">Q{question.question_number}</span>
+                                          <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded">
+                                            {question.marks} mark{question.marks > 1 ? 's' : ''}
+                                          </span>
+                                        </div>
+
+                                        <button
+                                          onClick={() => handleStartEditQuestion(question)}
+                                          className="text-gray-400 hover:text-[#eb1b23] p-1.5 rounded-lg hover:bg-red-50 transition"
+                                          title="Edit Question"
+                                        >
+                                          <Edit className="w-4 h-4" />
+                                        </button>
+                                      </div>
+
+                                      <p className="text-sm font-medium text-gray-800 mb-3">{question.question_text}</p>
+
+                                      {/* Display image if present */}
+                                      {question.image_path && (
+                                        <div className="mb-4 rounded-lg overflow-hidden bg-gray-50 border border-gray-200">
+                                          <img
+                                            src={supabase.storage.from('acp').getPublicUrl(question.image_path.replace('acp/', '')).data.publicUrl}
+                                            alt={`Question ${question.question_number}`}
+                                            className="w-full h-48 object-contain"
+                                          />
+                                        </div>
+                                      )}
+
+                                      <div className="space-y-2">
+                                        {question.options.map((option, optIndex) => {
+                                          const optionLabel = String(optIndex + 1);
+                                          const isCorrect = (question.correct_answer || '').split(',').map(s => s.trim()).includes(optionLabel);
+                                          return (
+                                            <div
+                                              key={optIndex}
+                                              className={`p-2 rounded text-sm border ${isCorrect
+                                                  ? 'border-green-500 bg-green-50'
+                                                  : 'border-gray-200 bg-gray-50'
+                                                }`}
+                                            >
+                                              <span className="font-semibold text-gray-700">{optIndex + 1})</span>
+                                              <span className="text-gray-700 ml-2">{option}</span>
+                                              {isCorrect && <span className="ml-2 text-xs text-green-700">✓ Correct</span>}
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              ))
+                            ) : (
+                              <p className="text-gray-500 text-center py-8">No questions found</p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Answer Sheet */}
+                        <div className="border-2 border-gray-200 rounded-xl overflow-hidden">
+                          <div className="bg-gray-100 px-4 py-3 border-b flex items-center space-x-2">
+                            <FileText className="w-5 h-5 text-[#eb1b23]" />
+                            <span className="font-semibold text-gray-700">Marked Answer Sheet</span>
+                          </div>
+
+                          <div className="p-4 space-y-3">
+                            {manualQuestions.map((question) => (
+                              <div
+                                key={question.id}
+                                className="bg-white border border-gray-200 rounded-lg p-3 hover:border-[#eb1b23] transition"
+                              >
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="font-semibold text-gray-700">Q{question.question_number}</span>
+                                  <span className="text-xs text-gray-500">
+                                    Current: {editedAnswers[question.question_number] === undefined ? question.correct_answer : editedAnswers[question.question_number]}
+                                  </span>
+                                </div>
+
+                                <div className="flex gap-1 flex-wrap">
+                                  {question.options.map((_, optIndex) => {
+                                    const optLabel = String(optIndex + 1);
+                                    const currentAnsString = editedAnswers[question.question_number] !== undefined
+                                      ? editedAnswers[question.question_number] as string
+                                      : (question.correct_answer || '');
+                                    const isSelected = currentAnsString.split(',').map(s => s.trim()).includes(optLabel);
+
+                                    return (
+                                      <button
+                                        key={optIndex}
+                                        onClick={() => updateAnswerEdit(question.question_number, optLabel)}
+                                        title={`Option ${optIndex + 1}`}
+                                        className={`w-10 h-10 rounded font-bold text-sm transition ${isSelected
+                                            ? 'bg-[#eb1b23] text-white'
+                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                          }`}
+                                      >
+                                        {optIndex + 1}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
                               </div>
-                            ))
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-6 border-t pt-4">
+                        <button
+                          onClick={handleSaveAnswerChanges}
+                          disabled={isSaving || Object.keys(editedAnswers).length === 0}
+                          title="Save changes to answer sheet"
+                          className="w-full bg-[#eb1b23] text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                        >
+                          {isSaving ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                              <span>Saving...</span>
+                            </>
                           ) : (
-                            <p className="text-gray-500 text-center py-8">No questions found</p>
+                            <span>Update Answers</span>
                           )}
-                        </div>
+                        </button>
                       </div>
-
-                      {/* Answer Sheet */}
-                      <div className="border-2 border-gray-200 rounded-xl overflow-hidden">
-                        <div className="bg-gray-100 px-4 py-3 border-b flex items-center space-x-2">
-                          <FileText className="w-5 h-5 text-[#eb1b23]" />
-                          <span className="font-semibold text-gray-700">Marked Answer Sheet</span>
-                        </div>
-                        
-                        <div className="p-4 space-y-3">
-                          {manualQuestions.map((question) => (
-                            <div
-                              key={question.id}
-                              className="bg-white border border-gray-200 rounded-lg p-3 hover:border-[#eb1b23] transition"
-                            >
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="font-semibold text-gray-700">Q{question.question_number}</span>
-                                <span className="text-xs text-gray-500">
-                                   Current: {editedAnswers[question.question_number] === undefined ? question.correct_answer : editedAnswers[question.question_number]}
-                                </span>
-                              </div>
-                              
-                              <div className="flex gap-1 flex-wrap">
-                                {question.options.map((_, optIndex) => {
-                                  const optLabel = String(optIndex + 1);
-                                  const currentAnsString = editedAnswers[question.question_number] !== undefined 
-                                    ? editedAnswers[question.question_number] as string
-                                    : (question.correct_answer || '');
-                                  const isSelected = currentAnsString.split(',').map(s => s.trim()).includes(optLabel);
-                                  
-                                  return (
-                                    <button
-                                      key={optIndex}
-                                      onClick={() => updateAnswerEdit(question.question_number, optLabel)}
-                                      title={`Option ${optIndex + 1}`}
-                                      className={`w-10 h-10 rounded font-bold text-sm transition ${
-                                        isSelected
-                                          ? 'bg-[#eb1b23] text-white'
-                                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                      }`}
-                                    >
-                                      {optIndex + 1}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-6 border-t pt-4">
-                      <button
-                        onClick={handleSaveAnswerChanges}
-                        disabled={isSaving || Object.keys(editedAnswers).length === 0}
-                        title="Save changes to answer sheet"
-                        className="w-full bg-[#eb1b23] text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-                      >
-                        {isSaving ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            <span>Saving...</span>
-                          </>
-                        ) : (
-                          <span>Update Answers</span>
-                        )}
-                      </button>
-                    </div>
                     </>
                   )}
                 </div>
@@ -2027,25 +2020,22 @@ export default function Exams() {
 
       {/* Toast Notification */}
       {toast && (
-        <div className={`fixed bottom-6 right-6 z-[100] transition-all duration-300 transform ${
-          toast.visible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
-        }`}>
-          <div className={`flex items-center gap-3 px-5 py-4 rounded-xl shadow-2xl border-l-4 min-w-[320px] max-w-[480px] ${
-            toast.type === 'success' ? 'bg-white border-green-500 text-slate-800' :
-            toast.type === 'error' ? 'bg-white border-red-500 text-slate-800' :
-            toast.type === 'warning' ? 'bg-white border-amber-500 text-slate-800' :
-            'bg-white border-blue-500 text-slate-800'
+        <div className={`fixed bottom-6 right-6 z-[100] transition-all duration-300 transform ${toast.visible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
           }`}>
-            <div className={`p-2 rounded-lg ${
-              toast.type === 'success' ? 'bg-green-100' :
-              toast.type === 'error' ? 'bg-red-100' :
-              toast.type === 'warning' ? 'bg-amber-100' :
-              'bg-blue-100'
+          <div className={`flex items-center gap-3 px-5 py-4 rounded-xl shadow-2xl border-l-4 min-w-[320px] max-w-[480px] ${toast.type === 'success' ? 'bg-white border-green-500 text-slate-800' :
+              toast.type === 'error' ? 'bg-white border-red-500 text-slate-800' :
+                toast.type === 'warning' ? 'bg-white border-amber-500 text-slate-800' :
+                  'bg-white border-blue-500 text-slate-800'
             }`}>
+            <div className={`p-2 rounded-lg ${toast.type === 'success' ? 'bg-green-100' :
+                toast.type === 'error' ? 'bg-red-100' :
+                  toast.type === 'warning' ? 'bg-amber-100' :
+                    'bg-blue-100'
+              }`}>
               {toast.type === 'success' ? <Check className="w-5 h-5 text-green-600" /> :
-               toast.type === 'error' ? <AlertTriangle className="w-5 h-5 text-red-600" /> :
-               toast.type === 'warning' ? <AlertTriangle className="w-5 h-5 text-amber-600" /> :
-               <Info className="w-5 h-5 text-blue-600" />}
+                toast.type === 'error' ? <AlertTriangle className="w-5 h-5 text-red-600" /> :
+                  toast.type === 'warning' ? <AlertTriangle className="w-5 h-5 text-amber-600" /> :
+                    <Info className="w-5 h-5 text-blue-600" />}
             </div>
             <div className="flex-1">
               <p className="text-sm font-medium">{toast.message}</p>
