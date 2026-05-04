@@ -160,7 +160,7 @@ export default function StudentRankings() {
       rows.sort((a, b) => b.totalScore - a.totalScore);
       setStudentData(rows);
 
-      // 7. Build monthly rankings (rank per month)
+      // 7. Build monthly rankings (rank per month) — tied ranking
       const rankingsByMonth: MonthlyRanking[] = allMonthKeys.map(monthKey => {
         const [y, m] = monthKey.split('-');
         const monthLabel = `${MONTHS_SHORT[parseInt(m) - 1]} ${y}`;
@@ -170,9 +170,11 @@ export default function StudentRankings() {
           .filter(s => s.score > 0)
           .sort((a, b) => b.score - a.score);
 
-        let rank = 1;
+        // Tied ranking: same score → same rank
         const rankings = scores.map((s, i) => {
-          if (i > 0 && s.score < scores[i - 1].score) rank = i + 1;
+          const rank = i === 0 ? 1 : (s.score === scores[i - 1].score
+            ? scores.findIndex(x => x.score === s.score) + 1
+            : i + 1);
           return { ...s, rank };
         });
 
@@ -189,8 +191,15 @@ export default function StudentRankings() {
 
   const selectedClass = classes.find(c => c.id === selectedClassId);
 
-  // Compute overall rankings
+  // Compute overall rankings with tied ranking support
   const overallRankings = [...studentData].sort((a, b) => b.totalScore - a.totalScore);
+  const overallRankMap: Record<string, number> = {};
+  overallRankings.forEach((student, i) => {
+    const rank = i === 0 ? 1 : (student.totalScore === overallRankings[i - 1].totalScore
+      ? overallRankMap[overallRankings[i - 1].studentId]
+      : i + 1);
+    overallRankMap[student.studentId] = rank;
+  });
 
   return (
     <div className="h-full min-h-0 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-gray-50/50">
@@ -378,8 +387,8 @@ export default function StudentRankings() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {overallRankings.map((student, idx) => {
-                    const overallRank = idx + 1;
+                  {overallRankings.map((student) => {
+                    const overallRank = overallRankMap[student.studentId] || 1;
                     const totalPossible = activeMonths.length * MARKS_PER_MONTH;
                     const totalPct = totalPossible > 0 ? Math.round((student.totalScore / totalPossible) * 100) : 0;
 
