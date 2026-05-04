@@ -14,6 +14,7 @@ import GalleryManager from './GalleryManager';
 import ReviewsManager from './ReviewsManager';
 import TestResultsManager from './TestResultsManager';
 import SuccessManager from './SuccessManager';
+import StudentRankings from './StudentRankings';
 import { TeacherRepository } from '../../repositories/TeacherRepository';
 import { dashboardRepository, DashboardStats, StudentOnboardingDataPoint } from '../../repositories/DashboardRepository';
 import ProfileMenu from '../shared/ProfileMenu';
@@ -77,6 +78,7 @@ export default function TeacherDashboard() {
     { path: '/teacher/classes', label: 'My Classes', icon: GraduationCap, section: 'main' },
     { path: '/teacher/exams', label: 'Exams', icon: FileText, section: 'main' },
     { path: '/teacher/study-packs', label: 'Study Packs', icon: Package, section: 'main' },
+    { path: '/teacher/rankings', label: 'Student Rankings', icon: Trophy, section: 'main' },
     { path: '/teacher/gallery', label: 'Gallery', icon: Image, section: 'website' },
     { path: '/teacher/reviews', label: 'Reviews', icon: MessageSquare, section: 'website' },
     { path: '/teacher/test-results', label: 'Test Results', icon: Trophy, section: 'website' },
@@ -234,6 +236,7 @@ export default function TeacherDashboard() {
           <Route path="classes" element={<MyClasses />} />
           <Route path="exams" element={<Exams />} />
           <Route path="study-packs" element={<StudyPacks />} />
+          <Route path="rankings" element={<StudentRankings />} />
           <Route path="gallery" element={teacherLoading ? <LoadingSpinner /> : teacherId ? <GalleryManager teacherId={teacherId} /> : <TeacherProfileMissing />} />
           <Route path="reviews" element={teacherLoading ? <LoadingSpinner /> : teacherId ? <ReviewsManager teacherId={teacherId} /> : <TeacherProfileMissing />} />
           <Route path="test-results" element={teacherLoading ? <LoadingSpinner /> : teacherId ? <TestResultsManager teacherId={teacherId} /> : <TeacherProfileMissing />} />
