@@ -11,8 +11,10 @@ interface Class {
 }
 
 interface StudentMonthlyScore {
-  studentId: string;
+  studentId: string; // The UUID
   studentName: string;
+  displayStudentId: string; // The YYCNNNN format
+  classCenter: string;
   monthlyScores: Record<string, number>; // key: "YYYY-MM", value: sum of scores
   totalScore: number;
 }
@@ -25,6 +27,12 @@ interface MonthlyRanking {
 
 const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const MARKS_PER_MONTH = 100; // 20 tests × 5 marks
+
+const CENTER_MAP: Record<string, string> = {
+  '0': 'Online',
+  '1': 'Riochem',
+  '2': 'Vision'
+};
 
 const teacherRepo = new TeacherRepository();
 
@@ -115,15 +123,26 @@ export default function StudentRankings() {
         return;
       }
 
-      // 3. Get unique student IDs and fetch their names
+      // 3. Get unique student IDs and fetch their names & readable student_ids
       const uniqueStudentIds = [...new Set(attempts.map(a => a.student_id))];
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, full_name')
+        .select('id, full_name, student_id')
         .in('id', uniqueStudentIds);
 
-      const studentNameMap: Record<string, string> = {};
-      (profiles || []).forEach(p => { studentNameMap[p.id] = p.full_name || 'Unknown'; });
+      const studentProfileMap: Record<string, { name: string; displayId: string; center: string }> = {};
+      (profiles || []).forEach(p => {
+        const displayId = p.student_id || 'N/A';
+        let center = 'Unknown';
+        if (displayId.length >= 3 && displayId !== 'N/A') {
+          center = CENTER_MAP[displayId[2]] || 'Unknown';
+        }
+        studentProfileMap[p.id] = {
+          name: p.full_name || 'Unknown',
+          displayId,
+          center
+        };
+      });
 
       // 4. Group by student + month, summing scores
       const studentMonthMap: Record<string, Record<string, number>> = {};
@@ -148,9 +167,13 @@ export default function StudentRankings() {
       const rows: StudentMonthlyScore[] = uniqueStudentIds.map(sid => {
         const monthlyScores = studentMonthMap[sid] || {};
         const totalScore = Object.values(monthlyScores).reduce((sum, s) => sum + s, 0);
+        const profile = studentProfileMap[sid] || { name: 'Unknown', displayId: 'N/A', center: 'Unknown' };
+        
         return {
           studentId: sid,
-          studentName: studentNameMap[sid] || 'Unknown',
+          studentName: profile.name,
+          displayStudentId: profile.displayId,
+          classCenter: profile.center,
           monthlyScores,
           totalScore,
         };
@@ -370,6 +393,9 @@ export default function StudentRankings() {
                     <th className="text-left px-5 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-10 min-w-[200px]">
                       Student
                     </th>
+                    <th className="text-left px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider min-w-[120px]">
+                      Center
+                    </th>
                     {activeMonths.map(mk => {
                       const [y, m] = mk.split('-');
                       return (
@@ -397,7 +423,7 @@ export default function StudentRankings() {
                         key={student.studentId}
                         className={`hover:bg-gray-50/70 transition-colors ${overallRank <= 3 ? 'bg-amber-50/30' : ''}`}
                       >
-                        {/* Name */}
+                        {/* Name & ID */}
                         <td className="px-5 py-3 sticky left-0 bg-white z-10">
                           <div className="flex items-center gap-2.5">
                             <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0 ${
@@ -408,8 +434,23 @@ export default function StudentRankings() {
                             }`}>
                               {overallRank}
                             </div>
-                            <span className="font-semibold text-slate-800 truncate">{student.studentName}</span>
+                            <div className="flex flex-col min-w-0">
+                              <span className="font-semibold text-slate-800 truncate leading-tight">{student.studentName}</span>
+                              <span className="text-[11px] text-slate-400 font-medium tracking-wide">{student.displayStudentId}</span>
+                            </div>
                           </div>
+                        </td>
+
+                        {/* Center */}
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider ${
+                            student.classCenter === 'Online' ? 'bg-blue-50 text-blue-600 border border-blue-100' :
+                            student.classCenter === 'Riochem' ? 'bg-purple-50 text-purple-600 border border-purple-100' :
+                            student.classCenter === 'Vision' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
+                            'bg-slate-50 text-slate-500 border border-slate-200'
+                          }`}>
+                            {student.classCenter}
+                          </span>
                         </td>
 
                         {/* Monthly scores */}
