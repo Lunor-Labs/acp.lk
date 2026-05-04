@@ -64,10 +64,20 @@ interface ReviewingResultData {
   pdfAnswers?: { question_no: number; correct_answer: string }[];
 }
 
+interface MonthlyResult {
+  month: string;
+  monthKey: string;
+  totalScore: number;
+  totalPossibleMarks: number;
+  rank: number;
+  attempts: ExamAttempt[];
+}
+
 export default function Exams() {
   const { profile } = useAuth();
   const [upcomingExams, setUpcomingExams] = useState<Exam[]>([]);
   const [results, setResults] = useState<ExamAttempt[]>([]);
+  const [monthlyResults, setMonthlyResults] = useState<MonthlyResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeExam, setActiveExam] = useState<ActiveExam | null>(null);
   const [view, setView] = useState<'upcoming' | 'results'>('upcoming');
@@ -134,27 +144,98 @@ export default function Exams() {
 
       if (resultsError) throw resultsError;
 
-      // Calculate ranks dynamically for finished exams
+      // Group by month
+      const monthsMap: Record<string, MonthlyResult> = {};
+      
       const resultsWithRanks = await Promise.all((resultsData || []).map(async (result) => {
         const endTime = new Date(result.exam.end_time);
-        if (new Date() > endTime) {
-          // Count how many students have a higher score for this specific exam
+        const isEnded = new Date() > endTime;
+        
+        let rank = result.rank;
+        if (isEnded) {
           const { count } = await supabase
             .from('exam_attempts')
             .select('*', { count: 'exact', head: true })
             .eq('exam_id', result.exam_id)
             .eq('status', 'submitted')
             .gt('score', result.score);
-
-          return {
-            ...result,
-            rank: (count || 0) + 1
-          };
+          rank = (count || 0) + 1;
         }
-        return result;
+
+        const resultWithRank = { ...result, rank };
+
+        // Process monthly grouping
+        if (isEnded) {
+          const monthDate = new Date(result.exam.end_time);
+          const monthKey = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`;
+          const monthName = monthDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+          if (!monthsMap[monthKey]) {
+            monthsMap[monthKey] = {
+              month: monthName,
+              monthKey,
+              totalScore: 0,
+              totalPossibleMarks: 0,
+              rank: 0,
+              attempts: []
+            };
+          }
+          monthsMap[monthKey].totalScore += result.score;
+          monthsMap[monthKey].totalPossibleMarks += result.exam.total_marks;
+          monthsMap[monthKey].attempts.push(resultWithRank);
+        }
+
+        return resultWithRank;
       }));
 
+      // Calculate monthly ranks
+      const sortedMonths = Object.keys(monthsMap).sort((a, b) => b.localeCompare(a));
+      const finalMonthlyResults: MonthlyResult[] = [];
+
+      for (const monthKey of sortedMonths) {
+        const monthlyData = monthsMap[monthKey];
+        
+        // Fetch all exams in this month for the student's classes
+        const startOfMonth = new Date(`${monthKey}-01T00:00:00Z`);
+        const endOfMonth = new Date(startOfMonth);
+        endOfMonth.setMonth(endOfMonth.getMonth() + 1);
+
+        const { data: monthExams } = await supabase
+          .from('exams')
+          .select('id')
+          .in('class_id', classIds)
+          .gte('end_time', startOfMonth.toISOString())
+          .lt('end_time', endOfMonth.toISOString());
+
+        const monthExamIds = monthExams?.map(e => e.id) || [];
+
+        if (monthExamIds.length > 0) {
+          // Fetch all attempts for these exams to calculate aggregate rank
+          const { data: allAttempts } = await supabase
+            .from('exam_attempts')
+            .select('student_id, score')
+            .in('exam_id', monthExamIds)
+            .eq('status', 'submitted');
+
+          if (allAttempts) {
+            // Group by student and sum scores
+            const studentSums: Record<string, number> = {};
+            allAttempts.forEach(att => {
+              studentSums[att.student_id] = (studentSums[att.student_id] || 0) + att.score;
+            });
+
+            // Calculate rank
+            const currentStudentScore = studentSums[profile?.id] || 0;
+            const higherScoresCount = Object.values(studentSums).filter(s => s > currentStudentScore).length;
+            monthlyData.rank = higherScoresCount + 1;
+          }
+        }
+
+        finalMonthlyResults.push(monthlyData);
+      }
+
       setResults(resultsWithRanks);
+      setMonthlyResults(finalMonthlyResults);
     } catch (error) {
       console.error('Error loading exams:', error);
     } finally {
@@ -1214,9 +1295,9 @@ export default function Exams() {
             </div>
             <div className="min-w-0">
               <p className="text-xl sm:text-2xl font-bold text-slate-900">
-                {results.length > 0 ? Math.round(results.reduce((sum, r) => sum + (r.score / r.exam.total_marks) * 100, 0) / results.length) : 0}%
+                {monthlyResults.length > 0 ? monthlyResults[0].totalScore : 0}
               </p>
-              <p className="text-xs text-slate-500">Avg Score</p>
+              <p className="text-xs text-slate-500">Latest Monthly Sum</p>
             </div>
           </div>
         </div>
@@ -1227,12 +1308,9 @@ export default function Exams() {
             </div>
             <div className="min-w-0">
               <p className="text-xl sm:text-2xl font-bold text-slate-900">
-                {results.filter(r => {
-                  const endTime = new Date(r.exam.end_time);
-                  return new Date() > endTime && r.rank && r.rank <= 3;
-                }).length}
+                {monthlyResults.length > 0 ? `#${monthlyResults[0].rank}` : 'N/A'}
               </p>
-              <p className="text-xs text-slate-500">Top 3 Ranks</p>
+              <p className="text-xs text-slate-500">Latest Monthly Rank</p>
             </div>
           </div>
         </div>
@@ -1398,7 +1476,7 @@ export default function Exams() {
             </div>
           ) : (
             <div className="space-y-3 sm:space-y-4">
-              {results.length === 0 ? (
+              {monthlyResults.length === 0 ? (
                 <div className="text-center py-12 sm:py-16">
                   <div className="w-16 sm:w-20 h-16 sm:h-20 bg-slate-50 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4">
                     <Award className="w-8 sm:w-10 h-8 sm:h-10 text-slate-300" />
@@ -1409,98 +1487,68 @@ export default function Exams() {
                   </p>
                 </div>
               ) : (
-                results.map((result) => {
-                  const endTime = new Date(result.exam.end_time);
-                  const now = new Date();
-                  const isExamEnded = now > endTime;
-                  const percentage = Math.round((result.score / result.exam.total_marks) * 100);
+                monthlyResults.map((monthly) => {
+                  const percentage = Math.round((monthly.totalScore / monthly.totalPossibleMarks) * 100);
 
                   return (
                     <div
-                      key={result.id}
-                      className="group bg-white border border-gray-100 rounded-lg sm:rounded-xl p-3 sm:p-5 hover:shadow-lg hover:border-[#eb1b23]/30 transition-all duration-300"
+                      key={monthly.monthKey}
+                      className="bg-white border border-gray-100 rounded-lg sm:rounded-xl p-3 sm:p-5 hover:shadow-lg transition-all duration-300"
                     >
-                      <div className="flex items-start gap-3 sm:gap-4">
-                        {/* Subject Icon */}
-                        <div className={`flex-shrink-0 w-12 sm:w-14 h-12 sm:h-14 rounded-lg sm:rounded-xl flex items-center justify-center text-lg sm:text-xl ${result.exam.subject.toLowerCase().includes('physics') ? 'bg-red-50 text-red-600' :
-                            result.exam.subject.toLowerCase().includes('chemistry') ? 'bg-blue-50 text-blue-600' :
-                              result.exam.subject.toLowerCase().includes('maths') || result.exam.subject.toLowerCase().includes('math') ? 'bg-purple-50 text-purple-600' :
-                                result.exam.subject.toLowerCase().includes('bio') ? 'bg-green-50 text-green-600' :
-                                  'bg-amber-50 text-amber-600'
-                          }`}>
-                          {result.exam.subject.toLowerCase().includes('maths') || result.exam.subject.toLowerCase().includes('math') ? (
-                            <span className="font-bold">∑</span>
-                          ) : result.exam.subject.toLowerCase().includes('physics') ? (
-                            <span className="font-bold">⚛</span>
-                          ) : result.exam.subject.toLowerCase().includes('chemistry') ? (
-                            <span className="font-bold">⚗</span>
-                          ) : result.exam.subject.toLowerCase().includes('bio') ? (
-                            <span className="font-bold">🧬</span>
-                          ) : (
-                            <BookOpen className="w-5 sm:w-7 h-5 sm:h-7" />
-                          )}
+                      <div className="flex flex-col gap-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-[#eb1b23]/5 rounded-lg">
+                              <Calendar className="w-5 h-5 text-[#eb1b23]" />
+                            </div>
+                            <div>
+                              <h4 className="text-lg font-bold text-slate-900">{monthly.month}</h4>
+                              <p className="text-xs text-slate-500">{monthly.attempts.length} Tests Completed</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Monthly Rank</p>
+                            <p className="text-3xl font-black text-[#eb1b23]">#{monthly.rank}</p>
+                          </div>
                         </div>
 
-                        {/* Content */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2 sm:gap-3">
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-1 sm:gap-2 mb-1 flex-wrap">
-                                <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
-                                  {result.exam.subject}
-                                </span>
-                                <span className="text-xs text-slate-400">
-                                  {new Date(result.submitted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}
-                                </span>
-                                {!isExamEnded && (
-                                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 flex items-center gap-1 whitespace-nowrap">
-                                    <Clock className="w-3 h-3" />
-                                    Pending
-                                  </span>
-                                )}
-                              </div>
-                              <h4 className="text-base sm:text-lg font-bold text-slate-900 group-hover:text-[#eb1b23] transition-colors line-clamp-2">
-                                {result.exam.title}
-                              </h4>
-                            </div>
+                        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                          <div className="bg-slate-50 rounded-xl p-3 sm:p-4 flex flex-col items-center">
+                            <p className="text-[10px] sm:text-xs text-slate-500 mb-1 uppercase tracking-wider font-bold">Total Marks</p>
+                            <p className="text-lg sm:text-xl font-bold text-slate-900">{monthly.totalScore} / {monthly.totalPossibleMarks}</p>
                           </div>
-
-                          {/* Score Stats */}
-                          <div className="grid grid-cols-3 gap-1.5 sm:gap-3 mt-3 sm:mt-4">
-                            <div className="bg-slate-50 rounded p-2 sm:p-3 flex flex-col items-center text-center min-w-0">
-                              <div className="text-xs text-slate-500 mb-1 truncate w-full">Score</div>
-                              <div className="text-sm sm:text-lg font-bold text-slate-900 truncate">{result.score}/{result.exam.total_marks}</div>
-                            </div>
-                            <div className="bg-slate-50 rounded p-2 sm:p-3 flex flex-col items-center text-center min-w-0">
-                              <div className="text-xs text-slate-500 mb-1">%</div>
-                              <div className={`text-sm sm:text-lg font-bold truncate ${percentage >= 75 ? 'text-green-600' :
-                                  percentage >= 50 ? 'text-amber-600' :
-                                    'text-red-600'
-                                }`}>{percentage}%</div>
-                            </div>
-                            <div className="bg-slate-50 rounded p-2 sm:p-3 flex flex-col items-center text-center min-w-0">
-                              <div className="text-xs text-slate-500 mb-1">Rank</div>
-                              <div className="text-sm sm:text-lg font-bold text-[#eb1b23] truncate">
-                                {isExamEnded ? `#${result.rank || 'N/A'}` : 'Pending'}
-                              </div>
-                            </div>
+                          <div className="bg-slate-50 rounded-xl p-3 sm:p-4 flex flex-col items-center">
+                            <p className="text-[10px] sm:text-xs text-slate-500 mb-1 uppercase tracking-wider font-bold">Percentage</p>
+                            <p className={`text-lg sm:text-xl font-bold ${percentage >= 75 ? 'text-green-600' : percentage >= 50 ? 'text-amber-600' : 'text-red-600'}`}>
+                              {percentage}%
+                            </p>
                           </div>
+                        </div>
 
-                          {/* Action */}
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-100">
-                            {!isExamEnded ? (
-                              <div className="flex items-center text-amber-600 text-xs sm:text-sm min-w-0">
-                                <AlertCircle className="w-3 sm:w-4 h-3 sm:h-4 mr-1 flex-shrink-0" />
-                                <span className="truncate">Rank on {endTime.toLocaleDateString()}</span>
+                        <div className="border-t border-dashed border-gray-100 pt-4 mt-2">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Individual Test Scores</p>
+                          <div className="space-y-2">
+                            {monthly.attempts.map((att) => (
+                              <div key={att.id} className="flex items-center justify-between p-3 bg-gray-50/50 rounded-lg border border-gray-50 hover:bg-white hover:border-[#eb1b23]/20 transition-all group">
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-sm font-bold text-slate-800 truncate group-hover:text-[#eb1b23]">{att.exam.title}</p>
+                                  <p className="text-[10px] text-slate-500">{att.exam.subject} • {new Date(att.submitted_at).toLocaleDateString()}</p>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                  <div className="text-right">
+                                    <p className="text-sm font-bold text-slate-900">{att.score}/{att.exam.total_marks}</p>
+                                    <p className="text-[10px] text-[#eb1b23] font-medium">Rank #{att.rank}</p>
+                                  </div>
+                                  <button
+                                    onClick={() => viewResultDetails(att)}
+                                    className="p-2 hover:bg-[#eb1b23]/5 rounded-lg text-slate-400 hover:text-[#eb1b23] transition-colors"
+                                    title="Review Details"
+                                  >
+                                    <FileText className="w-4 h-4" />
+                                  </button>
+                                </div>
                               </div>
-                            ) : <div className="hidden sm:block" />}
-                            <button
-                              onClick={() => viewResultDetails(result)}
-                              className="flex items-center justify-center sm:justify-start gap-1 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-white border-2 border-gray-200 text-slate-700 hover:border-[#eb1b23] hover:text-[#eb1b23] font-medium rounded-lg sm:rounded-xl transition text-xs sm:text-sm whitespace-nowrap flex-shrink-0"
-                            >
-                              <FileText className="w-3 sm:w-4 h-3 sm:h-4" />
-                              <span>Review</span>
-                            </button>
+                            ))}
                           </div>
                         </div>
                       </div>
