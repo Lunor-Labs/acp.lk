@@ -87,113 +87,75 @@ export default function StudentRankings() {
       setMonthlyRankings([]);
       setActiveMonths([]);
 
-      // 1. Get all exams for this class in the selected year
-      const startOfYear = new Date(`${selectedYear}-01-01T00:00:00Z`).toISOString();
-      const endOfYear = new Date(`${selectedYear + 1}-01-01T00:00:00Z`).toISOString();
+      // Call server-side RPC — aggregates in Postgres, no 1000-row limit
+      const { data: rows, error } = await supabase.rpc('get_student_monthly_scores', {
+        p_class_id: selectedClassId,
+        p_year: selectedYear,
+      });
 
-      const { data: exams } = await supabase
-        .from('exams')
-        .select('id, end_time, total_marks')
-        .eq('class_id', selectedClassId)
-        .gte('end_time', startOfYear)
-        .lt('end_time', endOfYear)
-        .lt('end_time', new Date().toISOString()); // only past exams
-
-      if (!exams || exams.length === 0) {
+      if (error) throw error;
+      if (!rows || rows.length === 0) {
         setLoading(false);
         return;
       }
 
-      const examIds = exams.map(e => e.id);
-
-      // 2. Fetch all submitted attempts for these exams + student profile names
-      const { data: attempts } = await supabase
-        .from('exam_attempts')
-        .select(`
-          student_id,
-          score,
-          exam_id,
-          exam:exams(end_time)
-        `)
-        .in('exam_id', examIds)
-        .eq('status', 'submitted');
-
-      if (!attempts || attempts.length === 0) {
-        setLoading(false);
-        return;
-      }
-
-      // 3. Get unique student IDs and fetch their names & readable student_ids
-      const uniqueStudentIds = [...new Set(attempts.map(a => a.student_id))];
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, full_name, student_id')
-        .in('id', uniqueStudentIds);
-
+      // Build lookup: studentId → profile info
       const studentProfileMap: Record<string, { name: string; displayId: string; center: string }> = {};
-      (profiles || []).forEach(p => {
-        const displayId = p.student_id || 'N/A';
-        let center = 'Unknown';
-        if (displayId.length >= 3 && displayId !== 'N/A') {
-          center = CENTER_MAP[displayId[2]] || 'Unknown';
+      rows.forEach((r: any) => {
+        if (!studentProfileMap[r.student_id]) {
+          const displayId = r.display_student_id || 'N/A';
+          let center = 'Unknown';
+          if (displayId.length >= 3 && displayId !== 'N/A') {
+            center = CENTER_MAP[displayId[2]] || 'Unknown';
+          }
+          studentProfileMap[r.student_id] = {
+            name: r.student_name || 'Unknown',
+            displayId,
+            center,
+          };
         }
-        studentProfileMap[p.id] = {
-          name: p.full_name || 'Unknown',
-          displayId,
-          center
-        };
       });
 
-      // 4. Group by student + month, summing scores
+      // Group by student + month
       const studentMonthMap: Record<string, Record<string, number>> = {};
-
-      attempts.forEach(att => {
-        const exam = att.exam as any;
-        if (!exam?.end_time) return;
-        const monthKey = att.exam.end_time.slice(0, 7); // "YYYY-MM"
-
-        if (!studentMonthMap[att.student_id]) {
-          studentMonthMap[att.student_id] = {};
-        }
-        studentMonthMap[att.student_id][monthKey] =
-          (studentMonthMap[att.student_id][monthKey] || 0) + att.score;
+      rows.forEach((r: any) => {
+        if (!studentMonthMap[r.student_id]) studentMonthMap[r.student_id] = {};
+        studentMonthMap[r.student_id][r.month_key] = Number(r.monthly_score);
       });
 
-      // 5. Collect all active months and sort
-      const allMonthKeys = [...new Set(attempts.map(att => (att.exam as any)?.end_time?.slice(0, 7)).filter(Boolean))].sort();
+      // Collect all active months
+      const allMonthKeys = [...new Set(rows.map((r: any) => r.month_key as string))].sort();
       setActiveMonths(allMonthKeys);
 
-      // 6. Build student data rows
-      const rows: StudentMonthlyScore[] = uniqueStudentIds.map(sid => {
+      // Build student data rows
+      const uniqueStudentIds = Object.keys(studentMonthMap);
+      const studentRows: StudentMonthlyScore[] = uniqueStudentIds.map(sid => {
         const monthlyScores = studentMonthMap[sid] || {};
         const totalScore = Object.values(monthlyScores).reduce((sum, s) => sum + s, 0);
-        const profile = studentProfileMap[sid] || { name: 'Unknown', displayId: 'N/A', center: 'Unknown' };
-        
+        const prof = studentProfileMap[sid] || { name: 'Unknown', displayId: 'N/A', center: 'Unknown' };
         return {
           studentId: sid,
-          studentName: profile.name,
-          displayStudentId: profile.displayId,
-          classCenter: profile.center,
+          studentName: prof.name,
+          displayStudentId: prof.displayId,
+          classCenter: prof.center,
           monthlyScores,
           totalScore,
         };
       });
 
-      // Sort by total score descending
-      rows.sort((a, b) => b.totalScore - a.totalScore);
-      setStudentData(rows);
+      studentRows.sort((a, b) => b.totalScore - a.totalScore);
+      setStudentData(studentRows);
 
-      // 7. Build monthly rankings (rank per month) — tied ranking
+      // Build monthly rankings with tied ranking support
       const rankingsByMonth: MonthlyRanking[] = allMonthKeys.map(monthKey => {
         const [y, m] = monthKey.split('-');
         const monthLabel = `${MONTHS_SHORT[parseInt(m) - 1]} ${y}`;
 
-        const scores = rows
+        const scores = studentRows
           .map(row => ({ studentId: row.studentId, studentName: row.studentName, score: row.monthlyScores[monthKey] || 0 }))
           .filter(s => s.score > 0)
           .sort((a, b) => b.score - a.score);
 
-        // Tied ranking: same score → same rank
         const rankings = scores.map((s, i) => {
           const rank = i === 0 ? 1 : (s.score === scores[i - 1].score
             ? scores.findIndex(x => x.score === s.score) + 1
