@@ -151,7 +151,8 @@ export default function Exams() {
         const endTime = new Date(result.exam.end_time);
         const isEnded = new Date() > endTime;
         
-        let rank = result.rank;
+        // Only calculate rank once the exam window has closed; 0 = rank pending
+        let rank = 0;
         if (isEnded) {
           const { count } = await supabase
             .from('exam_attempts')
@@ -164,26 +165,24 @@ export default function Exams() {
 
         const resultWithRank = { ...result, rank };
 
-        // Process monthly grouping
-        if (isEnded) {
-          const monthDate = new Date(result.exam.end_time);
-          const monthKey = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`;
-          const monthName = monthDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        // Always group submitted attempts by month, regardless of exam status
+        const monthDate = new Date(result.exam.end_time);
+        const monthKey = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`;
+        const monthName = monthDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
-          if (!monthsMap[monthKey]) {
-            monthsMap[monthKey] = {
-              month: monthName,
-              monthKey,
-              totalScore: 0,
-              totalPossibleMarks: 0,
-              rank: 0,
-              attempts: []
-            };
-          }
-          monthsMap[monthKey].totalScore += result.score;
-          monthsMap[monthKey].totalPossibleMarks += result.exam.total_marks;
-          monthsMap[monthKey].attempts.push(resultWithRank);
+        if (!monthsMap[monthKey]) {
+          monthsMap[monthKey] = {
+            month: monthName,
+            monthKey,
+            totalScore: 0,
+            totalPossibleMarks: 0,
+            rank: 0,
+            attempts: []
+          };
         }
+        monthsMap[monthKey].totalScore += result.score;
+        monthsMap[monthKey].totalPossibleMarks += result.exam.total_marks;
+        monthsMap[monthKey].attempts.push(resultWithRank);
 
         return resultWithRank;
       }));
@@ -1508,7 +1507,9 @@ export default function Exams() {
                           </div>
                           <div className="text-right">
                             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Monthly Rank</p>
-                            <p className="text-3xl font-black text-[#eb1b23]">#{monthly.rank}</p>
+                            <p className="text-3xl font-black text-[#eb1b23]">
+                              {monthly.rank > 0 ? `#${monthly.rank}` : <span className="text-lg text-slate-400">Pending</span>}
+                            </p>
                           </div>
                         </div>
 
@@ -1537,7 +1538,7 @@ export default function Exams() {
                                 <div className="flex items-center gap-4">
                                   <div className="text-right">
                                     <p className="text-sm font-bold text-slate-900">{att.score}/{att.exam.total_marks}</p>
-                                    <p className="text-[10px] text-[#eb1b23] font-medium">Rank #{att.rank}</p>
+                                    <p className="text-[10px] font-medium">{att.rank > 0 ? <span className="text-[#eb1b23]">Rank #{att.rank}</span> : <span className="text-amber-500">Rank Pending</span>}</p>
                                   </div>
                                   <button
                                     onClick={() => viewResultDetails(att)}
