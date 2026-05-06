@@ -148,7 +148,7 @@ export default function Exams() {
     {
       id: '1',
       question_text: '',
-      options: ['', '', '', '', ''],
+      options: ['1', '2', '3', '4', '5'],
       correct_answer: '',
       marks: 1,
     },
@@ -738,7 +738,7 @@ export default function Exams() {
       {
         id: '1',
         question_text: '',
-        options: ['', '', '', '', ''],
+        options: ['1', '2', '3', '4', '5'],
         correct_answer: '',
         marks: 1,
       },
@@ -759,7 +759,7 @@ export default function Exams() {
       {
         id: Date.now().toString(),
         question_text: '',
-        options: ['', '', '', '', ''],
+        options: ['1', '2', '3', '4', '5'],
         correct_answer: '',
         marks: 1,
       },
