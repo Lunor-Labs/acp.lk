@@ -309,19 +309,25 @@ export default function Exams() {
     }
   }
 
+  function toLocalDateTimeInputs(isoString: string) {
+    const d = new Date(isoString);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const time = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    return { date, time };
+  }
+
   function startEditingExamDetails() {
     if (!selectedExamDetail) return;
-    const startDate = new Date(selectedExamDetail.start_time);
-    const startTime = startDate.toISOString().slice(0, 16).split('T');
-    const endDate = new Date(selectedExamDetail.end_time);
-    const endTime = endDate.toISOString().slice(0, 16).split('T');
+    const start = toLocalDateTimeInputs(selectedExamDetail.start_time);
+    const end = toLocalDateTimeInputs(selectedExamDetail.end_time);
     setEditExamData({
       title: selectedExamDetail.title,
       description: selectedExamDetail.description,
-      exam_date: startTime[0],
-      exam_time: startTime[1],
-      end_date: endTime[0],
-      end_time: endTime[1],
+      exam_date: start.date,
+      exam_time: start.time,
+      end_date: end.date,
+      end_time: end.time,
       duration_minutes: selectedExamDetail.duration_minutes,
     });
     setIsEditingExamDetails(true);
