@@ -1,6 +1,20 @@
 import { useState, useEffect } from 'react';
 import { NavLink, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ReferenceLine,
+  XAxis,
+  YAxis,
+} from 'recharts';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from '@/components/ui/chart';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -458,148 +472,63 @@ function MiniStatCard({
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   Performance Chart — smooth Bezier curve + target line
+   Performance Chart — recharts AreaChart
 ───────────────────────────────────────────────────────────────── */
 
+const perfChartConfig = {
+  percentage: {
+    label: 'Score (%)',
+    color: 'hsl(var(--primary))',
+  },
+} satisfies ChartConfig;
+
 function PerformanceChart({ data }: { data: PerformanceData[] }) {
-  const [tooltip, setTooltip] = useState<{ x: number; y: number; idx: number } | null>(null);
-
-  const W = 700;
-  const H = 260;
-  const pad = { top: 24, right: 24, bottom: 44, left: 44 };
-  const iW = W - pad.left - pad.right;
-  const iH = H - pad.top - pad.bottom;
-  const TARGET = 75;
-  const maxVal = 100;
-  const gridLines = 5;
-
-  function xOf(i: number) { return pad.left + (i / (data.length - 1)) * iW; }
-  function yOf(v: number) { return pad.top + iH - (v / maxVal) * iH; }
-
-  function smoothPath(pts: { x: number; y: number }[]) {
-    if (pts.length < 2) return '';
-    let d = `M ${pts[0].x},${pts[0].y}`;
-    for (let i = 1; i < pts.length; i++) {
-      const prev = pts[i - 1];
-      const curr = pts[i];
-      const cpx = (prev.x + curr.x) / 2;
-      d += ` C ${cpx},${prev.y} ${cpx},${curr.y} ${curr.x},${curr.y}`;
-    }
-    return d;
-  }
-
-  function areaPath(pts: { x: number; y: number }[]) {
-    if (pts.length < 2) return '';
-    const linePart = smoothPath(pts);
-    const baseline = pad.top + iH;
-    return `${linePart} L ${pts[pts.length - 1].x},${baseline} L ${pts[0].x},${baseline} Z`;
-  }
-
-  const pts = data.map((d, i) => ({ x: xOf(i), y: yOf(d.percentage) }));
-  const linePath = smoothPath(pts);
-  const fillPath = areaPath(pts);
-  const targetY = yOf(TARGET);
-
   return (
-    <div className="relative w-full overflow-x-auto">
-      <svg
-        viewBox={`0 0 ${W} ${H}`}
-        className="w-full"
-        style={{ minWidth: 320, maxWidth: '100%' }}
-        onMouseLeave={() => setTooltip(null)}
-      >
+    <ChartContainer config={perfChartConfig} className="h-56 w-full">
+      <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -16 }}>
         <defs>
-          <linearGradient id="perf-area-grad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#eb1b23" stopOpacity="0.25" />
-            <stop offset="100%" stopColor="#eb1b23" stopOpacity="0" />
+          <linearGradient id="perfGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.2} />
+            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
           </linearGradient>
-          <filter id="perf-dot-shadow" x="-50%" y="-50%" width="200%" height="200%">
-            <feDropShadow dx="0" dy="1" stdDeviation="2" floodColor="#0004" />
-          </filter>
         </defs>
-
-        {/* Grid */}
-        {Array.from({ length: gridLines + 1 }).map((_, i) => {
-          const y = pad.top + (i / gridLines) * iH;
-          const val = Math.round(maxVal * (1 - i / gridLines));
-          return (
-            <g key={i}>
-              <line x1={pad.left} y1={y} x2={W - pad.right} y2={y} stroke="#f1f5f9" strokeWidth="1" />
-              <text x={pad.left - 8} y={y + 4} textAnchor="end" fontSize="10" fill="#94a3b8" fontFamily="Inter, sans-serif">
-                {val}%
-              </text>
-            </g>
-          );
-        })}
-
-        {/* Target line */}
-        <line
-          x1={pad.left} y1={targetY}
-          x2={W - pad.right} y2={targetY}
-          stroke="#f59e0b" strokeWidth="1.5" strokeDasharray="6 4"
+        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+        <XAxis
+          dataKey="month"
+          tickLine={false}
+          axisLine={false}
+          tick={{ fontSize: 11, fill: '#94a3b8' }}
         />
-        <text x={W - pad.right + 4} y={targetY + 4} fontSize="9" fill="#f59e0b" fontFamily="Inter, sans-serif" fontWeight="600">
-          75%
-        </text>
-
-        {/* Area fill */}
-        <path d={fillPath} fill="url(#perf-area-grad)" />
-
-        {/* Line */}
-        <path d={linePath} fill="none" stroke="#eb1b23" strokeWidth="2.5" strokeLinecap="round" />
-
-        {/* Data points + hover zones */}
-        {data.map((d, i) => {
-          const px = pts[i].x;
-          const py = pts[i].y;
-          return (
-            <g key={i}>
-              <rect
-                x={px - 18} y={pad.top - 10}
-                width={36} height={iH + 20}
-                fill="transparent"
-                onMouseEnter={() => setTooltip({ x: px, y: py, idx: i })}
-              />
-              <circle cx={px} cy={py} r="4.5" fill="#eb1b23" stroke="white" strokeWidth="2.5" filter="url(#perf-dot-shadow)" />
-              <text
-                x={px} y={H - pad.bottom + 18}
-                textAnchor="middle" fontSize="10" fill="#64748b"
-                fontFamily="Inter, sans-serif" fontWeight="500"
-              >
-                {d.month}
-              </text>
-            </g>
-          );
-        })}
-
-        {/* Tooltip */}
-        {tooltip !== null && (() => {
-          const d = data[tooltip.idx];
-          const tx = Math.min(tooltip.x + 12, W - 110);
-          const ty = Math.max(tooltip.y - 10, pad.top);
-          const aboveTarget = d.percentage >= TARGET;
-          return (
-            <g>
-              <line
-                x1={tooltip.x} y1={pad.top}
-                x2={tooltip.x} y2={pad.top + iH}
-                stroke="#e2e8f0" strokeWidth="1" strokeDasharray="4 3"
-              />
-              <rect x={tx} y={ty} width={108} height={52} rx="8" ry="8" fill="white" stroke="#e2e8f0" strokeWidth="1" filter="url(#perf-dot-shadow)" />
-              <text x={tx + 10} y={ty + 16} fontSize="10" fontWeight="600" fill="#0f172a" fontFamily="Inter, sans-serif">{d.month}</text>
-              <circle cx={tx + 10} cy={ty + 30} r="4" fill="#eb1b23" />
-              <text x={tx + 20} y={ty + 34} fontSize="10" fill="#475569" fontFamily="Inter, sans-serif">
-                Score: {d.percentage > 0 ? `${d.percentage}%` : 'No data'}
-              </text>
-              {d.percentage > 0 && (
-                <text x={tx + 10} y={ty + 46} fontSize="9" fill={aboveTarget ? '#10b981' : '#f59e0b'} fontFamily="Inter, sans-serif">
-                  {aboveTarget ? '✓ Above target' : '↑ Below target'}
-                </text>
-              )}
-            </g>
-          );
-        })()}
-      </svg>
-    </div>
+        <YAxis
+          domain={[0, 100]}
+          tickLine={false}
+          axisLine={false}
+          tick={{ fontSize: 11, fill: '#94a3b8' }}
+          tickFormatter={(v) => `${v}%`}
+        />
+        <ReferenceLine
+          y={75}
+          stroke="#f59e0b"
+          strokeDasharray="5 5"
+          label={{ value: 'Target 75%', position: 'insideTopRight', fontSize: 10, fill: '#f59e0b' }}
+        />
+        <ChartTooltip
+          content={
+            <ChartTooltipContent
+              formatter={(value) => [`${value}%`, 'Score']}
+            />
+          }
+        />
+        <Area
+          type="monotoneX"
+          dataKey="percentage"
+          stroke="hsl(var(--primary))"
+          strokeWidth={2}
+          fill="url(#perfGradient)"
+          dot={{ r: 3, fill: 'hsl(var(--primary))', strokeWidth: 2, stroke: '#fff' }}
+          activeDot={{ r: 5 }}
+        />
+      </AreaChart>
+    </ChartContainer>
   );
 }

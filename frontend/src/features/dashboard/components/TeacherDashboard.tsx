@@ -1,6 +1,20 @@
 import { useState, useEffect } from 'react';
 import { NavLink, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import {
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  XAxis,
+  YAxis,
+} from 'recharts';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from '@/components/ui/chart';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -491,170 +505,61 @@ function MiniStatCard({
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   Onboarding Dual-Line Chart (pure SVG with smooth Bezier curves)
+   Onboarding Dual-Line Chart — recharts LineChart
 ───────────────────────────────────────────────────────────────── */
 
+const onboardingChartConfig = {
+  platformStudents: {
+    label: 'Platform Students',
+    color: '#6366f1',
+  },
+  enrollments: {
+    label: 'Your Enrollments',
+    color: 'hsl(var(--primary))',
+  },
+} satisfies ChartConfig;
+
 function OnboardingChart({ data }: { data: StudentOnboardingDataPoint[] }) {
-  const [tooltip, setTooltip] = useState<{ x: number; y: number; idx: number } | null>(null);
-
-  const W = 700;
-  const H = 260;
-  const pad = { top: 24, right: 24, bottom: 44, left: 44 };
-  const iW = W - pad.left - pad.right;
-  const iH = H - pad.top - pad.bottom;
-
-  const maxVal = Math.max(...data.map(d => Math.max(d.platformStudents, d.enrollments)), 1);
-  const gridLines = 5;
-
-  function xOf(i: number) { return pad.left + (i / (data.length - 1)) * iW; }
-  function yOf(v: number) { return pad.top + iH - (v / maxVal) * iH; }
-
-  /** Build smooth Bezier path through points */
-  function smoothPath(pts: { x: number; y: number }[]) {
-    if (pts.length < 2) return '';
-    let d = `M ${pts[0].x},${pts[0].y}`;
-    for (let i = 1; i < pts.length; i++) {
-      const prev = pts[i - 1];
-      const curr = pts[i];
-      const cpx = (prev.x + curr.x) / 2;
-      d += ` C ${cpx},${prev.y} ${cpx},${curr.y} ${curr.x},${curr.y}`;
-    }
-    return d;
-  }
-
-  function areaPath(pts: { x: number; y: number }[]) {
-    if (pts.length < 2) return '';
-    const linePath = smoothPath(pts);
-    const baseline = pad.top + iH;
-    return `${linePath} L ${pts[pts.length - 1].x},${baseline} L ${pts[0].x},${baseline} Z`;
-  }
-
-  const platformPts = data.map((d, i) => ({ x: xOf(i), y: yOf(d.platformStudents) }));
-  const enrollPts = data.map((d, i) => ({ x: xOf(i), y: yOf(d.enrollments) }));
-
-  const platformLinePath = smoothPath(platformPts);
-  const enrollLinePath = smoothPath(enrollPts);
-  const platformAreaPath = areaPath(platformPts);
-  const enrollAreaPath = areaPath(enrollPts);
-
   return (
-    <div className="relative w-full h-full overflow-x-auto">
-      <svg
-        viewBox={`0 0 ${W} ${H}`}
-        className="w-full h-full"
-        style={{ minWidth: 320, minHeight: 140 }}
-        preserveAspectRatio="xMidYMid meet"
-        onMouseLeave={() => setTooltip(null)}
-      >
-        <defs>
-          <linearGradient id="grad-platform" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#6366f1" stopOpacity="0.25" />
-            <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
-          </linearGradient>
-          <linearGradient id="grad-enroll" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#eb1b23" stopOpacity="0.2" />
-            <stop offset="100%" stopColor="#eb1b23" stopOpacity="0" />
-          </linearGradient>
-
-          {/* Drop shadow filter for dots */}
-          <filter id="dot-shadow" x="-50%" y="-50%" width="200%" height="200%">
-            <feDropShadow dx="0" dy="1" stdDeviation="2" floodColor="#0005" />
-          </filter>
-        </defs>
-
-        {/* Grid lines & Y labels */}
-        {Array.from({ length: gridLines + 1 }).map((_, i) => {
-          const y = pad.top + (i / gridLines) * iH;
-          const val = Math.round(maxVal * (1 - i / gridLines));
-          return (
-            <g key={i}>
-              <line
-                x1={pad.left} y1={y}
-                x2={W - pad.right} y2={y}
-                stroke="#f1f5f9" strokeWidth="1"
-              />
-              <text
-                x={pad.left - 8} y={y + 4}
-                textAnchor="end"
-                fontSize="10"
-                fill="#94a3b8"
-                fontFamily="Inter, sans-serif"
-              >
-                {val}
-              </text>
-            </g>
-          );
-        })}
-
-        {/* Area fills */}
-        <path d={platformAreaPath} fill="url(#grad-platform)" />
-        <path d={enrollAreaPath} fill="url(#grad-enroll)" />
-
-        {/* Lines */}
-        <path d={platformLinePath} fill="none" stroke="#6366f1" strokeWidth="2.5" strokeLinecap="round" />
-        <path d={enrollLinePath} fill="none" stroke="#eb1b23" strokeWidth="2.5" strokeLinecap="round" />
-
-        {/* Data points + hover zones */}
-        {data.map((d, i) => {
-          const px = platformPts[i].x;
-          const py = platformPts[i].y;
-          const ex = enrollPts[i].x;
-          const ey = enrollPts[i].y;
-          return (
-            <g key={i}>
-              {/* Invisible wide hover target */}
-              <rect
-                x={px - 18} y={pad.top - 10}
-                width={36} height={iH + 20}
-                fill="transparent"
-                onMouseEnter={() => setTooltip({ x: px, y: Math.min(py, ey), idx: i })}
-              />
-
-              {/* Platform dot */}
-              <circle cx={px} cy={py} r="4.5" fill="#6366f1" stroke="white" strokeWidth="2" filter="url(#dot-shadow)" />
-              {/* Enrollment dot */}
-              <circle cx={ex} cy={ey} r="4.5" fill="#eb1b23" stroke="white" strokeWidth="2" filter="url(#dot-shadow)" />
-
-              {/* X-axis label */}
-              <text
-                x={px} y={H - pad.bottom + 18}
-                textAnchor="middle"
-                fontSize="10"
-                fill="#64748b"
-                fontFamily="Inter, sans-serif"
-                fontWeight="500"
-              >
-                {d.month}
-              </text>
-            </g>
-          );
-        })}
-
-        {/* Tooltip */}
-        {tooltip !== null && (() => {
-          const d = data[tooltip.idx];
-          const tx = Math.min(tooltip.x + 12, W - 130);
-          const ty = Math.max(tooltip.y - 10, pad.top);
-          return (
-            <g>
-              {/* Vertical guide */}
-              <line
-                x1={tooltip.x} y1={pad.top}
-                x2={tooltip.x} y2={pad.top + iH}
-                stroke="#e2e8f0" strokeWidth="1" strokeDasharray="4 3"
-              />
-              {/* Tooltip box */}
-              <rect x={tx} y={ty} width={120} height={62} rx="8" ry="8" fill="white" stroke="#e2e8f0" strokeWidth="1" filter="url(#dot-shadow)" />
-              <text x={tx + 10} y={ty + 16} fontSize="10" fontWeight="600" fill="#0f172a" fontFamily="Inter, sans-serif">{d.month}</text>
-              <circle cx={tx + 10} cy={ty + 30} r="4" fill="#6366f1" />
-              <text x={tx + 20} y={ty + 34} fontSize="10" fill="#475569" fontFamily="Inter, sans-serif">Platform: {d.platformStudents}</text>
-              <circle cx={tx + 10} cy={ty + 46} r="4" fill="#eb1b23" />
-              <text x={tx + 20} y={ty + 50} fontSize="10" fill="#475569" fontFamily="Inter, sans-serif">Enrolled: {d.enrollments}</text>
-            </g>
-          );
-        })()}
-      </svg>
-    </div>
+    <ChartContainer config={onboardingChartConfig} className="h-56 w-full">
+      <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -16 }}>
+        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+        <XAxis
+          dataKey="month"
+          tickLine={false}
+          axisLine={false}
+          tick={{ fontSize: 11, fill: '#94a3b8' }}
+        />
+        <YAxis
+          tickLine={false}
+          axisLine={false}
+          tick={{ fontSize: 11, fill: '#94a3b8' }}
+        />
+        <ChartTooltip content={<ChartTooltipContent />} />
+        <Legend
+          wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
+          formatter={(value) =>
+            value === 'platformStudents' ? 'Platform Students' : 'Your Enrollments'
+          }
+        />
+        <Line
+          type="monotone"
+          dataKey="platformStudents"
+          stroke="var(--color-platformStudents)"
+          strokeWidth={2}
+          dot={{ r: 3, strokeWidth: 2 }}
+          activeDot={{ r: 5 }}
+        />
+        <Line
+          type="monotone"
+          dataKey="enrollments"
+          stroke="var(--color-enrollments)"
+          strokeWidth={2}
+          dot={{ r: 3, strokeWidth: 2 }}
+          activeDot={{ r: 5 }}
+        />
+      </LineChart>
+    </ChartContainer>
   );
 }
 
