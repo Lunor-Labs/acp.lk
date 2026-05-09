@@ -55,7 +55,7 @@ export function ExamDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0 flex flex-col gap-0">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0 flex flex-col gap-0 [&>button.absolute]:hidden">
         {loadingExamDetail ? (
           <div className="flex items-center justify-center h-96">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#eb1b23]"></div>

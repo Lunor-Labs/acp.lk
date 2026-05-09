@@ -395,7 +395,6 @@ function DashboardContent({
             <StatCard
               label="Monthly Revenue"
               value={`LKR ${(stats.monthlyRevenue / 1000).toFixed(1)}K`}
-              valueRaw={stats.monthlyRevenue}
               subtitle={`Total: LKR ${(stats.totalRevenue / 1000).toFixed(1)}K`}
               icon={DollarSign}
               accentColor="#f59e0b"
@@ -463,7 +462,6 @@ function DashboardContent({
 interface StatCardProps {
   label: string;
   value: string | number;
-  valueRaw?: number;
   subtitle: string;
   icon: React.ElementType;
   accentColor: string;
