@@ -61,7 +61,7 @@ const Process: React.FC = () => {
         {/* Header */}
         <div className="text-center mb-16">
           <h2 className="text-4xl lg:text-5xl font-black text-neutral-black mb-4">
-            <span className="text-primary">All-In-One</span> Our Work Process
+            <span className="text-primary-400">All-In-One</span> Our Work Process
           </h2>
           <p className="text-lg text-gray max-w-2xl mx-auto">
             A comprehensive approach combining all the essential tools and methods needed for successful A/L Physics education.
@@ -73,11 +73,11 @@ const Process: React.FC = () => {
           {steps.map((step, index) => (
             <div
               key={index}
-              className="group relative bg-neutral-white border-2 border-gray-200 hover:border-primary rounded-2xl p-8 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2"
+              className="group relative bg-neutral-white border-2 border-gray-200 hover:border-primary-400 rounded-2xl p-8 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2"
             >
               {/* Icon */}
               <div className="mb-6">
-                <div className="w-16 h-16 bg-dark rounded-xl flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-dark transition-all duration-300">
+                <div className="w-16 h-16 bg-dark rounded-xl flex items-center justify-center text-primary-400 group-hover:bg-primary-400 group-hover:text-dark transition-all duration-300">
                   {renderIcon(step.icon)}
                 </div>
               </div>
@@ -91,7 +91,7 @@ const Process: React.FC = () => {
               </p>
 
               {/* Number Badge */}
-              <div className="absolute top-6 right-6 w-10 h-10 bg-primary-50 text-primary rounded-full flex items-center justify-center font-black text-lg">
+              <div className="absolute top-6 right-6 w-10 h-10 bg-primary-50 text-primary-400 rounded-full flex items-center justify-center font-black text-lg">
                 {index + 1}
               </div>
             </div>

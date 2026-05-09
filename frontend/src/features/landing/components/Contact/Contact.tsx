@@ -33,14 +33,14 @@ const Contact: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Left Column: Form & Info */}
           <div className="flex flex-col gap-12">
-            <div className="bg-primary/5 rounded-3xl p-8 md:p-12 border border-primary/10">
+            <div className="bg-primary-400/5 rounded-3xl p-8 md:p-12 border border-primary-400/10">
               <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <input
                     type="text"
                     name="name"
                     placeholder="Name"
-                    className="w-full px-6 py-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                    className="w-full px-6 py-4 rounded-xl border border-gray-200 focus:border-primary-400 focus:ring-2 focus:ring-primary-400/20 outline-none transition-all"
                     value={formData.name}
                     onChange={handleChange}
                     required
@@ -49,7 +49,7 @@ const Contact: React.FC = () => {
                     type="email"
                     name="email"
                     placeholder="Email"
-                    className="w-full px-6 py-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                    className="w-full px-6 py-4 rounded-xl border border-gray-200 focus:border-primary-400 focus:ring-2 focus:ring-primary-400/20 outline-none transition-all"
                     value={formData.email}
                     onChange={handleChange}
                     required
@@ -59,7 +59,7 @@ const Contact: React.FC = () => {
                   type="tel"
                   name="phone"
                   placeholder="Phone Number"
-                  className="w-full px-6 py-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  className="w-full px-6 py-4 rounded-xl border border-gray-200 focus:border-primary-400 focus:ring-2 focus:ring-primary-400/20 outline-none transition-all"
                   value={formData.phone}
                   onChange={handleChange}
                   required
@@ -67,13 +67,13 @@ const Contact: React.FC = () => {
                 <textarea
                   name="message"
                   placeholder="Message"
-                  className="w-full px-6 py-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all resize-none"
+                  className="w-full px-6 py-4 rounded-xl border border-gray-200 focus:border-primary-400 focus:ring-2 focus:ring-primary-400/20 outline-none transition-all resize-none"
                   value={formData.message}
                   onChange={handleChange}
                   rows={4}
                   required
                 />
-                <button type="submit" className="w-full md:w-max bg-primary text-dark font-bold py-4 px-12 rounded-xl shadow-lg shadow-primary/20 hover:shadow-xl hover:-translate-y-0.5 transition-all">
+                <button type="submit" className="w-full md:w-max bg-primary-400 text-dark font-bold py-4 px-12 rounded-xl shadow-lg shadow-primary-400/20 hover:shadow-xl hover:-translate-y-0.5 transition-all">
                   Submit Now
                 </button>
               </form>
@@ -81,7 +81,7 @@ const Contact: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="flex items-start gap-4 p-6 bg-white rounded-2xl border border-gray-100 shadow-sm">
-                <div className="w-12 h-12 flex-shrink-0 bg-primary/10 rounded-full flex items-center justify-center text-primary">
+                <div className="w-12 h-12 flex-shrink-0 bg-primary-400/10 rounded-full flex items-center justify-center text-primary-400">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
                   </svg>
@@ -92,7 +92,7 @@ const Contact: React.FC = () => {
                 </div>
               </div>
               <div className="flex items-start gap-4 p-6 bg-white rounded-2xl border border-gray-100 shadow-sm">
-                <div className="w-12 h-12 flex-shrink-0 bg-primary/10 rounded-full flex items-center justify-center text-primary">
+                <div className="w-12 h-12 flex-shrink-0 bg-primary-400/10 rounded-full flex items-center justify-center text-primary-400">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" />
                   </svg>

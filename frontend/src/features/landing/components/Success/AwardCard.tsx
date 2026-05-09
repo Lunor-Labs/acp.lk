@@ -18,7 +18,7 @@ const AwardCard: React.FC<AwardCardProps> = ({
 }) => {
   const renderStars = (count: number = 5) => {
     return Array.from({ length: count }).map((_, i) => (
-      <span key={i} className="text-primary text-lg">★</span>
+      <span key={i} className="text-primary-400 text-lg">★</span>
     ));
   };
 

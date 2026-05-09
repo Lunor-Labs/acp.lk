@@ -59,11 +59,11 @@ const Channels: React.FC = () => {
             <a
               key={channel.name}
               href={channel.href}
-              className="landing-card flex flex-col items-center gap-4 hover:border-primary group"
+              className="landing-card flex flex-col items-center gap-4 hover:border-primary-400 group"
               target="_blank"
               rel="noopener noreferrer"
             >
-              <div className="w-16 h-16 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+              <div className="w-16 h-16 flex items-center justify-center text-primary-400 group-hover:scale-110 transition-transform">
                 {channel.icon}
               </div>
               <h3 className="text-xl font-bold text-dark">{channel.name}</h3>

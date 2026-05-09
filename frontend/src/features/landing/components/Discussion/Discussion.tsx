@@ -51,7 +51,7 @@ const Discussion: React.FC = () => {
               </div>
 
               {/* End Discussion Button */}
-              <button className="w-full bg-primary hover:bg-primary-500 text-dark font-bold py-3 rounded-xl transition-all duration-300 shadow-lg shadow-primary/20 hover:shadow-primary/40">
+              <button className="w-full bg-primary-400 hover:bg-primary-500 text-dark font-bold py-3 rounded-xl transition-all duration-300 shadow-lg shadow-primary-400/20 hover:shadow-primary-400/40">
                 End Discussion
               </button>
             </div>
@@ -61,7 +61,7 @@ const Discussion: React.FC = () => {
         {/* Right Side - Text Content */}
         <div className="text-center lg:text-left order-1 lg:order-2">
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-8">
-            <span className="text-primary block mb-2">ලංකාවේ ඉහළම</span>
+            <span className="text-primary-400 block mb-2">ලංකාවේ ඉහළම</span>
             <span className="text-success block"> ප්‍රතිඵල ලබන පන්තිය</span>
           </h2>
           <p className="text-lg text-gray leading-relaxed max-w-xl mx-auto lg:mx-0">
