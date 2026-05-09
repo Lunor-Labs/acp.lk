@@ -50,7 +50,6 @@ type DashboardStats = StudentDashboardStats;
 
 function StudentSidebarContent({ onClose }: { onClose?: () => void }) {
   const { user, signOut } = useAuth();
-  const navigate = useNavigate();
 
   const navItems = [
     { path: '/student/dashboard', label: 'Dashboard', icon: LayoutDashboard },
