@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -200,8 +200,10 @@ export default function TeacherDashboard() {
         <div className="border-t border-white/10 px-4 py-4">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-9 h-9 rounded-full bg-slate-700 flex items-center justify-center overflow-hidden ring-2 ring-white/10">
-              {/* Note: avatar_url isn't in UserProfile type yet, so we use the default icon */}
-              <User className="w-4 h-4 text-slate-300" />
+              {user?.avatar_url
+                ? <img src={user.avatar_url} alt={user.full_name} className="w-full h-full object-cover" />
+                : <User className="w-4 h-4 text-slate-300" />
+              }
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-white truncate">{user?.full_name}</p>
@@ -235,7 +237,7 @@ export default function TeacherDashboard() {
                   <Avatar className="w-8 h-8 cursor-pointer">
                     <AvatarImage src={user?.avatar_url ?? undefined} alt={user?.full_name ?? ''} />
                     <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
-                      {getInitials(user?.full_name ?? 'U')}
+                      {getInitials(user?.full_name || 'U')}
                     </AvatarFallback>
                   </Avatar>
                 </button>
@@ -493,7 +495,6 @@ function MiniStatCard({
 ───────────────────────────────────────────────────────────────── */
 
 function OnboardingChart({ data }: { data: StudentOnboardingDataPoint[] }) {
-  const svgRef = useRef<SVGSVGElement>(null);
   const [tooltip, setTooltip] = useState<{ x: number; y: number; idx: number } | null>(null);
 
   const W = 700;
@@ -539,7 +540,6 @@ function OnboardingChart({ data }: { data: StudentOnboardingDataPoint[] }) {
   return (
     <div className="relative w-full h-full overflow-x-auto">
       <svg
-        ref={svgRef}
         viewBox={`0 0 ${W} ${H}`}
         className="w-full h-full"
         style={{ minWidth: 320, minHeight: 140 }}

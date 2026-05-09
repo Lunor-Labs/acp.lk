@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -197,7 +197,7 @@ export default function StudentDashboard() {
                   <Avatar className="w-8 h-8 cursor-pointer">
                     <AvatarImage src={user?.avatar_url ?? undefined} alt={user?.full_name ?? ''} />
                     <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
-                      {getInitials(user?.full_name ?? 'U')}
+                      {getInitials(user?.full_name || 'U')}
                     </AvatarFallback>
                   </Avatar>
                 </button>
@@ -462,7 +462,6 @@ function MiniStatCard({
 ───────────────────────────────────────────────────────────────── */
 
 function PerformanceChart({ data }: { data: PerformanceData[] }) {
-  const svgRef = useRef<SVGSVGElement>(null);
   const [tooltip, setTooltip] = useState<{ x: number; y: number; idx: number } | null>(null);
 
   const W = 700;
@@ -504,7 +503,6 @@ function PerformanceChart({ data }: { data: PerformanceData[] }) {
   return (
     <div className="relative w-full overflow-x-auto">
       <svg
-        ref={svgRef}
         viewBox={`0 0 ${W} ${H}`}
         className="w-full"
         style={{ minWidth: 320, maxWidth: '100%' }}
