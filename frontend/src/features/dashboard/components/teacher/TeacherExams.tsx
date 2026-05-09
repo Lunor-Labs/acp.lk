@@ -5,10 +5,10 @@ import { ExamList } from './exams/ExamList';
 import { ExamCreateView } from './exams/ExamCreateView';
 import { ExamDetailModal } from './exams/ExamDetailModal';
 import { AlertCircle } from 'lucide-react';
-import type { Exam, Class, PdfAnswer, ManualQuestion, ExamDetail, Question } from './exams/types';
+import type { Exam, Class, PdfAnswer, ManualAnswer, ManualQuestion, ExamDetail, Question } from './exams/types';
 
 export default function TeacherExams() {
-  const { profile } = useAuth();
+  const { user } = useAuth();
   const [exams, setExams] = useState<Exam[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState(true);
@@ -89,7 +89,7 @@ export default function TeacherExams() {
   useEffect(() => {
     fetchExams();
     fetchClasses();
-  }, [profile?.id]);
+  }, [user?.id]);
 
   async function fetchClasses() {
     try {

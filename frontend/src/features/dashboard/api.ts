@@ -75,7 +75,7 @@ export const FilesApi = {
   
   // Helper to directly upload file using signed URL
   uploadWithSignedUrl: async (bucket: string, path: string, file: File) => {
-    const { data } = await FilesApi.getSignedUploadUrl(bucket, path);
+    const data = await FilesApi.getSignedUploadUrl(bucket, path);
     const res = await fetch(data.signedUrl, {
       method: 'PUT',
       headers: {

@@ -15,7 +15,6 @@ interface ExamListProps {
 
 export function ExamList({
   exams,
-  classes,
   loading,
   searchQuery,
   setSearchQuery,

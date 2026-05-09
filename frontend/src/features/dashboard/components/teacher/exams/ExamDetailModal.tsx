@@ -1,4 +1,4 @@
-import { X, Calendar, Clock, Edit, Trash2, FileText, Image, AlertCircle } from 'lucide-react';
+import { X, Calendar, Clock, Edit, Trash2, FileText, Image } from 'lucide-react';
 import type { ExamDetail, ManualQuestion } from './types';
 
 // Derives public URL from stored image_path (format: "acp/questions/images/foo.jpg")
