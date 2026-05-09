@@ -15,6 +15,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from '@/components/ui/chart';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -298,13 +299,36 @@ function StudentDashboardContent({
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center h-72">
-          <div className="flex flex-col items-center gap-4">
-            <div className="relative w-14 h-14">
-              <div className="absolute inset-0 rounded-full border-4 border-red-100"></div>
-              <div className="absolute inset-0 rounded-full border-4 border-[#eb1b23] border-t-transparent animate-spin"></div>
-            </div>
-            <p className="text-slate-400 text-sm font-medium">Loading your dashboard…</p>
+        <div className="space-y-6">
+          {/* Stat card skeletons */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="bg-white rounded-2xl shadow-sm p-5 space-y-3">
+                <div className="flex items-start justify-between">
+                  <Skeleton className="h-11 w-11 rounded-xl" />
+                  <Skeleton className="h-6 w-16 rounded-full" />
+                </div>
+                <Skeleton className="h-8 w-20" />
+                <Skeleton className="h-4 w-28" />
+              </div>
+            ))}
+          </div>
+          {/* Secondary row skeletons */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <div key={i} className="bg-white rounded-2xl shadow-sm p-5 flex items-center gap-4">
+                <Skeleton className="h-12 w-12 rounded-2xl flex-shrink-0" />
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-6 w-16" />
+                  <Skeleton className="h-4 w-28" />
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* Chart skeleton */}
+          <div className="bg-white rounded-2xl shadow-sm p-6 space-y-4">
+            <Skeleton className="h-5 w-40" />
+            <Skeleton className="h-56 w-full rounded-xl" />
           </div>
         </div>
       ) : (
