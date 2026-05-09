@@ -26,102 +26,68 @@ and several frontend features are stubs.
 
 | Area | Status |
 |---|---|
-| `backend/` — Express + Drizzle ORM | Built, not deployed |
-| `frontend/` — React/Vite, feature-based | Partially migrated |
+| `backend/` — Express + Drizzle ORM | Deployed on Railway ✓ |
+| `frontend/` — React/Vite, feature-based | Deployed on Vercel ✓ |
 | Auth, dashboards, classes, exams | Working |
 | StudyPacks (student), Gallery, Reviews, Test Results, Success, Profile | Stubs |
 | Admin portal | Not started |
-| CI/CD (`deploy.yml`) | Broken — points to root with no `package.json`, Firebase vars |
+| CI/CD (`deploy.yml`) | Working — path-filtered Railway + Vercel deploys ✓ |
 | `old/` codebase | Frozen for reference |
 
 ---
 
 ## Architecture & Deployment
 
-### Monorepo Structure (end state)
+### Monorepo Structure (deployed state)
 
 ```
 acp.lk/
-├── api/                        ← Vercel Serverless Functions (NEW)
-│   ├── auth/
-│   │   ├── signin.ts
-│   │   ├── signup/otp.ts
-│   │   ├── signup/verify.ts
-│   │   ├── reset/otp.ts
-│   │   └── reset/verify.ts
-│   ├── courses/index.ts
-│   ├── dashboard/
-│   │   ├── student.ts
-│   │   └── teacher.ts
-│   ├── exams/index.ts
-│   ├── enrollments/index.ts
-│   ├── studypacks/index.ts
-│   ├── users/me.ts
-│   └── files/index.ts
-│
-├── vercel.json                 ← Monorepo build config (NEW)
-├── package.json                ← Root package.json for api/ deps (NEW)
-├── frontend/                   ← React/Vite app (structure unchanged)
-├── backend/                    ← Services + repositories (UNTOUCHED)
+├── railway.json                ← Railway build + start config (backend)
+├── nixpacks.toml               ← Pins Node 20 for Railway build
+├── vercel.json                 ← Vercel build config (frontend only)
+├── frontend/                   ← React/Vite app → deployed on Vercel
+├── backend/                    ← Express + Drizzle ORM → deployed on Railway
 └── old/                        ← Legacy frozen codebase
 ```
 
-### Vercel Function Pattern
+### Backend → Railway
 
-Each function file is a thin wrapper around the existing service layer:
+The existing Express server (`backend/src/api/express/server.ts`) runs as-is on Railway.
+No code changes to `backend/` were needed — only config files at the repo root:
 
-```ts
-// api/auth/signin.ts (public route — no auth required)
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { userService } from '../../backend/src/services/userService.js';
-import { handleError } from '../../backend/src/utils/errors.js';
+- `railway.json`: build command (`cd backend && npm install && npm run build`), start command (`node backend/dist/api/express/server.js`), healthcheck at `/health`
+- `nixpacks.toml`: pins `nodejs_20`
+- Required env vars in Railway dashboard: `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `SUPABASE_ANON_KEY`, `SUPABASE_JWT_SECRET`
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'POST') return res.status(405).end();
-  try {
-    const result = await userService.signIn(req.body.identifier, req.body.password);
-    res.json(result);
-  } catch (err) {
-    handleError(err, res);
-  }
-}
-```
+### Frontend → Vercel
 
-Protected routes call `verifyToken()` from `SupabaseAuthProvider` to extract `userId` from the
-Bearer token before calling the service. A shared `withAuth` helper wraps this so each protected
-function stays a thin one-liner rather than repeating token extraction logic.
-
-The `backend/src/services/` and `backend/src/repositories/` layers are **never modified**.
-Only the `api/` handler wrappers are new.
-
-### vercel.json
+`vercel.json` builds and serves the React app only:
 
 ```json
 {
   "buildCommand": "cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/dist",
-  "functions": {
-    "api/**/*.ts": { "runtime": "@vercel/node@3" }
-  }
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
 ```
 
-### Frontend API calls
+`VITE_API_BASE_URL` is set as a Vercel secret (the Railway service URL) and injected into
+`frontend/.env.production` at build time. The frontend API client (`frontend/src/api/client.ts`)
+reads it:
 
-`VITE_API_URL=/api` — frontend calls relative paths (`/api/auth/signin`).
-Same Vercel domain → zero CORS configuration needed.
+```ts
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+```
 
-### CI/CD Pipeline (deploy.yml) changes
+Local dev: `/api` proxies to `http://localhost:3001` via Vite. Production: points to Railway URL.
 
-- Remove all Firebase env vars
-- Add: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `DATABASE_URL`, `JWT_SECRET`, `VITE_API_URL`
-- Build step: `cd frontend && npm install && npm run build`
-- Root `npm install` for Vercel Function dependencies
+### CI/CD Pipeline (`.github/workflows/deploy.yml`)
 
-### Migration path to Render (if needed later)
+Path-filtered — only the changed service deploys:
 
-The `backend/src/api/express/server.ts` already exists with all routes. To move to Render:
-point the Express routes at the same services layer — no service or repository code changes.
+- `frontend/**` changed → `deploy-frontend` job: `vercel build --prod` + `vercel deploy --prebuilt --prod`
+- `backend/**` changed → `deploy-backend` job: `railway up --service acp-lk --environment production --detach`
+- Secrets required: `VERCEL_TOKEN`, `RAILWAY_API_TOKEN`, `RAILWAY_PROJECT_ID`, `VITE_API_BASE_URL`
 
 ---
 
@@ -259,11 +225,11 @@ Null for all existing records — enables multi-tenancy later without schema cha
 
 ## Phased Delivery Order (Approach B)
 
-1. **Phase 1 — Deployment fix** (unblocks everything)
-   - Create root `vercel.json` + root `package.json`
-   - Create `api/` Vercel Function wrappers for all existing backend routes
-   - Update `deploy.yml` with correct env vars and build commands
-   - Verify end-to-end: login → dashboard works on preview URL
+1. **Phase 1 — Deployment fix** ✅ COMPLETE
+   - Backend deployed on Railway (Express server, nixpacks, `railway.json`)
+   - Frontend deployed on Vercel (`vercel.json`, `VITE_API_BASE_URL` secret)
+   - CI/CD path-filtered: Railway deploys on `backend/**` changes, Vercel on `frontend/**` changes
+   - End-to-end verified: login → dashboard works
 
 2. **Phase 2 — shadcn/ui design system**
    - Init shadcn/ui in `frontend/`
@@ -283,8 +249,8 @@ Null for all existing records — enables multi-tenancy later without schema cha
 
 ## Success Criteria
 
-- [ ] Frontend deployed on Vercel, backend API served as Vercel Functions on same domain
-- [ ] No Firebase references remain in codebase or CI/CD
+- [x] Frontend deployed on Vercel, backend deployed on Railway
+- [x] No Firebase references remain in codebase or CI/CD
 - [ ] All "Porting in progress" stubs replaced with working pages
 - [ ] All portals use shadcn/ui components — no custom spinner or SVG charts
 - [ ] Admin portal allows adding/deactivating teachers and viewing platform stats
