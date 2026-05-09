@@ -276,7 +276,7 @@ export default function TeacherExams() {
       if (selectedExamDetail.isPdfExam) {
         setMarkedAnswers(markedAnswers.map(answer => ({
           question_no: answer.question_no,
-          correct_answer: editedAnswers[answer.question_no] ?? answer.correct_answer,
+          correct_answer: (editedAnswers[answer.question_no] ?? answer.correct_answer) as number,
         })));
       } else {
         setManualQuestions(manualQuestions.map(q =>
