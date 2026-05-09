@@ -59,6 +59,11 @@ jobs:
 
       - name: Build
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+
+      - name: Verify URL in bundle
+        run: grep -r "railway.app" .vercel/output/ && echo "✓ Railway URL found" || echo "✗ Railway URL NOT in bundle"
 
       - name: Deploy
         run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
