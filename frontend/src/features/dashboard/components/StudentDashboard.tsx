@@ -35,12 +35,11 @@ import type { StudentDashboardStats, StudentPerformanceData as PerformanceData }
 import { DashboardApi } from '../api';
 import acpLogo from '@/assets/acp-logo.webp';
 
-// Stub components until we port the actual UI
 import MyClasses from './student/StudentMyClasses';
 import BrowseClasses from './student/BrowseClasses';
 import StudentExams from './student/StudentExams';
-const StudyPacks = () => <div className="p-8 font-bold text-xl">Study Packs (Porting in progress)</div>;
-const ProfilePage = () => <div className="p-8 font-bold text-xl">Profile Page (Porting in progress)</div>;
+import StudentStudyPacks from './student/StudentStudyPacks';
+import StudentProfile from './student/StudentProfile';
 
 type DashboardStats = StudentDashboardStats;
 
@@ -250,9 +249,9 @@ export default function StudentDashboard() {
           } />
           <Route path="browse" element={<BrowseClasses />} />
           <Route path="classes" element={<MyClasses />} />
-          <Route path="studypacks" element={<StudyPacks />} />
+          <Route path="studypacks" element={<StudentStudyPacks />} />
           <Route path="exams" element={<StudentExams />} />
-          <Route path="profile" element={<ProfilePage />} />
+          <Route path="profile" element={<StudentProfile />} />
         </Routes>
       </main>
     </div>
