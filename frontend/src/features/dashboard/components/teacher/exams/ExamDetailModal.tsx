@@ -1,5 +1,6 @@
 import { X, Calendar, Clock, Edit, Trash2, FileText, Image } from 'lucide-react';
 import type { ExamDetail, ManualQuestion } from './types';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 // Derives public URL from stored image_path (format: "acp/questions/images/foo.jpg")
 function getImageUrl(imagePath: string): string {
@@ -12,6 +13,8 @@ function getImageUrl(imagePath: string): string {
 }
 
 interface ExamDetailModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   selectedExamDetail: ExamDetail;
   setSelectedExamDetail: (e: ExamDetail | null) => void;
   loadingExamDetail: boolean;
@@ -39,6 +42,7 @@ interface ExamDetailModalProps {
 }
 
 export function ExamDetailModal({
+  open, onOpenChange,
   selectedExamDetail, setSelectedExamDetail, loadingExamDetail,
   isEditingExamDetails, setIsEditingExamDetails, editExamData, setEditExamData,
   handleUpdateExamDetails, isSaving, setShowDeleteConfirm,
@@ -50,8 +54,8 @@ export function ExamDetailModal({
 }: ExamDetailModalProps) {
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0 flex flex-col gap-0">
         {loadingExamDetail ? (
           <div className="flex items-center justify-center h-96">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#eb1b23]"></div>
@@ -530,7 +534,7 @@ export function ExamDetailModal({
             </div>
           </>
         )}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

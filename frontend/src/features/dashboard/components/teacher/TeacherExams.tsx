@@ -435,7 +435,9 @@ export default function TeacherExams() {
       </div>
 
       {selectedExamDetail && (
-        <ExamDetailModal 
+        <ExamDetailModal
+          open={selectedExamDetail !== null}
+          onOpenChange={(open) => { if (!open) setSelectedExamDetail(null); }}
           selectedExamDetail={selectedExamDetail} setSelectedExamDetail={setSelectedExamDetail}
           loadingExamDetail={loadingExamDetail} isEditingExamDetails={isEditingExamDetails}
           setIsEditingExamDetails={setIsEditingExamDetails} editExamData={editExamData} setEditExamData={setEditExamData}
