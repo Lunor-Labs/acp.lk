@@ -53,6 +53,17 @@ export class UserService {
     return this.profileRepo.update(userId, updates);
   }
 
+  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
+    const profile = await this.profileRepo.findById(userId);
+    if (!profile) throw AppError.notFound('Profile not found');
+    try {
+      await this.authProvider.signIn(profile.email, currentPassword);
+    } catch {
+      throw AppError.badRequest('Current password is incorrect');
+    }
+    await this.authProvider.updatePassword(userId, newPassword);
+  }
+
   // ─── Sign-up OTP flow ─────────────────────────────────────────────────────
 
   /**
