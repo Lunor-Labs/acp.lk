@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { Video, ShoppingBag, Trash2, Upload, Package, Pencil } from 'lucide-react';
 import { StudyPacksApi } from '../../api';
 import type { StudyPack, VideoLesson } from '../../api';
@@ -46,7 +47,7 @@ export default function TeacherStudyPacks() {
   async function handleCreatePack(isDraft: boolean) {
     try {
       if (!formData.title || !formData.subject) {
-        alert('Please fill in all required fields');
+        toast.warning('Please fill in all required fields');
         return;
       }
 
@@ -61,16 +62,16 @@ export default function TeacherStudyPacks() {
 
       if (editingPackId) {
         await StudyPacksApi.updatePack(editingPackId, packData);
-        alert(isDraft ? 'Study pack draft updated!' : 'Study pack updated successfully!');
+        toast.success(isDraft ? 'Study pack draft updated!' : 'Study pack updated successfully!');
       } else {
         await StudyPacksApi.createPack(packData);
-        alert(isDraft ? 'Study pack saved as draft!' : 'Study pack published successfully!');
+        toast.success(isDraft ? 'Study pack saved as draft!' : 'Study pack published successfully!');
       }
       resetForm();
       fetchStudyPacks();
     } catch (error) {
       console.error('Error creating study pack:', error);
-      alert('Failed to create study pack. Please try again.');
+      toast.error('Failed to save study pack. Please try again.');
     }
   }
 
@@ -107,10 +108,10 @@ export default function TeacherStudyPacks() {
       await StudyPacksApi.deletePack(id);
 
       setStudyPacks((prevPacks) => prevPacks.filter((pack) => pack.id !== id));
-      alert('Study pack deleted successfully');
+      toast.success('Study pack deleted');
     } catch (error) {
       console.error('Error deleting study pack:', error);
-      alert('Failed to delete study pack. Please try again.');
+      toast.error('Failed to delete study pack. Please try again.');
     } finally {
       setLoading(false);
     }

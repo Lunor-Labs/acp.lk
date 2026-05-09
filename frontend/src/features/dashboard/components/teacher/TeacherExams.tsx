@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { TeacherExamsApi, TeacherCoursesApi, FilesApi } from '../../api';
 import { ExamList } from './exams/ExamList';
@@ -41,17 +42,6 @@ export default function TeacherExams() {
     remove_image?: boolean;
   } | null>(null);
   const [isUpdatingQuestion, setIsUpdatingQuestion] = useState(false);
-
-  // Toast notification state
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info'; visible: boolean } | null>(null);
-
-  const showToast = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
-    setToast({ message, type, visible: true });
-    setTimeout(() => {
-      setToast(prev => prev ? { ...prev, visible: false } : null);
-      setTimeout(() => setToast(null), 300);
-    }, 4000);
-  };
 
   const [formData, setFormData] = useState({
     class_id: '',
@@ -160,7 +150,7 @@ export default function TeacherExams() {
       }
     } catch (error) {
       console.error('Error loading exam details:', error);
-      showToast('Failed to load exam details', 'error');
+      toast.error('Failed to load exam details');
     } finally {
       setLoadingExamDetail(false);
     }
@@ -174,7 +164,7 @@ export default function TeacherExams() {
       const endTime = new Date(`${editExamData.end_date}T${editExamData.end_time}`);
 
       if (endTime <= startTime) {
-        showToast('End time must be after start time', 'warning');
+        toast.warning('End time must be after start time');
         setIsSaving(false);
         return;
       }
@@ -187,7 +177,7 @@ export default function TeacherExams() {
         duration_minutes: editExamData.duration_minutes,
       });
 
-      showToast('Exam details updated successfully!', 'success');
+      toast.success('Exam details updated successfully!');
       setIsEditingExamDetails(false);
       fetchExams();
       
@@ -201,7 +191,7 @@ export default function TeacherExams() {
       });
     } catch (error) {
       console.error('Error updating exam details:', error);
-      showToast('Failed to update exam details. Please try again.', 'error');
+      toast.error('Failed to update exam details. Please try again.');
     } finally {
       setIsSaving(false);
     }
@@ -212,12 +202,12 @@ export default function TeacherExams() {
     try {
       setIsDeleting(true);
       await TeacherExamsApi.deleteExam(selectedExamDetail.id);
-      showToast('Exam deleted successfully!', 'success');
+      toast.success('Exam deleted successfully!');
       setSelectedExamDetail(null);
       setShowDeleteConfirm(false);
       fetchExams();
     } catch (error) {
-      showToast('Failed to delete exam. Please try again.', 'error');
+      toast.error('Failed to delete exam. Please try again.');
     } finally {
       setIsDeleting(false);
     }
@@ -255,11 +245,11 @@ export default function TeacherExams() {
         } : q
       ));
 
-      showToast('Question updated successfully!', 'success');
+      toast.success('Question updated successfully!');
       setEditingQuestionId(null);
       setEditQuestionData(null);
     } catch (error) {
-      showToast('Failed to update question', 'error');
+      toast.error('Failed to update question');
     } finally {
       setIsUpdatingQuestion(false);
     }
@@ -268,7 +258,7 @@ export default function TeacherExams() {
   async function handleSaveAnswerChanges() {
     if (!selectedExamDetail) return;
     try {
-      if (Object.keys(editedAnswers).length === 0) return showToast('No changes made to save', 'warning');
+      if (Object.keys(editedAnswers).length === 0) return toast.warning('No changes made to save');
 
       setIsSaving(true);
       await TeacherExamsApi.updateAnswers(selectedExamDetail.id, editedAnswers, selectedExamDetail.isPdfExam);
@@ -284,9 +274,9 @@ export default function TeacherExams() {
         ));
       }
       setEditedAnswers({});
-      showToast('Answer sheet updated successfully!', 'success');
+      toast.success('Answer sheet updated successfully!');
     } catch (error) {
-      showToast('Failed to save changes', 'error');
+      toast.error('Failed to save changes');
     } finally {
       setIsSaving(false);
     }
@@ -325,15 +315,15 @@ export default function TeacherExams() {
   async function handleCreateExam() {
     try {
       if (!formData.class_id || !formData.title || !formData.exam_date || !formData.exam_time || !formData.end_date || !formData.end_time) {
-        return showToast('Please fill in all required fields', 'warning');
+        return toast.warning('Please fill in all required fields');
       }
 
       const validQuestions = questions.filter(q => q.question_text.trim() || q.image_file || q.image_path);
-      if (validQuestions.length === 0) return showToast('Please add at least one question', 'warning');
+      if (validQuestions.length === 0) return toast.warning('Please add at least one question');
 
       const startTime = new Date(`${formData.exam_date}T${formData.exam_time}`);
       const endTime = new Date(`${formData.end_date}T${formData.end_time}`);
-      if (endTime <= startTime) return showToast('End time must be after start time', 'warning');
+      if (endTime <= startTime) return toast.warning('End time must be after start time');
 
       setIsCreatingExam(true);
       const payload: any = { type: 'manual', ...formData, start_time: startTime.toISOString(), end_time: endTime.toISOString(), total_marks: validQuestions.reduce((sum, q) => sum + q.marks, 0), questions: [] };
@@ -357,11 +347,11 @@ export default function TeacherExams() {
       payload.total_marks = validQuestions.reduce((sum, q) => sum + q.marks, 0);
 
       await TeacherExamsApi.createExam(payload);
-      showToast('Exam created successfully!', 'success');
+      toast.success('Exam created successfully!');
       resetForm();
       fetchExams();
     } catch(err) {
-      showToast('Failed to create exam.', 'error');
+      toast.error('Failed to create exam.');
     } finally {
       setIsCreatingExam(false);
     }
@@ -382,11 +372,11 @@ export default function TeacherExams() {
         type: 'pdf', ...formData, start_time: startTime.toISOString(), end_time: endTime.toISOString(),
         total_marks: 50, pdfPath: `acp/${storedPath}`, pdfAnswers
       });
-      showToast('PDF Paper exam created successfully!', 'success');
+      toast.success('PDF Paper exam created successfully!');
       resetForm();
       fetchExams();
     } catch(err) {
-      showToast('Failed to create PDF exam.', 'error');
+      toast.error('Failed to create PDF exam.');
     } finally {
       setPdfUploading(false);
     }
@@ -490,13 +480,6 @@ export default function TeacherExams() {
         </div>
       )}
 
-      {toast && (
-        <div className={`fixed bottom-6 right-6 z-[100] transition-all duration-300 transform ${toast.visible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
-          <div className="bg-white px-5 py-4 rounded-xl shadow-2xl border-l-4 min-w-[320px] max-w-[480px]">
-             {toast.message}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

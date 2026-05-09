@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { Toaster } from '@/components/ui/sonner';
 
 import LandingPage from './pages/LandingPage';
 import AuthPanel from './features/landing/components/Auth/AuthPanel';
@@ -50,6 +51,7 @@ export default function App() {
       <BrowserRouter>
         <div className="min-h-screen bg-gray-50 text-gray-900">
           <AppRoutes />
+          <Toaster richColors position="bottom-right" />
         </div>
       </BrowserRouter>
     </AuthProvider>

@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { CoursesApi } from '../../../courses/api';
 import { EnrollmentsApi } from '../../../enrollments/api';
 import type { Course } from '../../../courses/api';
 import {
   BookOpen,
-  CheckCircle,
   LayoutGrid,
   List,
-  AlertCircle,
   ChevronDown,
   Loader
 } from 'lucide-react';
@@ -80,8 +79,6 @@ export default function BrowseClasses() {
   const [subjects, setSubjects] = useState<string[]>([]);
   const [enrollingClassId, setEnrollingClassId] = useState<string | null>(null);
   const [processingPayment, setProcessingPayment] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     fetchClasses();
@@ -127,7 +124,7 @@ export default function BrowseClasses() {
       setTeachers(uniqueTeachers);
     } catch (error) {
       console.error('Error fetching classes:', error);
-      setErrorMessage('Failed to load classes');
+      toast.error('Failed to load classes');
     } finally {
       setLoading(false);
     }
@@ -158,13 +155,11 @@ export default function BrowseClasses() {
     try {
       await EnrollmentsApi.enroll(classItem.id);
 
-      setSuccessMessage(`Successfully enrolled in "${classItem.title}"!`);
+      toast.success(`Successfully enrolled in "${classItem.title}"!`);
       await fetchClasses();
-      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (error) {
       console.error('Error enrolling in class:', error);
-      setErrorMessage('Failed to enroll. Please try again.');
-      setTimeout(() => setErrorMessage(null), 3000);
+      toast.error('Failed to enroll. Please try again.');
     } finally {
       setEnrollingClassId(null);
     }
@@ -179,14 +174,12 @@ export default function BrowseClasses() {
       await new Promise(resolve => setTimeout(resolve, 800));
       await EnrollmentsApi.enroll(classItem.id);
 
-      setSuccessMessage(`Payment successful! Enrolled in "${classItem.title}"`);
+      toast.success(`Payment successful! Enrolled in "${classItem.title}"`);
       await fetchClasses();
-      setTimeout(() => setSuccessMessage(null), 3000);
       setProcessingPayment(null);
     } catch (error) {
       console.error('Error initiating payment:', error);
-      setErrorMessage('Failed to process enrollment. Please try again.');
-      setTimeout(() => setErrorMessage(null), 3000);
+      toast.error('Failed to process enrollment. Please try again.');
       setProcessingPayment(null);
     }
   }
@@ -227,39 +220,6 @@ export default function BrowseClasses() {
             Explore our curated selection of high-performance academic courses. Designed for excellence, led by industry experts.
           </p>
         </div>
-
-        {/* Alert Messages */}
-        {successMessage && (
-          <div style={{
-            marginBottom: 20,
-            background: '#f0fdf4',
-            border: '1px solid #bbf7d0',
-            borderRadius: 12,
-            padding: '14px 18px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-          }}>
-            <CheckCircle size={18} color="#16a34a" />
-            <p style={{ color: '#15803d', fontSize: 14 }}>{successMessage}</p>
-          </div>
-        )}
-
-        {errorMessage && (
-          <div style={{
-            marginBottom: 20,
-            background: '#fef2f2',
-            border: '1px solid #fecaca',
-            borderRadius: 12,
-            padding: '14px 18px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-          }}>
-            <AlertCircle size={18} color="#dc2626" />
-            <p style={{ color: '#b91c1c', fontSize: 14 }}>{errorMessage}</p>
-          </div>
-        )}
 
         {/* Filter Bar */}
         <div style={{
