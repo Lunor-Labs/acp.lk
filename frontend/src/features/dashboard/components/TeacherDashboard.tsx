@@ -39,6 +39,7 @@ import acpLogo from '@/assets/acp-logo.webp';
 import MyClasses from './teacher/MyClasses';
 import TeacherStudyPacks from './teacher/TeacherStudyPacks';
 import TeacherExams from './teacher/TeacherExams';
+import GalleryManager from './teacher/GalleryManager';
 
 /* ─────────────────────────────────────────────────────────────────
    Teacher Sidebar Content (shared between desktop aside and Sheet)
@@ -169,7 +170,6 @@ function TeacherSidebarContent({ onClose }: { onClose?: () => void }) {
   );
 }
 
-const GalleryManager = () => <div className="p-8 font-bold text-xl">Gallery Manager (Porting in progress)</div>;
 const ReviewsManager = () => <div className="p-8 font-bold text-xl">Reviews Manager (Porting in progress)</div>;
 const TestResultsManager = () => <div className="p-8 font-bold text-xl">Test Results (Porting in progress)</div>;
 const SuccessManager = () => <div className="p-8 font-bold text-xl">Success Stories (Porting in progress)</div>;
