@@ -1,6 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { NavLink, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { getInitials } from '@/lib/utils';
 import {
   LayoutDashboard, Users, FileText, Package, LogOut,
   GraduationCap, TrendingUp, DollarSign, UserPlus, User,
@@ -19,7 +28,6 @@ const GalleryManager = () => <div className="p-8 font-bold text-xl">Gallery Mana
 const ReviewsManager = () => <div className="p-8 font-bold text-xl">Reviews Manager (Porting in progress)</div>;
 const TestResultsManager = () => <div className="p-8 font-bold text-xl">Test Results (Porting in progress)</div>;
 const SuccessManager = () => <div className="p-8 font-bold text-xl">Success Stories (Porting in progress)</div>;
-const ProfileMenu = ({ onProfileClick }: any) => <button onClick={onProfileClick} className="w-8 h-8 rounded-full bg-red-100"></button>;
 const ProfilePage = () => <div className="p-8 font-bold text-xl">Profile Page (Porting in progress)</div>;
 
 export default function TeacherDashboard() {
@@ -221,7 +229,27 @@ export default function TeacherDashboard() {
             <Menu className="w-5 h-5" />
           </button>
           <div className="flex-1" />
-          <ProfileMenu onProfileClick={() => navigate('/teacher/profile')} />
+          <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                  <Avatar className="w-8 h-8 cursor-pointer">
+                    <AvatarImage src={user?.avatar_url ?? undefined} alt={user?.full_name ?? ''} />
+                    <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+                      {getInitials(user?.full_name ?? 'U')}
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40">
+                <DropdownMenuItem onSelect={() => navigate('/teacher/profile')}>
+                  Profile
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={signOut} className="text-destructive focus:text-destructive">
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
         </div>
 
         {/* ── Route content ── */}

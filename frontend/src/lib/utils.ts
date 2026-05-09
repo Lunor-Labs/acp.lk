@@ -16,3 +16,13 @@ export function formatDate(dateString: string) {
     year: 'numeric'
   }).format(new Date(dateString));
 }
+
+export function getInitials(name: string): string {
+  return name
+    .split(' ')
+    .map(n => n[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+}
