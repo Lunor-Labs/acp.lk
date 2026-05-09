@@ -31,7 +31,13 @@ jobs:
         run: echo "VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}" > frontend/.env.production
 
       - name: Debug env file
-        run: cat frontend/.env.production
+        run: |
+          echo "=== frontend/.env.production ==="
+          cat frontend/.env.production
+          echo "=== frontend/.env.production.local (if exists) ==="
+          cat frontend/.env.production.local 2>/dev/null || echo "not found"
+          echo "=== All .env files in frontend/ ==="
+          find frontend -name ".env*" -not -path "*/node_modules/*"
 
       - name: Build
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
