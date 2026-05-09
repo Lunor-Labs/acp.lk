@@ -8,3 +8,7 @@ export * from './TeacherRepository.js';
 export * from './GalleryRepository.js';
 export * from './DashboardRepository.js';
 export * from './StudyPackRepository.js';
+export * from './ReviewsRepository.js';
+export * from './SuccessRepository.js';
+export * from './RankListRepository.js';
+export * from './StudyPackPurchaseRepository.js';
