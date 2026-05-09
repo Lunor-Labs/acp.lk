@@ -42,6 +42,7 @@ import TeacherExams from './teacher/TeacherExams';
 import GalleryManager from './teacher/GalleryManager';
 import ReviewsManager from './teacher/ReviewsManager';
 import TestResultsManager from './teacher/TestResultsManager';
+import SuccessManager from './teacher/SuccessManager';
 
 /* ─────────────────────────────────────────────────────────────────
    Teacher Sidebar Content (shared between desktop aside and Sheet)
@@ -172,7 +173,6 @@ function TeacherSidebarContent({ onClose }: { onClose?: () => void }) {
   );
 }
 
-const SuccessManager = () => <div className="p-8 font-bold text-xl">Success Stories (Porting in progress)</div>;
 const ProfilePage = () => <div className="p-8 font-bold text-xl">Profile Page (Porting in progress)</div>;
 
 export default function TeacherDashboard() {
