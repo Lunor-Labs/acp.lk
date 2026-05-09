@@ -2,14 +2,16 @@ import { StudyPackRepository } from '../repositories/index.js';
 import { TeacherRepository } from '../repositories/index.js';
 import type { NewStudyPack } from '../repositories/schema/studyPacks.js';
 import { AppError } from '../utils/errors.js';
+import { getDb } from '../providers/db/drizzle.js';
 
 export class StudyPackService {
   private studyPackRepo: StudyPackRepository;
   private teacherRepo: TeacherRepository;
 
   constructor() {
-    this.studyPackRepo = new StudyPackRepository();
-    this.teacherRepo = new TeacherRepository();
+    const db = getDb();
+    this.studyPackRepo = new StudyPackRepository(db);
+    this.teacherRepo = new TeacherRepository(db);
   }
 
   async getTeacherStudyPacks(userId: string) {

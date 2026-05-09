@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "ACP.lk Backend API - Fully decoupled, cloud-portable backend",
   "type": "module",
+  "engines": {
+    "node": "20"
+  },
   "scripts": {
     "dev": "tsx watch src/api/express/server.ts",
     "build": "tsc",
