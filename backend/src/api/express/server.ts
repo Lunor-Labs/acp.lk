@@ -9,6 +9,10 @@ import { enrollmentRouter } from './routes/enrollments.routes.js';
 import { examsRouter } from './routes/exams.routes.js';
 import { studyPacksRouter } from './routes/studypacks.routes.js';
 import { filesRouter } from './routes/files.routes.js';
+import { galleryRouter } from './routes/gallery.routes.js';
+import { reviewsRouter } from './routes/reviews.routes.js';
+import { successRouter } from './routes/success.routes.js';
+import { rankListsRouter } from './routes/rank-lists.routes.js';
 import cors from 'cors';
 
 const app = express();
@@ -36,6 +40,10 @@ app.use('/api/users', usersRouter);
 app.use('/api/exams', examsRouter);
 app.use('/api/studypacks', studyPacksRouter);
 app.use('/api/files', filesRouter);
+app.use('/api/gallery', galleryRouter);
+app.use('/api/reviews', reviewsRouter);
+app.use('/api/success', successRouter);
+app.use('/api/rank-lists', rankListsRouter);
 
 // ─── Health check ─────────────────────────────────────────────────────────────
 app.get('/health', (_req: Request, res: Response) => {
