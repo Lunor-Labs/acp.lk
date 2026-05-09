@@ -16,6 +16,7 @@ import {
   type ChartConfig,
 } from '@/components/ui/chart';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -38,6 +39,135 @@ import acpLogo from '@/assets/acp-logo.webp';
 import MyClasses from './teacher/MyClasses';
 import TeacherStudyPacks from './teacher/TeacherStudyPacks';
 import TeacherExams from './teacher/TeacherExams';
+
+/* ─────────────────────────────────────────────────────────────────
+   Teacher Sidebar Content (shared between desktop aside and Sheet)
+───────────────────────────────────────────────────────────────── */
+
+function TeacherSidebarContent({ onClose }: { onClose?: () => void }) {
+  const { user, signOut } = useAuth();
+
+  const mainNav = [
+    { path: '/teacher/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { path: '/teacher/classes', label: 'My Classes', icon: GraduationCap },
+    { path: '/teacher/exams', label: 'Exams', icon: FileText },
+    { path: '/teacher/study-packs', label: 'Study Packs', icon: Package },
+  ];
+
+  const websiteNav = [
+    { path: '/teacher/gallery', label: 'Gallery', icon: Image },
+    { path: '/teacher/reviews', label: 'Reviews', icon: MessageSquare },
+    { path: '/teacher/test-results', label: 'Test Results', icon: Trophy },
+    { path: '/teacher/success', label: 'Success Stories', icon: BookOpen },
+  ];
+
+  return (
+    <div className="w-64 flex flex-col h-full bg-[#0f1623] text-white">
+      {/* Logo area */}
+      <div className="px-6 py-5 border-b border-white/10 flex items-center justify-between">
+        <div className="flex flex-col items-center w-full gap-1">
+          <img src={acpLogo} alt="ACP Logo" className="h-9 w-auto object-contain" />
+          <span className="text-[10px] font-semibold text-slate-500 tracking-[0.2em] uppercase">
+            Teacher Portal
+          </span>
+        </div>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="lg:hidden text-slate-400 hover:text-white p-1 rounded-lg"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
+        {/* Main section */}
+        <p className="px-3 pb-2 text-[10px] font-semibold text-slate-600 uppercase tracking-widest">
+          Main
+        </p>
+        {mainNav.map(item => {
+          const Icon = item.icon;
+          return (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              onClick={onClose}
+              className={({ isActive }) =>
+                `w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  isActive
+                    ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-900/40'
+                    : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                }`
+              }
+            >
+              <Icon className="w-4 h-4 flex-shrink-0" />
+              {item.label}
+            </NavLink>
+          );
+        })}
+
+        {/* Website section */}
+        <div className="pt-4">
+          <p className="px-3 pb-2 text-[10px] font-semibold text-slate-600 uppercase tracking-widest">
+            Public Website
+          </p>
+          <NavLink
+            to="/"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:bg-white/5 hover:text-white transition-all duration-200"
+          >
+            <Home className="w-4 h-4" />
+            Go to Website
+          </NavLink>
+          {websiteNav.map(item => {
+            const Icon = item.icon;
+            return (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                onClick={onClose}
+                className={({ isActive }) =>
+                  `w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                    isActive
+                      ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-900/40'
+                      : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                  }`
+                }
+              >
+                <Icon className="w-4 h-4 flex-shrink-0" />
+                {item.label}
+              </NavLink>
+            );
+          })}
+        </div>
+      </nav>
+
+      {/* User footer */}
+      <div className="border-t border-white/10 px-4 py-4">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-9 h-9 rounded-full bg-slate-700 flex items-center justify-center overflow-hidden ring-2 ring-white/10">
+            {user?.avatar_url
+              ? <img src={user.avatar_url} alt={user.full_name} className="w-full h-full object-cover" />
+              : <User className="w-4 h-4 text-slate-300" />
+            }
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-white truncate">{user?.full_name}</p>
+            <p className="text-[11px] text-slate-500">Teacher</p>
+          </div>
+        </div>
+        <button
+          onClick={signOut}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm text-slate-400 hover:bg-white/5 hover:text-white transition-all"
+        >
+          <LogOut className="w-4 h-4" />
+          <span className="font-medium">Sign Out</span>
+        </button>
+      </div>
+    </div>
+  );
+}
 
 const GalleryManager = () => <div className="p-8 font-bold text-xl">Gallery Manager (Porting in progress)</div>;
 const ReviewsManager = () => <div className="p-8 font-bold text-xl">Reviews Manager (Porting in progress)</div>;
@@ -101,138 +231,18 @@ export default function TeacherDashboard() {
     }
   }
 
-  const navItems = [
-    { path: '/teacher/dashboard', label: 'Dashboard', icon: LayoutDashboard, section: 'main' },
-    { path: '/teacher/classes', label: 'My Classes', icon: GraduationCap, section: 'main' },
-    { path: '/teacher/exams', label: 'Exams', icon: FileText, section: 'main' },
-    { path: '/teacher/study-packs', label: 'Study Packs', icon: Package, section: 'main' },
-    { path: '/teacher/gallery', label: 'Gallery', icon: Image, section: 'website' },
-    { path: '/teacher/reviews', label: 'Reviews', icon: MessageSquare, section: 'website' },
-    { path: '/teacher/test-results', label: 'Test Results', icon: Trophy, section: 'website' },
-    { path: '/teacher/success', label: 'Success Stories', icon: BookOpen, section: 'website' },
-  ];
-
-  const mainNav = navItems.filter(n => n.section === 'main');
-  const websiteNav = navItems.filter(n => n.section === 'website');
-
   return (
     <div className="min-h-screen bg-[#f0f2f7] flex">
-      {/* Mobile overlay */}
-      {isMobileMenuOpen && (
-        <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
-          onClick={() => setIsMobileMenuOpen(false)}
-        />
-      )}
+      {/* Mobile sidebar via Sheet */}
+      <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+        <SheetContent side="left" className="p-0 w-64 border-none">
+          <TeacherSidebarContent onClose={() => setIsMobileMenuOpen(false)} />
+        </SheetContent>
+      </Sheet>
 
-      {/* ─── Sidebar ─── */}
-      <aside className={`
-        fixed lg:static inset-y-0 left-0 z-50
-        w-64 flex flex-col h-screen
-        bg-[#0f1623] text-white
-        transform transition-transform duration-300 ease-in-out
-        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-      `}>
-        {/* Logo area */}
-        <div className="px-6 py-5 border-b border-white/10 flex items-center justify-between">
-          <div className="flex flex-col items-center w-full gap-1">
-            <img src={acpLogo} alt="ACP Logo" className="h-9 w-auto object-contain" />
-            <span className="text-[10px] font-semibold text-slate-500 tracking-[0.2em] uppercase">
-              Teacher Portal
-            </span>
-          </div>
-          <button
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="lg:hidden text-slate-400 hover:text-white p-1 rounded-lg"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
-          {/* Main section */}
-          <p className="px-3 pb-2 text-[10px] font-semibold text-slate-600 uppercase tracking-widest">
-            Main
-          </p>
-          {mainNav.map(item => {
-            const Icon = item.icon;
-            return (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className={({ isActive }) =>
-                  `w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
-                    isActive
-                      ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-900/40'
-                      : 'text-slate-400 hover:bg-white/5 hover:text-white'
-                  }`
-                }
-              >
-                <Icon className="w-4 h-4 flex-shrink-0" />
-                {item.label}
-              </NavLink>
-            );
-          })}
-
-          {/* Website section */}
-          <div className="pt-4">
-            <p className="px-3 pb-2 text-[10px] font-semibold text-slate-600 uppercase tracking-widest">
-              Public Website
-            </p>
-            <NavLink
-              to="/"
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:bg-white/5 hover:text-white transition-all duration-200"
-            >
-              <Home className="w-4 h-4" />
-              Go to Website
-            </NavLink>
-            {websiteNav.map(item => {
-              const Icon = item.icon;
-              return (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={({ isActive }) =>
-                    `w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
-                      isActive
-                        ? 'bg-[#eb1b23] text-white shadow-lg shadow-red-900/40'
-                        : 'text-slate-400 hover:bg-white/5 hover:text-white'
-                    }`
-                  }
-                >
-                  <Icon className="w-4 h-4 flex-shrink-0" />
-                  {item.label}
-                </NavLink>
-              );
-            })}
-          </div>
-        </nav>
-
-        {/* User footer */}
-        <div className="border-t border-white/10 px-4 py-4">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-9 h-9 rounded-full bg-slate-700 flex items-center justify-center overflow-hidden ring-2 ring-white/10">
-              {user?.avatar_url
-                ? <img src={user.avatar_url} alt={user.full_name} className="w-full h-full object-cover" />
-                : <User className="w-4 h-4 text-slate-300" />
-              }
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white truncate">{user?.full_name}</p>
-              <p className="text-[11px] text-slate-500">Teacher</p>
-            </div>
-          </div>
-          <button
-            onClick={signOut}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm text-slate-400 hover:bg-white/5 hover:text-white transition-all"
-          >
-            <LogOut className="w-4 h-4" />
-            <span className="font-medium">Sign Out</span>
-          </button>
-        </div>
+      {/* Desktop sidebar — always visible */}
+      <aside className="hidden lg:flex flex-col h-screen flex-shrink-0">
+        <TeacherSidebarContent />
       </aside>
 
       {/* ─── Main content ─── */}
