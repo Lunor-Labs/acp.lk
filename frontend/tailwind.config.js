@@ -4,9 +4,14 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Primary Color (Gold/Yellow)
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
         primary: {
-          DEFAULT: '#f3b113',
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
           50: '#fef9e7',
           100: '#fdf0c4',
           200: '#fbe58d',
@@ -18,14 +23,36 @@ export default {
           800: '#7d5605',
           900: '#664603',
         },
-        // Dark Theme Colors
+        secondary: {
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))',
+        },
+        destructive: {
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))',
+        },
+        muted: {
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))',
+        },
+        accent: {
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))',
+        },
+        popover: {
+          DEFAULT: 'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))',
+        },
+        card: {
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))',
+        },
         dark: {
           DEFAULT: '#383838',
           50: '#4a4a4a',
           100: '#383838',
           900: '#1a1a1a',
         },
-        // Gray Scale
         gray: {
           DEFAULT: '#828282',
           50: '#f5f5f5',
@@ -39,16 +66,16 @@ export default {
           800: '#262626',
           900: '#0f0f0f',
         },
-        // Neutral Colors
-        neutral: {
-          white: '#FFFFFF',
-          black: '#000000',
-        },
-        // Status Colors
+        neutral: { white: '#FFFFFF', black: '#000000' },
         success: '#00C853',
         warning: '#FFB300',
         error: '#D32F2F',
         info: '#0288D1',
+      },
+      borderRadius: {
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)',
       },
       keyframes: {
         float: {
@@ -73,9 +100,9 @@ export default {
         },
       },
       animation: {
-        'float': 'float 6s ease-in-out infinite',
+        float: 'float 6s ease-in-out infinite',
         'float-delayed': 'float 6s ease-in-out 3s infinite',
-        'shine': 'shine 1.5s ease-in-out infinite',
+        shine: 'shine 1.5s ease-in-out infinite',
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'fade-in': 'fadeIn 0.6s ease-out forwards',
         'slide-up': 'slideUp 0.6s ease-out forwards',
