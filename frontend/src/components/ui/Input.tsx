@@ -27,7 +27,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           )}
           <input
             className={cn(
-              'flex w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#eb1b23] focus-visible:border-[#eb1b23] disabled:cursor-not-allowed disabled:opacity-50 shadow-sm',
+              'flex w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:border-ring disabled:cursor-not-allowed disabled:opacity-50 shadow-sm',
               leftIcon && 'pl-10',
               rightIcon && 'pr-10',
               error && 'border-red-500 focus-visible:ring-red-500',
