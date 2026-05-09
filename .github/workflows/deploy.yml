@@ -44,7 +44,7 @@ jobs:
         run: npm install --global @railway/cli
 
       - name: Deploy to Railway
-        run: railway up --detach
+        run: railway up --environment production --detach
         env:
           RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_API_TOKEN }}
           RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
