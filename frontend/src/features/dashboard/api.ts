@@ -110,3 +110,10 @@ export const TeacherExamsApi = {
 export const TeacherCoursesApi = {
   getMyClasses: () => apiClient.get<{ data: any[] }>('/courses/teacher/me').then(r => r.data),
 };
+
+export const StudentStudyPacksApi = {
+  getStudentPacks: () =>
+    apiClient.get<{ purchased: StudyPack[]; available: StudyPack[] }>('/studypacks/student'),
+  purchasePack: (id: string) =>
+    apiClient.post<{ success: boolean }>(`/studypacks/${id}/purchase`, {}),
+};
