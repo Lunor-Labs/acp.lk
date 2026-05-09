@@ -43,6 +43,7 @@ import GalleryManager from './teacher/GalleryManager';
 import ReviewsManager from './teacher/ReviewsManager';
 import TestResultsManager from './teacher/TestResultsManager';
 import SuccessManager from './teacher/SuccessManager';
+import TeacherProfile from './teacher/TeacherProfile';
 
 /* ─────────────────────────────────────────────────────────────────
    Teacher Sidebar Content (shared between desktop aside and Sheet)
@@ -173,7 +174,6 @@ function TeacherSidebarContent({ onClose }: { onClose?: () => void }) {
   );
 }
 
-const ProfilePage = () => <div className="p-8 font-bold text-xl">Profile Page (Porting in progress)</div>;
 
 export default function TeacherDashboard() {
   const { user, signOut } = useAuth();
@@ -297,7 +297,7 @@ export default function TeacherDashboard() {
           <Route path="reviews" element={teacherLoading ? <LoadingSpinner /> : teacherId ? <ReviewsManager /> : <TeacherProfileMissing />} />
           <Route path="test-results" element={teacherLoading ? <LoadingSpinner /> : teacherId ? <TestResultsManager /> : <TeacherProfileMissing />} />
           <Route path="success" element={teacherLoading ? <LoadingSpinner /> : teacherId ? <SuccessManager /> : <TeacherProfileMissing />} />
-          <Route path="profile" element={<ProfilePage />} />
+          <Route path="profile" element={<TeacherProfile />} />
         </Routes>
       </main>
     </div>
