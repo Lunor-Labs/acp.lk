@@ -1,11 +1,20 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { CourseService } from '../../../services/courseService.js';
+import { TeacherRepository } from '../../../repositories/index.js';
+import { getDb } from '../../../providers/db/drizzle.js';
 import { sendSuccess } from '../../../utils/response.js';
 import { requireAuth } from '../../middleware/auth.js';
 import { AppError } from '../../../utils/errors.js';
 
 export const coursesRouter = Router();
 const courseService = new CourseService();
+
+async function resolveTeacherId(profileId: string): Promise<string> {
+  const repo = new TeacherRepository(getDb());
+  const teacher = await repo.findByProfileId(profileId);
+  if (!teacher) throw AppError.notFound('Teacher profile not found');
+  return teacher.id;
+}
 
 /**
  * GET /api/courses
@@ -45,7 +54,7 @@ coursesRouter.get('/teacher/me', async (req: Request, res: Response, next: NextF
     if ((req as any).user?.role !== 'teacher' && (req as any).user?.role !== 'admin') {
       throw AppError.forbidden('Only teachers can list their classes');
     }
-    const teacherId = (req as any).user?.id;
+    const teacherId = await resolveTeacherId((req as any).user.id);
     const courses = await courseService.listCoursesByTeacher(teacherId, false);
     sendSuccess(res, courses);
   } catch (error) {
@@ -64,7 +73,7 @@ coursesRouter.post('/', async (req: Request, res: Response, next: NextFunction) 
     }
 
     const data = req.body;
-    data.teacher_id = (req as any).user?.id;
+    data.teacher_id = await resolveTeacherId((req as any).user.id);
 
     const newCourse = await courseService.createCourse(data);
     sendSuccess(res, newCourse, 201);
