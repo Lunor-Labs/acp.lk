@@ -384,7 +384,7 @@ export default function TeacherExams() {
   }
 
   return (
-    <div className="flex flex-col h-full text-left bg-gray-50/50">
+    <div className="flex-1 min-h-0 flex flex-col text-left bg-gray-50/50">
 
       {/* ── Mobile tab bar (hidden on lg+) ── */}
       <div className="lg:hidden flex-shrink-0 flex bg-white border-b border-gray-200">
@@ -408,7 +408,7 @@ export default function TeacherExams() {
       </div>
 
       {/* ── Mobile: single-panel view ── */}
-      <div className="lg:hidden flex-1 min-h-0 p-4">
+      <div className="lg:hidden flex-1 min-h-0 overflow-hidden p-4">
         {mobileTab === 'list' ? (
           <ExamList
             exams={exams} classes={classes} loading={loading}
