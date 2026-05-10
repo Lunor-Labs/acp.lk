@@ -97,19 +97,19 @@ export const FilesApi = {
 };
 
 export const TeacherExamsApi = {
-  getExams: () => apiClient.get<{ data: any[] }>('/exams/teacher').then(r => r.data),
-  createExam: (data: any) => apiClient.post<{ data: any }>('/exams/teacher', data).then(r => r.data),
-  updateExam: (id: string, data: any) => apiClient.patch<{ data: any }>(`/exams/teacher/${id}`, data).then(r => r.data),
+  getExams: () => apiClient.get<any[]>('/exams/teacher'),
+  createExam: (data: any) => apiClient.post<any>('/exams/teacher', data),
+  updateExam: (id: string, data: any) => apiClient.patch<any>(`/exams/teacher/${id}`, data),
   deleteExam: (id: string) => apiClient.delete(`/exams/teacher/${id}`),
-  getExamDetail: (id: string) => apiClient.get<{ data: any }>(`/exams/teacher/${id}/detail`).then(r => r.data),
+  getExamDetail: (id: string) => apiClient.get<any>(`/exams/teacher/${id}/detail`),
   updateAnswers: (id: string, changes: Record<string, string | number>, isPdfExam: boolean) =>
     apiClient.patch(`/exams/teacher/${id}/answers`, { changes, isPdfExam }),
   updateQuestion: (examId: string, questionId: string, data: any) =>
-    apiClient.patch<{ data: any }>(`/exams/teacher/${examId}/questions/${questionId}`, data).then(r => r.data),
+    apiClient.patch<any>(`/exams/teacher/${examId}/questions/${questionId}`, data),
 };
 
 export const TeacherCoursesApi = {
-  getMyClasses: () => apiClient.get<{ data: any[] }>('/courses/teacher/me').then(r => r.data),
+  getMyClasses: () => apiClient.get<any[]>('/courses/teacher/me'),
 };
 
 export const StudentStudyPacksApi = {
