@@ -71,28 +71,29 @@ export const StudyPacksApi = {
 };
 
 export const FilesApi = {
-  getSignedUploadUrl: (bucket: string, path: string) => apiClient.post<{ data: { signedUrl: string, token: string, path: string } }>('/files/signed-upload-url', { bucket, path }).then(r => r.data),
-  
+  getSignedUploadUrl: (bucket: string, path: string) =>
+    apiClient.post<{ signedUrl: string; token: string; path: string }>('/files/signed-upload-url', { bucket, path }),
+
   // Helper to directly upload file using signed URL
   uploadWithSignedUrl: async (bucket: string, path: string, file: File) => {
     const data = await FilesApi.getSignedUploadUrl(bucket, path);
+    console.debug('[FilesApi] signed upload URL received:', data?.signedUrl?.slice(0, 80));
     const res = await fetch(data.signedUrl, {
       method: 'PUT',
-      headers: {
-        'Content-Type': file.type,
-      },
-      body: file
+      headers: { 'Content-Type': file.type },
+      body: file,
     });
-    if (!res.ok) {
-      throw new Error('Failed to upload file');
-    }
-    // Return storage path to save to DB
+    if (!res.ok) throw new Error(`Upload failed: ${res.status} ${res.statusText}`);
+    console.debug('[FilesApi] upload OK, storage path:', path);
     return path;
   },
 
   // Get a public URL for a stored file (path should NOT include bucket prefix)
   getPublicUrl: (bucket: string, path: string): Promise<string> =>
-    apiClient.get<{ data: { url: string } }>(`/files/public-url?bucket=${encodeURIComponent(bucket)}&path=${encodeURIComponent(path)}`).then(r => r.data.url),
+    apiClient.get<{ url: string }>(`/files/public-url?bucket=${encodeURIComponent(bucket)}&path=${encodeURIComponent(path)}`).then(r => {
+      console.debug('[FilesApi] public URL:', r?.url?.slice(0, 80));
+      return r.url;
+    }),
 };
 
 export const TeacherExamsApi = {

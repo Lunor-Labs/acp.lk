@@ -4,8 +4,6 @@ import { Upload, Trash2, Eye, EyeOff, Image as ImageIcon } from 'lucide-react';
 import { GalleryApi } from '@/features/teacher/api';
 import type { GalleryImage } from '@/features/teacher/api';
 import { FilesApi } from '../../api';
-import { Button } from '@/components/ui/Button';
-import { Skeleton } from '@/components/ui/skeleton';
 
 export default function GalleryManager() {
   const [images, setImages] = useState<GalleryImage[]>([]);
@@ -59,41 +57,48 @@ export default function GalleryManager() {
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="h-full min-h-0 overflow-y-auto p-4 sm:p-6 lg:p-8">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gallery</h1>
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Gallery</h2>
           <p className="text-sm text-gray-500 mt-1">Images displayed on the public website gallery section</p>
         </div>
-        <Button onClick={() => fileInputRef.current?.click()} isLoading={uploading} className="gap-2">
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          className="flex items-center gap-2 px-5 py-2.5 bg-[#eb1b23] text-white rounded-xl font-medium text-sm hover:bg-red-700 transition-all shadow-sm hover:shadow-md disabled:opacity-60"
+        >
           <Upload className="w-4 h-4" />
-          Upload Images
-        </Button>
+          {uploading ? 'Uploading…' : 'Upload Images'}
+        </button>
         <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} />
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="aspect-square rounded-xl" />)}
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#eb1b23]" />
         </div>
       ) : images.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 text-center">
+        <div
+          onClick={() => fileInputRef.current?.click()}
+          className="flex flex-col items-center justify-center bg-white rounded-2xl border-2 border-dashed border-gray-200 hover:border-[#eb1b23]/40 hover:bg-red-50/30 py-24 px-8 text-center cursor-pointer transition-colors"
+        >
           <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
             <ImageIcon className="w-8 h-8 text-gray-400" />
           </div>
           <p className="font-medium text-gray-700">No images yet</p>
-          <p className="text-sm text-gray-400 mt-1">Upload photos to show on the public gallery</p>
+          <p className="text-sm text-gray-400 mt-1">Click to upload photos for the public gallery</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {images.map(image => (
-            <div key={image.id} className="group relative rounded-xl overflow-hidden bg-gray-100 aspect-square">
+            <div key={image.id} className="group relative rounded-2xl overflow-hidden bg-gray-100 aspect-[4/3] border border-gray-100 shadow-sm">
               <img
                 src={image.public_url ?? ''}
                 alt={image.caption ?? ''}
                 className={`w-full h-full object-cover transition-opacity ${image.is_active ? 'opacity-100' : 'opacity-40'}`}
               />
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                 <button
                   onClick={() => handleToggle(image)}
                   className="p-2 rounded-full bg-white/90 hover:bg-white text-gray-700 transition-colors"
