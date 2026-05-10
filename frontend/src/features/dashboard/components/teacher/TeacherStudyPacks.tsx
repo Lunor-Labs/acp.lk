@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import {
   Video, ShoppingBag, Trash2, Plus, Pencil, Package,
-  ChevronRight, Search, ListChecks, PlusCircle, X, Youtube,
+  ChevronRight, Search, ListChecks, PlusCircle, X,
   Clock, LayoutGrid,
 } from 'lucide-react';
 import { StudyPacksApi } from '../../api';
@@ -260,6 +260,7 @@ export default function TeacherStudyPacks() {
 
   const CreatePanel = (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 h-full flex flex-col min-h-0">
+
       {/* Header */}
       <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
@@ -268,19 +269,24 @@ export default function TeacherStudyPacks() {
           </div>
           <div>
             <h3 className="text-sm font-bold text-gray-900">{editingPackId ? 'Edit Study Pack' : 'Create Study Pack'}</h3>
-            <p className="text-[11px] text-gray-400">{editingPackId ? 'Update pack details' : 'Bundle lessons for students'}</p>
+            <p className="text-[11px] text-gray-400">
+              {videos.length > 0
+                ? `${videos.length} lesson${videos.length !== 1 ? 's' : ''} · ${formData.is_free ? 'Free' : formData.price ? `LKR ${Number(formData.price).toLocaleString()}` : 'Price not set'}`
+                : editingPackId ? 'Update pack details' : 'Bundle lessons for students'}
+            </p>
           </div>
         </div>
         {editingPackId && (
-          <button onClick={resetForm} className="text-xs font-semibold text-gray-500 hover:text-gray-800 flex items-center gap-1">
-            <X style={{ width: 12, height: 12 }} /> Cancel
+          <button onClick={resetForm} className="text-xs font-semibold text-gray-400 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg transition flex items-center gap-1">
+            <X style={{ width: 11, height: 11 }} /> Cancel
           </button>
         )}
       </div>
 
       {/* Scrollable body */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 space-y-5">
+      <div className="flex-1 min-h-0 overflow-y-auto px-5 py-5 space-y-6">
 
+        {/* ── Details ── */}
         <div>
           <SectionLabel>Details</SectionLabel>
           <div className="space-y-3">
@@ -290,111 +296,155 @@ export default function TeacherStudyPacks() {
                 placeholder="e.g. Mechanics Full Revision"
                 className={inputCls} />
             </Field>
+
             <Field label="Subject">
-              <div className={`${inputCls} cursor-default flex items-center gap-2`}>
-                <span className="w-2 h-2 rounded-full bg-purple-500" />
-                <span className="text-gray-700 font-medium">Physics</span>
+              <div className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-xl bg-gray-50">
+                <span className="w-3 h-3 rounded-full bg-purple-500 flex-shrink-0" />
+                <span className="text-sm font-semibold text-gray-800">Physics</span>
+                <span className="ml-auto text-[10px] font-bold text-purple-600 bg-purple-100 border border-purple-200 px-2 py-0.5 rounded-full">Fixed</span>
               </div>
             </Field>
+
             <Field label="Description">
               <textarea value={formData.description}
                 onChange={e => setFormData({ ...formData, description: e.target.value })}
-                placeholder="What will students learn from this pack?"
+                placeholder="Describe what students will learn, topics covered, prerequisites…"
                 rows={3}
-                className={`${inputCls} resize-none`} />
+                className={`${inputCls} resize-none leading-relaxed`} />
             </Field>
           </div>
         </div>
 
-        <div className="border-t border-gray-100" />
+        <div className="border-t border-dashed border-gray-200" />
 
-        {/* Pricing */}
+        {/* ── Pricing ── */}
         <div>
           <SectionLabel>Pricing</SectionLabel>
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 bg-gray-50">
-              <input
-                type="checkbox"
-                id="is_free"
-                checked={formData.is_free}
-                onChange={e => setFormData({ ...formData, is_free: e.target.checked, price: '' })}
-                className="rounded border-gray-300 text-[#eb1b23] focus:ring-[#eb1b23]"
-              />
-              <label htmlFor="is_free" className="text-sm font-medium text-gray-700 cursor-pointer">Make this pack free</label>
-              {formData.is_free && (
-                <span className="ml-auto text-xs font-bold text-green-700 bg-green-100 border border-green-200 px-2 py-0.5 rounded-full">Free</span>
-              )}
-            </div>
-            {!formData.is_free && (
-              <Field label="Price (LKR)">
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-500">LKR</span>
-                  <input type="number" step="1" value={formData.price}
-                    onChange={e => setFormData({ ...formData, price: e.target.value })}
-                    placeholder="0"
-                    className={`${inputCls} pl-11`} />
-                </div>
-              </Field>
-            )}
+
+          {/* Free / Paid toggle */}
+          <div className="flex gap-2 mb-3">
+            {[
+              { value: true,  label: 'Free',  desc: 'Available to all students' },
+              { value: false, label: 'Paid',  desc: 'Requires purchase' },
+            ].map(opt => (
+              <button
+                key={String(opt.value)}
+                type="button"
+                onClick={() => setFormData({ ...formData, is_free: opt.value, price: opt.value ? '' : formData.price })}
+                className={`flex-1 flex flex-col items-center py-3 rounded-xl border-2 text-sm font-semibold transition-all ${
+                  formData.is_free === opt.value
+                    ? opt.value
+                      ? 'border-green-500 bg-green-50 text-green-700'
+                      : 'border-[#eb1b23] bg-red-50 text-[#eb1b23]'
+                    : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300'
+                }`}
+              >
+                {opt.label}
+                <span className="text-[10px] font-normal mt-0.5 opacity-70">{opt.desc}</span>
+              </button>
+            ))}
           </div>
+
+          {!formData.is_free && (
+            <Field label="Price (LKR)">
+              <div className="relative">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-500 bg-gray-200 px-1.5 py-0.5 rounded">
+                  LKR
+                </div>
+                <input type="number" min="0" step="100" value={formData.price}
+                  onChange={e => setFormData({ ...formData, price: e.target.value })}
+                  placeholder="0"
+                  className={`${inputCls} pl-14 text-base font-bold`} />
+              </div>
+            </Field>
+          )}
         </div>
 
-        <div className="border-t border-gray-100" />
+        <div className="border-t border-dashed border-gray-200" />
 
-        {/* Video lessons */}
+        {/* ── Video Lessons ── */}
         <div>
-          <SectionLabel>Video Lessons</SectionLabel>
+          <div className="flex items-center justify-between mb-3">
+            <SectionLabel>Video Lessons</SectionLabel>
+            {videos.length > 0 && (
+              <span className="text-[10px] font-bold text-gray-400 -mt-3">
+                {videos.length} lesson{videos.length !== 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
+
+          {videos.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-8 border-2 border-dashed border-gray-200 rounded-xl mb-3 text-center">
+              <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center mb-2">
+                <Video className="w-5 h-5 text-gray-400" />
+              </div>
+              <p className="text-xs font-semibold text-gray-500">No lessons yet</p>
+              <p className="text-[10px] text-gray-400 mt-0.5">Add video lessons below</p>
+            </div>
+          )}
+
           <div className="space-y-3">
             {videos.map((video, idx) => (
-              <div key={video.id} className="border border-gray-200 rounded-xl overflow-hidden">
-                {/* Lesson header */}
-                <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50 border-b border-gray-200">
-                  <div className="flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-[#eb1b23] text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">
-                      {idx + 1}
-                    </span>
-                    <input
-                      type="text"
-                      value={video.title}
-                      onChange={e => setVideos(v => v.map(x => x.id === video.id ? { ...x, title: e.target.value } : x))}
-                      className="text-xs font-semibold text-gray-800 bg-transparent focus:outline-none border-b border-transparent focus:border-[#eb1b23] pb-0.5"
-                      placeholder="Lesson title"
-                    />
+              <div key={video.id} className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                {/* Card header */}
+                <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100">
+                  <div className="w-6 h-6 rounded-full bg-[#eb1b23] text-white text-[10px] font-black flex items-center justify-center flex-shrink-0">
+                    {idx + 1}
                   </div>
-                  <button onClick={() => setVideos(v => v.filter(x => x.id !== video.id))}
-                    className="text-gray-300 hover:text-red-500 transition-colors">
-                    <X style={{ width: 14, height: 14 }} />
+                  <input
+                    type="text"
+                    value={video.title}
+                    onChange={e => setVideos(v => v.map(x => x.id === video.id ? { ...x, title: e.target.value } : x))}
+                    className="flex-1 text-sm font-semibold text-gray-800 bg-transparent focus:outline-none placeholder:text-gray-400 placeholder:font-normal"
+                    placeholder="Lesson title…"
+                  />
+                  <button
+                    onClick={() => setVideos(v => v.filter(x => x.id !== video.id))}
+                    className="w-6 h-6 rounded-lg bg-gray-100 hover:bg-red-100 hover:text-red-500 flex items-center justify-center text-gray-400 transition flex-shrink-0"
+                  >
+                    <X style={{ width: 12, height: 12 }} />
                   </button>
                 </div>
 
-                <div className="p-4 space-y-3">
+                <div className="p-4 space-y-3 bg-white">
                   {/* YouTube URL */}
-                  <div>
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-1 mb-1.5">
-                      <Youtube style={{ width: 12, height: 12 }} className="text-red-500" /> YouTube URL
-                    </label>
-                    <input type="text" value={video.youtube_url || ''}
+                  <div className="flex items-center gap-2 border border-gray-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#eb1b23]/20 focus-within:border-[#eb1b23] transition">
+                    <div className="flex items-center gap-1.5 px-3 py-2 bg-red-50 border-r border-gray-200 flex-shrink-0">
+                      <svg viewBox="0 0 24 24" className="w-4 h-4 text-red-600" fill="currentColor">
+                        <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
+                      </svg>
+                      <span className="text-[10px] font-bold text-red-600 hidden sm:block">YT</span>
+                    </div>
+                    <input
+                      type="text"
+                      value={video.youtube_url || ''}
                       onChange={e => setVideos(v => v.map(x => x.id === video.id ? { ...x, youtube_url: e.target.value } : x))}
-                      placeholder="https://www.youtube.com/watch?v=…"
-                      className="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#eb1b23] focus:border-[#eb1b23]" />
+                      placeholder="Paste YouTube link…"
+                      className="flex-1 text-xs py-2 pr-3 bg-transparent focus:outline-none placeholder:text-gray-400"
+                    />
                   </div>
 
+                  {/* Duration + Quality */}
                   <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-1 mb-1.5">
-                        <Clock style={{ width: 12, height: 12 }} /> Duration
-                      </label>
-                      <input type="text" value={video.duration}
+                    <div className="flex items-center gap-2 border border-gray-200 rounded-xl px-3 py-2 focus-within:ring-2 focus-within:ring-[#eb1b23]/20 focus-within:border-[#eb1b23] transition">
+                      <Clock style={{ width: 12, height: 12 }} className="text-gray-400 flex-shrink-0" />
+                      <input
+                        type="text"
+                        value={video.duration}
                         onChange={e => setVideos(v => v.map(x => x.id === video.id ? { ...x, duration: e.target.value } : x))}
-                        placeholder="e.g. 45 mins"
-                        className="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#eb1b23]" />
+                        placeholder="45 mins"
+                        className="flex-1 min-w-0 text-xs bg-transparent focus:outline-none placeholder:text-gray-400"
+                      />
                     </div>
-                    <div>
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5 block">Quality</label>
-                      <input type="text" value={video.size}
+                    <div className="flex items-center gap-2 border border-gray-200 rounded-xl px-3 py-2 focus-within:ring-2 focus-within:ring-[#eb1b23]/20 focus-within:border-[#eb1b23] transition">
+                      <Video style={{ width: 12, height: 12 }} className="text-gray-400 flex-shrink-0" />
+                      <input
+                        type="text"
+                        value={video.size}
                         onChange={e => setVideos(v => v.map(x => x.id === video.id ? { ...x, size: e.target.value } : x))}
-                        placeholder="e.g. 1080p"
-                        className="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#eb1b23]" />
+                        placeholder="1080p"
+                        className="flex-1 min-w-0 text-xs bg-transparent focus:outline-none placeholder:text-gray-400"
+                      />
                     </div>
                   </div>
                 </div>
@@ -402,7 +452,7 @@ export default function TeacherStudyPacks() {
             ))}
 
             <button onClick={addVideo}
-              className="w-full flex items-center justify-center gap-2 py-2.5 border-2 border-dashed border-gray-200 rounded-xl text-xs font-semibold text-gray-500 hover:border-[#eb1b23] hover:text-[#eb1b23] hover:bg-red-50/30 transition-all">
+              className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-gray-200 rounded-xl text-xs font-semibold text-gray-500 hover:border-[#eb1b23] hover:text-[#eb1b23] hover:bg-red-50/30 transition-all">
               <Plus style={{ width: 14, height: 14 }} />
               Add Video Lesson
             </button>
@@ -413,12 +463,14 @@ export default function TeacherStudyPacks() {
       {/* Pinned footer */}
       <div className="px-5 py-4 border-t border-gray-100 flex gap-2 flex-shrink-0">
         <button onClick={() => handleSavePack(true)} disabled={saving}
-          className="flex-1 border border-gray-200 text-gray-700 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-50 transition disabled:opacity-50">
+          className="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-50 transition disabled:opacity-50">
           {editingPackId ? 'Update Draft' : 'Save Draft'}
         </button>
         <button onClick={() => handleSavePack(false)} disabled={saving}
           className="flex-1 bg-[#eb1b23] text-white py-2.5 rounded-xl text-sm font-bold hover:bg-red-700 transition shadow-sm shadow-red-200 disabled:opacity-50 flex items-center justify-center gap-2">
-          {saving ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Saving…</> : (editingPackId ? 'Update & Publish' : 'Publish')}
+          {saving
+            ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Saving…</>
+            : editingPackId ? 'Update & Publish' : 'Publish Pack'}
         </button>
       </div>
     </div>
