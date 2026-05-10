@@ -1,6 +1,6 @@
 import { ExamRepository } from '../repositories/ExamRepository.js';
 import { EnrollmentRepository } from '../repositories/EnrollmentRepository.js';
-import { BaseRepository } from '../repositories/BaseRepository.js';
+import { TeacherRepository } from '../repositories/TeacherRepository.js';
 import { pdfExams, testResults } from '../repositories/schema/other.js';
 import type { DrizzleDb } from '../providers/db/drizzle.js';
 import type { NewExam, NewExamQuestion, NewExamAttempt, ExamQuestion } from '../repositories/schema/exams.js';
@@ -13,13 +13,12 @@ export class ExamService {
   private enrollmentRepo: EnrollmentRepository;
   private db: DrizzleDb;
 
-  private teacherRepo: any; // We'll import TeacherRepository
+  private teacherRepo: TeacherRepository;
 
   constructor(db: DrizzleDb) {
     this.db = db;
     this.examRepo = new ExamRepository(db);
     this.enrollmentRepo = new EnrollmentRepository(db);
-    const { TeacherRepository } = require('../repositories/TeacherRepository.js');
     this.teacherRepo = new TeacherRepository(db);
   }
 
