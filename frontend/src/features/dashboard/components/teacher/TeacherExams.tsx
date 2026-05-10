@@ -385,10 +385,10 @@ export default function TeacherExams() {
   return (
     <div className="flex h-full text-left bg-gray-50/50">
       <div className="flex-1 overflow-hidden relative">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6 h-full min-h-0 overflow-y-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6 h-full min-h-0">
           {/* Left Column - Exams List */}
-          <div className="lg:col-span-2">
-            <ExamList 
+          <div className="lg:col-span-2 min-h-0 flex flex-col">
+            <ExamList
               exams={exams} classes={classes} loading={loading}
               searchQuery={searchQuery} setSearchQuery={setSearchQuery}
               filterStatus={filterStatus} setFilterStatus={setFilterStatus}
