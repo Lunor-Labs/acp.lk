@@ -54,7 +54,7 @@ export function ExamCreateView({
 }: ExamCreateViewProps) {
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 sticky top-6 max-h-[calc(100vh-3rem)] flex flex-col">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 h-full flex flex-col min-h-0">
       {/* Header */}
       <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3 flex-shrink-0">
         <div className="w-9 h-9 bg-[#eb1b23] rounded-xl flex items-center justify-center shadow-sm shadow-red-200">

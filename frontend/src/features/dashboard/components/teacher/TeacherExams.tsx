@@ -5,7 +5,7 @@ import { TeacherExamsApi, TeacherCoursesApi, FilesApi } from '../../api';
 import { ExamList } from './exams/ExamList';
 import { ExamCreateView } from './exams/ExamCreateView';
 import { ExamDetailModal } from './exams/ExamDetailModal';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, ListChecks, PlusCircle } from 'lucide-react';
 import type { Exam, Class, PdfAnswer, ManualAnswer, ManualQuestion, ExamDetail, Question } from './exams/types';
 
 export default function TeacherExams() {
@@ -16,6 +16,7 @@ export default function TeacherExams() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreatingExam, setIsCreatingExam] = useState(false);
+  const [mobileTab, setMobileTab] = useState<'list' | 'create'>('list');
   
   // State for exam detail modal
   const [selectedExamDetail, setSelectedExamDetail] = useState<ExamDetail | null>(null);
@@ -383,22 +384,89 @@ export default function TeacherExams() {
   }
 
   return (
-    <div className="flex h-full text-left bg-gray-50/50">
-      <div className="flex-1 overflow-hidden relative">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6 h-full min-h-0">
-          {/* Left Column - Exams List */}
-          <div className="lg:col-span-2 min-h-0 flex flex-col">
-            <ExamList
-              exams={exams} classes={classes} loading={loading}
-              searchQuery={searchQuery} setSearchQuery={setSearchQuery}
-              filterStatus={filterStatus} setFilterStatus={setFilterStatus}
-              onExamClick={handleExamCardClick} onCreateClick={() => window.scrollTo(0, 0)}
-            />
-          </div>
+    <div className="flex flex-col h-full text-left bg-gray-50/50">
 
-          {/* Right Column - Create Form */}
-          <div className="lg:col-span-1">
-            <ExamCreateView
+      {/* ── Mobile tab bar (hidden on lg+) ── */}
+      <div className="lg:hidden flex-shrink-0 flex bg-white border-b border-gray-200">
+        {[
+          { key: 'list',   label: 'Exams',  Icon: ListChecks },
+          { key: 'create', label: 'Create', Icon: PlusCircle },
+        ].map(({ key, label, Icon }) => (
+          <button
+            key={key}
+            onClick={() => setMobileTab(key as 'list' | 'create')}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold border-b-2 transition-colors ${
+              mobileTab === key
+                ? 'border-[#eb1b23] text-[#eb1b23]'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Icon className="w-4 h-4" />
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Mobile: single-panel view ── */}
+      <div className="lg:hidden flex-1 min-h-0 p-4">
+        {mobileTab === 'list' ? (
+          <ExamList
+            exams={exams} classes={classes} loading={loading}
+            searchQuery={searchQuery} setSearchQuery={setSearchQuery}
+            filterStatus={filterStatus} setFilterStatus={setFilterStatus}
+            onExamClick={handleExamCardClick} onCreateClick={() => setMobileTab('create')}
+          />
+        ) : (
+          <ExamCreateView
+            formData={formData} setFormData={setFormData} classes={classes}
+            pdfFile={pdfFile} setPdfFile={setPdfFile}
+            showPdfAnswerSheet={showPdfAnswerSheet} setShowPdfAnswerSheet={setShowPdfAnswerSheet}
+            pdfAnswers={pdfAnswers} updatePdfAnswer={(q: number, a: number) => setPdfAnswers(pdfAnswers.map(ans => ans.question_no === q ? { ...ans, correct_answer: a } : ans))}
+            handlePdfFileSelect={(e: any) => { if(e.target.files?.[0]) { setPdfFile(e.target.files[0]); setShowPdfAnswerSheet(true); } }}
+            questions={questions} addQuestion={() => setQuestions([...questions, { id: Date.now().toString(), question_text: '', options: ['', '', '', '', ''], correct_answer: '', marks: 1 }])}
+            updateQuestion={(id: string, field: string, val: any) => setQuestions(questions.map((q) => q.id === id ? { ...q, [field]: val } : q))}
+            handleQuestionToggleCorrectAnswer={(questionId: string, optionLetter: string) => {
+              setQuestions(questions.map(q => {
+                if (q.id === questionId) {
+                  let currentAnswers = q.correct_answer ? q.correct_answer.split(',') : [];
+                  if (currentAnswers.includes(optionLetter)) currentAnswers = currentAnswers.filter(a => a !== optionLetter);
+                  else currentAnswers.push(optionLetter);
+                  return { ...q, correct_answer: currentAnswers.sort().join(',') };
+                }
+                return q;
+              }));
+            }}
+            updateQuestionOption={(id: string, optionIndex: number, value: string) => setQuestions(questions.map((q) => q.id === id ? { ...q, options: q.options.map((opt, i) => (i === optionIndex ? value : opt)) } : q))}
+            handleQuestionImageSelect={(id: string, e: any) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => setQuestions(questions.map((q) => q.id === id ? { ...q, image_file: file, image_preview: event.target?.result as string } : q));
+                reader.readAsDataURL(file);
+              }
+            }}
+            removeQuestionImage={(id: string) => setQuestions(questions.map((q) => q.id === id ? { ...q, image_file: undefined, image_preview: undefined } : q))}
+            handleCreateExam={handleCreateExam} handlePdfAnswerSheetSubmit={handlePdfAnswerSheetSubmit}
+            isCreatingExam={isCreatingExam} pdfUploading={pdfUploading}
+          />
+        )}
+      </div>
+
+      {/* ── Desktop: split panel ── */}
+      <div className="hidden lg:grid lg:grid-cols-3 gap-6 p-6 flex-1 min-h-0">
+        {/* Left Column - Exams List */}
+        <div className="lg:col-span-2 min-h-0 flex flex-col">
+          <ExamList
+            exams={exams} classes={classes} loading={loading}
+            searchQuery={searchQuery} setSearchQuery={setSearchQuery}
+            filterStatus={filterStatus} setFilterStatus={setFilterStatus}
+            onExamClick={handleExamCardClick} onCreateClick={() => {}}
+          />
+        </div>
+
+        {/* Right Column - Create Form */}
+        <div className="lg:col-span-1 min-h-0 flex flex-col">
+          <ExamCreateView
               formData={formData} setFormData={setFormData} classes={classes}
               pdfFile={pdfFile} setPdfFile={setPdfFile}
               showPdfAnswerSheet={showPdfAnswerSheet} setShowPdfAnswerSheet={setShowPdfAnswerSheet}
@@ -431,7 +499,6 @@ export default function TeacherExams() {
               isCreatingExam={isCreatingExam} pdfUploading={pdfUploading}
             />
           </div>
-        </div>
       </div>
 
       {selectedExamDetail && (
