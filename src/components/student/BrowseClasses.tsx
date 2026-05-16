@@ -266,6 +266,59 @@ export default function BrowseClasses() {
     }
   }
 
+  // ⚠️ UPDATE THESE VALUES with real bank account details before deploying
+  const BANK_DETAILS = {
+    bank: 'Commercial Bank of Ceylon',
+    accountName: 'ACP Academy (Pvt) Ltd',
+    accountNumber: '1234567890',
+    branch: 'Colombo Main',
+  };
+
+  async function handleSubmitSlip() {
+    if (!slipModalClass || !slipFile || !profile?.id) return;
+    setSlipUploading(true);
+    try {
+      const ext = slipFile.name.split('.').pop() || 'jpg';
+      const storagePath = `payslips/${slipModalClass.id}/${profile.id}/${Date.now()}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('acp')
+        .upload(storagePath, slipFile, { upsert: false });
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from('acp').getPublicUrl(storagePath);
+
+      const { error: dbError } = await supabase
+        .from('class_payments')
+        .insert({
+          student_id: profile.id,
+          class_id: slipModalClass.id,
+          amount: slipModalClass.price,
+          payment_status: 'pending',
+          payment_method: 'bank_transfer',
+          slip_image_url: urlData.publicUrl,
+        });
+      if (dbError) throw dbError;
+
+      setSlipStatusMap(prev => ({
+        ...prev,
+        [slipModalClass.id]: { status: 'pending', reason: null },
+      }));
+      setSlipModalClass(null);
+      setSlipFile(null);
+      setSuccessMessage('Payslip submitted! Awaiting teacher approval.');
+      setTimeout(() => setSuccessMessage(null), 4000);
+    } catch (err) {
+      console.error('Slip upload error:', err);
+      setErrorMessage('Failed to submit payslip. Please try again.');
+      setTimeout(() => setErrorMessage(null), 3000);
+    } finally {
+      setSlipUploading(false);
+    }
+  }
+
+  const slipStatus = slipModalClass ? slipStatusMap[slipModalClass.id] ?? null : null;
+
   return (
     <div style={{ minHeight: '100vh', background: '#f5f6fa' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 24px' }}>
@@ -464,9 +517,10 @@ export default function BrowseClasses() {
               <ClassCard
                 key={cls.id}
                 classItem={cls}
-                processing={isProcessing(cls.id)}
-                processingPayment={processingPayment === cls.id}
-                onEnroll={() => cls.is_free ? handleEnrollFree(cls) : handleEnrollPaid(cls)}
+                processing={enrollingClassId === cls.id}
+                slipStatus={slipStatusMap[cls.id] ?? null}
+                onEnroll={() => handleEnrollFree(cls)}
+                onOpenSlipModal={() => setSlipModalClass(cls)}
               />
             ))}
           </div>
@@ -476,14 +530,87 @@ export default function BrowseClasses() {
               <ClassListRow
                 key={cls.id}
                 classItem={cls}
-                processing={isProcessing(cls.id)}
-                processingPayment={processingPayment === cls.id}
-                onEnroll={() => cls.is_free ? handleEnrollFree(cls) : handleEnrollPaid(cls)}
+                processing={enrollingClassId === cls.id}
+                slipStatus={slipStatusMap[cls.id] ?? null}
+                onEnroll={() => handleEnrollFree(cls)}
+                onOpenSlipModal={() => setSlipModalClass(cls)}
               />
             ))}
           </div>
         )}
       </div>
+
+      {/* Slip Upload Modal */}
+      {slipModalClass && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1000,
+          background: 'rgba(0,0,0,0.55)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '24px',
+        }}>
+          <div style={{
+            background: '#fff', borderRadius: 20,
+            width: '100%', maxWidth: 460,
+            boxShadow: '0 24px 64px rgba(0,0,0,0.22)',
+            overflow: 'hidden',
+          }}>
+            <div style={{ background: '#0f1623', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <p style={{ color: '#9ca3af', fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', marginBottom: 4 }}>BANK TRANSFER</p>
+                <h3 style={{ color: '#fff', fontSize: 18, fontWeight: 700, margin: 0 }}>
+                  {slipStatus?.status === 'rejected' ? 'Resubmit Payment Slip' : 'Submit Payment Slip'}
+                </h3>
+              </div>
+              <button
+                onClick={() => { setSlipModalClass(null); setSlipFile(null); }}
+                style={{ background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 8, padding: '6px 10px', cursor: 'pointer', color: '#9ca3af', fontSize: 20, lineHeight: 1 }}
+              >×</button>
+            </div>
+            <div style={{ padding: '24px' }}>
+              <div style={{ background: '#f9fafb', borderRadius: 10, padding: '12px 16px', marginBottom: 20, border: '1px solid #e5e7eb' }}>
+                <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 2 }}>Enrolling in</p>
+                <p style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: 0 }}>{slipModalClass.title}</p>
+                <p style={{ fontSize: 16, fontWeight: 800, color: '#eb1b23', margin: '4px 0 0' }}>LKR {slipModalClass.price.toLocaleString()}</p>
+              </div>
+              <div style={{ marginBottom: 20 }}>
+                <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: '#9ca3af', marginBottom: 10 }}>TRANSFER TO</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {Object.entries({ Bank: BANK_DETAILS.bank, 'Account Name': BANK_DETAILS.accountName, 'Account No.': BANK_DETAILS.accountNumber, Branch: BANK_DETAILS.branch }).map(([label, value]) => (
+                    <div key={label} style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                      <span style={{ fontSize: 13, color: '#9ca3af', flexShrink: 0 }}>{label}</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: '#111827', textAlign: 'right' }}>{value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div style={{ marginBottom: 20 }}>
+                <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: '#9ca3af', marginBottom: 10 }}>UPLOAD SLIP PHOTO</p>
+                <label style={{ display: 'block', border: '2px dashed #d1d5db', borderRadius: 12, padding: '20px', textAlign: 'center', cursor: 'pointer', background: slipFile ? '#f0fdf4' : '#f9fafb', transition: 'all 0.15s' }}>
+                  <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => setSlipFile(e.target.files?.[0] ?? null)} />
+                  {slipFile ? (
+                    <div>
+                      <p style={{ fontSize: 14, fontWeight: 600, color: '#16a34a', margin: 0 }}>✓ {slipFile.name}</p>
+                      <p style={{ fontSize: 12, color: '#6b7280', margin: '4px 0 0' }}>Click to change</p>
+                    </div>
+                  ) : (
+                    <div>
+                      <p style={{ fontSize: 14, color: '#6b7280', margin: 0 }}>Click to select a photo</p>
+                      <p style={{ fontSize: 12, color: '#9ca3af', margin: '4px 0 0' }}>JPG, PNG, etc.</p>
+                    </div>
+                  )}
+                </label>
+              </div>
+              <button
+                onClick={handleSubmitSlip}
+                disabled={!slipFile || slipUploading}
+                style={{ width: '100%', padding: '13px', background: (!slipFile || slipUploading) ? '#e5e7eb' : '#eb1b23', color: (!slipFile || slipUploading) ? '#9ca3af' : '#fff', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: (!slipFile || slipUploading) ? 'not-allowed' : 'pointer', transition: 'all 0.15s' }}
+              >
+                {slipUploading ? 'Uploading...' : 'Submit Payslip'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -543,240 +670,142 @@ function FilterSelect({
 }
 
 function ClassCard({
-  classItem, processing, processingPayment, onEnroll,
+  classItem, processing, slipStatus, onEnroll, onOpenSlipModal,
 }: {
   classItem: Class;
   processing: boolean;
-  processingPayment: boolean;
+  slipStatus: SlipStatus | null;
   onEnroll: () => void;
+  onOpenSlipModal: () => void;
 }) {
   const theme = getSubjectTheme(classItem.subject);
   const teacherName = classItem.teacher?.profile?.full_name || 'Unknown';
   const avatarUrl = classItem.teacher?.profile?.avatar_url;
 
+  function renderButton() {
+    if (!classItem.is_free) {
+      if (slipStatus?.status === 'pending') {
+        return (
+          <button disabled style={{ width: '100%', padding: '12px', borderRadius: 10, border: 'none', background: '#fef3c7', color: '#92400e', fontSize: 13, fontWeight: 700, cursor: 'not-allowed' }}>
+            ⏳ Pending Approval
+          </button>
+        );
+      }
+      if (slipStatus?.status === 'rejected') {
+        return (
+          <div>
+            <button onClick={onOpenSlipModal} className="enroll-btn" style={{ width: '100%', padding: '12px', borderRadius: 10, border: 'none', background: '#f59e0b', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', marginBottom: 8 }}>
+              Resubmit Slip
+            </button>
+            {slipStatus.reason && (
+              <p style={{ fontSize: 11, color: '#b45309', textAlign: 'center', margin: 0 }}>Rejected: {slipStatus.reason}</p>
+            )}
+          </div>
+        );
+      }
+      return (
+        <button onClick={onOpenSlipModal} className="enroll-btn" style={{ width: '100%', padding: '12px', borderRadius: 10, border: 'none', background: '#eb1b23', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+          Upload Payment Slip
+        </button>
+      );
+    }
+    return (
+      <button className="enroll-btn" onClick={onEnroll} disabled={processing} style={{ width: '100%', padding: '12px', borderRadius: 10, border: 'none', cursor: processing ? 'not-allowed' : 'pointer', background: processing ? '#f3f4f6' : '#eb1b23', color: processing ? '#9ca3af' : '#fff', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'all 0.18s ease' }}>
+        {processing ? <><Loader size={15} style={{ animation: 'spin 0.8s linear infinite' }} /> Enrolling...</> : 'Enroll Now'}
+      </button>
+    );
+  }
+
   return (
-    <div
-      className="browse-card"
-      style={{
-        background: '#fff',
-        borderRadius: 18,
-        overflow: 'hidden',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
-        border: '1px solid #e5e7eb',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      {/* Thumbnail */}
-      <div style={{
-        background: `linear-gradient(135deg, var(--g1), var(--g2))`,
-        backgroundImage: `linear-gradient(135deg, ${theme.gradient.replace('from-', '').replace('to-', '').split(' ').map(c => c.replace('[', '').replace(']', '')).join(', ')})`,
-        height: 160,
-        position: 'relative',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        overflow: 'hidden',
-      }}
-        className={`bg-gradient-to-br ${theme.gradient}`}
-      >
-        {/* Decorative pattern */}
-        <div style={{
-          position: 'absolute', inset: 0, opacity: 0.07,
-          backgroundImage: 'repeating-linear-gradient(45deg, #fff 0, #fff 1px, transparent 0, transparent 50%)',
-          backgroundSize: '12px 12px',
-        }} />
-
-        {/* Subject emoji / icon */}
-        <span style={{ fontSize: 52, opacity: 0.35, userSelect: 'none', zIndex: 1 }}>
-          {theme.emoji}
-        </span>
-
-        {/* Subject tag (bottom-left) */}
-        <div style={{
-          position: 'absolute',
-          bottom: 12,
-          left: 12,
-          background: 'rgba(0,0,0,0.45)',
-          color: '#fff',
-          fontSize: 10,
-          fontWeight: 700,
-          letterSpacing: '0.1em',
-          padding: '4px 10px',
-          borderRadius: 6,
-          backdropFilter: 'blur(4px)',
-        }}>
+    <div className="browse-card" style={{ background: '#fff', borderRadius: 18, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.07)', border: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ height: 160, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }} className={`bg-gradient-to-br ${theme.gradient}`}>
+        <div style={{ position: 'absolute', inset: 0, opacity: 0.07, backgroundImage: 'repeating-linear-gradient(45deg, #fff 0, #fff 1px, transparent 0, transparent 50%)', backgroundSize: '12px 12px' }} />
+        <span style={{ fontSize: 52, opacity: 0.35, userSelect: 'none', zIndex: 1 }}>{theme.emoji}</span>
+        <div style={{ position: 'absolute', bottom: 12, left: 12, background: 'rgba(0,0,0,0.45)', color: '#fff', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', padding: '4px 10px', borderRadius: 6, backdropFilter: 'blur(4px)' }}>
           {classItem.subject?.toUpperCase()}
         </div>
-
-        {/* Price badge (top-left) */}
-        <div style={{
-          position: 'absolute',
-          top: 12,
-          left: 12,
-          background: classItem.is_free ? 'rgba(16,185,129,0.9)' : 'rgba(30,30,30,0.8)',
-          color: '#fff',
-          fontSize: 11,
-          fontWeight: 700,
-          padding: '4px 10px',
-          borderRadius: 20,
-          backdropFilter: 'blur(4px)',
-        }}>
+        <div style={{ position: 'absolute', top: 12, left: 12, background: classItem.is_free ? 'rgba(16,185,129,0.9)' : 'rgba(30,30,30,0.8)', color: '#fff', fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 20, backdropFilter: 'blur(4px)' }}>
           {classItem.is_free ? 'FREE' : `LKR ${classItem.price.toLocaleString()}`}
         </div>
       </div>
-
-      {/* Body */}
       <div style={{ padding: '18px 18px 0', flex: 1 }}>
-        <h3 style={{
-          fontSize: 17,
-          fontWeight: 700,
-          color: '#111827',
-          marginBottom: 12,
-          lineHeight: 1.3,
-        }}>
-          {classItem.title}
-        </h3>
-
-        {/* Teacher row */}
+        <h3 style={{ fontSize: 17, fontWeight: 700, color: '#111827', marginBottom: 12, lineHeight: 1.3 }}>{classItem.title}</h3>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {avatarUrl ? (
-            <img src={avatarUrl} alt={teacherName} style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', border: '2px solid #e5e7eb', flexShrink: 0 }} />
-          ) : (
-            <AvatarFallback name={teacherName} size={30} />
-          )}
+          {avatarUrl ? <img src={avatarUrl} alt={teacherName} style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', border: '2px solid #e5e7eb', flexShrink: 0 }} /> : <AvatarFallback name={teacherName} size={30} />}
           <span style={{ fontSize: 13, color: '#6b7280', fontWeight: 500 }}>{teacherName}</span>
         </div>
       </div>
-
-      {/* Enroll Button */}
-      <div style={{ padding: '16px 18px 18px' }}>
-        <button
-          className="enroll-btn"
-          onClick={onEnroll}
-          disabled={processing}
-          style={{
-            width: '100%',
-            padding: '12px',
-            borderRadius: 10,
-            border: 'none',
-            cursor: processing ? 'not-allowed' : 'pointer',
-            background: processing ? '#f3f4f6' : '#eb1b23',
-            color: processing ? '#9ca3af' : '#fff',
-            fontSize: 14,
-            fontWeight: 700,
-            letterSpacing: '0.02em',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 8,
-            transition: 'all 0.18s ease',
-          }}
-        >
-          {processing ? (
-            <>
-              <Loader size={15} style={{ animation: 'spin 0.8s linear infinite' }} />
-              {processingPayment ? 'Processing...' : 'Enrolling...'}
-            </>
-          ) : (
-            'Enroll Now'
-          )}
-        </button>
-      </div>
+      <div style={{ padding: '16px 18px 18px' }}>{renderButton()}</div>
     </div>
   );
 }
 
 function ClassListRow({
-  classItem, processing, processingPayment, onEnroll,
+  classItem, processing, slipStatus, onEnroll, onOpenSlipModal,
 }: {
   classItem: Class;
   processing: boolean;
-  processingPayment: boolean;
+  slipStatus: SlipStatus | null;
   onEnroll: () => void;
+  onOpenSlipModal: () => void;
 }) {
   const theme = getSubjectTheme(classItem.subject);
   const teacherName = classItem.teacher?.profile?.full_name || 'Unknown';
   const avatarUrl = classItem.teacher?.profile?.avatar_url;
 
+  function renderButton() {
+    if (!classItem.is_free) {
+      if (slipStatus?.status === 'pending') {
+        return (
+          <button disabled style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: '#fef3c7', color: '#92400e', fontSize: 13, fontWeight: 700, cursor: 'not-allowed', whiteSpace: 'nowrap' }}>
+            ⏳ Pending
+          </button>
+        );
+      }
+      if (slipStatus?.status === 'rejected') {
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+            <button onClick={onOpenSlipModal} className="enroll-btn" style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: '#f59e0b', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              Resubmit Slip
+            </button>
+            {slipStatus.reason && <p style={{ fontSize: 11, color: '#b45309', margin: 0, maxWidth: 160, textAlign: 'right' }}>{slipStatus.reason}</p>}
+          </div>
+        );
+      }
+      return (
+        <button onClick={onOpenSlipModal} className="enroll-btn" style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: '#eb1b23', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+          Upload Slip
+        </button>
+      );
+    }
+    return (
+      <button className="enroll-btn" onClick={onEnroll} disabled={processing} style={{ padding: '10px 28px', borderRadius: 10, border: 'none', cursor: processing ? 'not-allowed' : 'pointer', background: processing ? '#f3f4f6' : '#eb1b23', color: processing ? '#9ca3af' : '#fff', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.18s ease', whiteSpace: 'nowrap' }}>
+        {processing ? <><Loader size={14} style={{ animation: 'spin 0.8s linear infinite' }} /> Enrolling...</> : 'Enroll Now'}
+      </button>
+    );
+  }
+
   return (
-    <div
-      className="browse-card"
-      style={{
-        background: '#fff',
-        borderRadius: 16,
-        overflow: 'hidden',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-        border: '1px solid #e5e7eb',
-        display: 'flex',
-        alignItems: 'stretch',
-      }}
-    >
-      {/* Thumbnail strip */}
-      <div
-        className={`bg-gradient-to-br ${theme.gradient}`}
-        style={{ width: 100, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}
-      >
+    <div className="browse-card" style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'stretch' }}>
+      <div className={`bg-gradient-to-br ${theme.gradient}`} style={{ width: 100, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, opacity: 0.07, backgroundImage: 'repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%)', backgroundSize: '12px 12px' }} />
         <span style={{ fontSize: 32, opacity: 0.4 }}>{theme.emoji}</span>
       </div>
-
-      {/* Content */}
       <div style={{ flex: 1, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: 180 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: '#6b7280', background: '#f3f4f6', padding: '2px 8px', borderRadius: 4 }}>
-              {classItem.subject?.toUpperCase()}
-            </span>
-            <span style={{
-              fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10,
-              background: classItem.is_free ? 'rgba(16,185,129,0.12)' : 'rgba(235,27,35,0.10)',
-              color: classItem.is_free ? '#059669' : '#eb1b23',
-            }}>
+            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: '#6b7280', background: '#f3f4f6', padding: '2px 8px', borderRadius: 4 }}>{classItem.subject?.toUpperCase()}</span>
+            <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10, background: classItem.is_free ? 'rgba(16,185,129,0.12)' : 'rgba(235,27,35,0.10)', color: classItem.is_free ? '#059669' : '#eb1b23' }}>
               {classItem.is_free ? 'FREE' : `LKR ${classItem.price.toLocaleString()}`}
             </span>
           </div>
           <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111827', marginBottom: 6, lineHeight: 1.3 }}>{classItem.title}</h3>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            {avatarUrl ? (
-              <img src={avatarUrl} alt={teacherName} style={{ width: 22, height: 22, borderRadius: '50%', objectFit: 'cover', border: '2px solid #e5e7eb' }} />
-            ) : (
-              <AvatarFallback name={teacherName} size={22} />
-            )}
+            {avatarUrl ? <img src={avatarUrl} alt={teacherName} style={{ width: 22, height: 22, borderRadius: '50%', objectFit: 'cover', border: '2px solid #e5e7eb' }} /> : <AvatarFallback name={teacherName} size={22} />}
             <span style={{ fontSize: 12, color: '#6b7280' }}>{teacherName}</span>
           </div>
         </div>
-
-        {/* Enroll button */}
-        <button
-          className="enroll-btn"
-          onClick={onEnroll}
-          disabled={processing}
-          style={{
-            padding: '10px 28px',
-            borderRadius: 10,
-            border: 'none',
-            cursor: processing ? 'not-allowed' : 'pointer',
-            background: processing ? '#f3f4f6' : '#eb1b23',
-            color: processing ? '#9ca3af' : '#fff',
-            fontSize: 13,
-            fontWeight: 700,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            transition: 'all 0.18s ease',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {processing ? (
-            <>
-              <Loader size={14} style={{ animation: 'spin 0.8s linear infinite' }} />
-              {processingPayment ? 'Processing...' : 'Enrolling...'}
-            </>
-          ) : (
-            'Enroll Now'
-          )}
-        </button>
+        {renderButton()}
       </div>
     </div>
   );
