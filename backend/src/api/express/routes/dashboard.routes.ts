@@ -1,9 +1,17 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { DashboardService } from '../../../services/dashboardService.js';
+import { TeacherRepository } from '../../../repositories/index.js';
 import { getDb } from '../../../providers/db/drizzle.js';
 import { sendSuccess } from '../../../utils/response.js';
 import { requireAuth } from '../../middleware/auth.js';
 import { AppError } from '../../../utils/errors.js';
+
+async function resolveTeacherId(profileId: string): Promise<string> {
+  const repo = new TeacherRepository(getDb());
+  const teacher = await repo.findByProfileId(profileId);
+  if (!teacher) throw AppError.notFound('Teacher profile not found');
+  return teacher.id;
+}
 
 export const dashboardRouter = Router();
 
@@ -30,9 +38,10 @@ dashboardRouter.get('/teacher', async (req: Request, res: Response, next: NextFu
       throw AppError.forbidden('Only teachers can access the teacher dashboard');
     }
 
-    const teacherId = (req as any).user?.id;
-    if (!teacherId) throw AppError.unauthorized();
+    const profileId = (req as any).user?.id;
+    if (!profileId) throw AppError.unauthorized();
 
+    const teacherId = await resolveTeacherId(profileId);
     const data = await getDashboardService().getTeacherDashboard(teacherId);
     sendSuccess(res, data);
   } catch (error) {
