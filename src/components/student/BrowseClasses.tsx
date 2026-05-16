@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { db } from '../../lib/database';
-import { payHereService } from '../../lib/payhere';
+import { supabase } from '../../lib/supabase';
 import {
   Search,
   BookOpen,
@@ -99,6 +99,8 @@ function AvatarFallback({ name, size = 32 }: { name: string; size?: number }) {
   );
 }
 
+type SlipStatus = { status: 'pending' | 'completed' | 'rejected'; reason: string | null };
+
 export default function BrowseClasses() {
   const { profile } = useAuth();
   const [classes, setClasses] = useState<Class[]>([]);
@@ -111,7 +113,10 @@ export default function BrowseClasses() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [subjects, setSubjects] = useState<string[]>([]);
   const [enrollingClassId, setEnrollingClassId] = useState<string | null>(null);
-  const [processingPayment, setProcessingPayment] = useState<string | null>(null);
+  const [slipModalClass, setSlipModalClass] = useState<Class | null>(null);
+  const [slipFile, setSlipFile] = useState<File | null>(null);
+  const [slipUploading, setSlipUploading] = useState(false);
+  const [slipStatusMap, setSlipStatusMap] = useState<Record<string, SlipStatus>>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -155,40 +160,58 @@ export default function BrowseClasses() {
 
       if (error) throw error;
 
-      const { data: enrollments } = await db
-        .from<any>('enrollments')
-        .select('class_id')
-        .eq('student_id', profile?.id)
-        .eq('is_active', true)
-        .execute();
+      const [enrollmentsResult, slipPaymentsResult] = await Promise.all([
+        db.from<any>('enrollments')
+          .select('class_id')
+          .eq('student_id', profile?.id)
+          .eq('is_active', true)
+          .execute(),
+        supabase
+          .from('class_payments')
+          .select('class_id, payment_status, rejection_reason, created_at')
+          .eq('student_id', profile?.id)
+          .eq('payment_method', 'bank_transfer')
+          .order('created_at', { ascending: false }),
+      ]);
 
-      const enrolledClassIds = new Set(enrollments?.map(e => e.class_id) || []);
+      const enrolledClassIds = new Set(enrollmentsResult.data?.map((e: any) => e.class_id) || []);
 
-      const classesWithStatus = allClasses?.map(cls => ({
+      // Most-recent slip per class
+      const statusMap: Record<string, SlipStatus> = {};
+      for (const p of slipPaymentsResult.data || []) {
+        if (!statusMap[p.class_id]) {
+          statusMap[p.class_id] = {
+            status: p.payment_status as SlipStatus['status'],
+            reason: p.rejection_reason ?? null,
+          };
+        }
+      }
+      setSlipStatusMap(statusMap);
+
+      const classesWithStatus = allClasses?.map((cls: any) => ({
         ...cls,
-        is_enrolled: enrolledClassIds.has(cls.id)
+        is_enrolled: enrolledClassIds.has(cls.id),
       })) || [];
 
       setClasses(classesWithStatus);
 
-      // Extract unique subjects
       const uniqueSubjects = Array.from(
-        new Set(allClasses?.map(cls => cls.subject).filter(Boolean))
+        new Set(allClasses?.map((cls: any) => cls.subject).filter(Boolean))
       ).sort() as string[];
       setSubjects(uniqueSubjects);
 
       const uniqueTeachers = Array.from(
         new Map(
           allClasses
-            ?.filter(cls => cls.teacher?.profile?.full_name)
-            .map(cls => [
+            ?.filter((cls: any) => cls.teacher?.profile?.full_name)
+            .map((cls: any) => [
               cls.teacher.id,
-              { id: cls.teacher.id, name: cls.teacher.profile.full_name }
+              { id: cls.teacher.id, name: cls.teacher.profile.full_name },
             ])
         ).values()
-      ).sort((a, b) => a.name.localeCompare(b.name));
+      ).sort((a: any, b: any) => a.name.localeCompare(b.name));
 
-      setTeachers(uniqueTeachers);
+      setTeachers(uniqueTeachers as Teacher[]);
     } catch (error) {
       console.error('Error fetching classes:', error);
       setErrorMessage('Failed to load classes');
@@ -242,102 +265,6 @@ export default function BrowseClasses() {
       setEnrollingClassId(null);
     }
   }
-
-  async function handleEnrollPaid(classItem: Class) {
-    setProcessingPayment(classItem.id);
-
-    try {
-      const { data: dbPaymentData, error: paymentError } = await db
-        .from<any>('class_payments')
-        .insert({
-          student_id: profile?.id,
-          class_id: classItem.id,
-          amount: classItem.price,
-          payment_status: 'pending',
-          payment_method: 'payhere',
-        })
-        .select()
-        .execute();
-
-      const payment = dbPaymentData?.[0];
-
-      if (paymentError || !payment) throw paymentError || new Error('Failed to create payment');
-
-      if (!payHereService.isPayHereLoaded()) {
-        alert('Payment gateway is loading. Please try again in a moment.');
-        setProcessingPayment(null);
-        return;
-      }
-
-      const nameParts = profile?.full_name?.split(' ') || ['Student'];
-      const firstName = nameParts[0] || 'Student';
-      const lastName = nameParts.slice(1).join(' ') || '';
-
-      const paymentData = payHereService.createPaymentData({
-        orderId: payment.id,
-        items: classItem.title,
-        amount: classItem.price,
-        firstName,
-        lastName,
-        email: profile?.email || '',
-        phone: profile?.phone || '',
-        city: 'Colombo',
-        country: 'Sri Lanka',
-        address: '',
-      });
-
-      await payHereService.initiatePayment(paymentData, {
-        onCompleted: async (orderId: string) => {
-          await db
-            .from<any>('class_payments')
-            .update({
-              payment_status: 'completed',
-              payment_reference: orderId,
-              paid_at: new Date().toISOString(),
-            })
-            .eq('id', payment.id)
-            .execute();
-
-          await db
-            .from<any>('enrollments')
-            .insert({
-              student_id: profile?.id,
-              class_id: classItem.id,
-              is_active: true
-            })
-            .execute();
-
-          setSuccessMessage(`Payment successful! Enrolled in "${classItem.title}"`);
-          await fetchClasses();
-          setTimeout(() => setSuccessMessage(null), 3000);
-          setProcessingPayment(null);
-        },
-        onDismissed: () => {
-          setProcessingPayment(null);
-        },
-        onError: async (error: any) => {
-          console.error('Payment error:', error);
-          await db
-            .from<any>('class_payments')
-            .update({ payment_status: 'failed' })
-            .eq('id', payment.id)
-            .execute();
-
-          setErrorMessage('Payment failed. Please try again.');
-          setTimeout(() => setErrorMessage(null), 3000);
-          setProcessingPayment(null);
-        },
-      });
-    } catch (error) {
-      console.error('Error initiating payment:', error);
-      setErrorMessage('Failed to process enrollment. Please try again.');
-      setTimeout(() => setErrorMessage(null), 3000);
-      setProcessingPayment(null);
-    }
-  }
-
-  const isProcessing = (id: string) =>
-    enrollingClassId === id || processingPayment === id;
 
   return (
     <div style={{ minHeight: '100vh', background: '#f5f6fa' }}>
