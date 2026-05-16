@@ -6,7 +6,7 @@ import { pdfExams, testResults } from '../repositories/schema/other.js';
 import { examAttempts } from '../repositories/schema/index.js';
 import type { DrizzleDb } from '../providers/db/drizzle.js';
 import type { NewExam, NewExamQuestion, NewExamAttempt, ExamQuestion } from '../repositories/schema/exams.js';
-import { eq, and, gt, count } from 'drizzle-orm';
+import { eq, and, gt, count, desc } from 'drizzle-orm';
 import { AppError } from '../utils/errors.js';
 import crypto from 'crypto';
 
@@ -31,11 +31,15 @@ export class ExamService {
   async listUpcomingExams(studentId: string) {
     const enrollments = await this.enrollmentRepo.findByStudentId(studentId);
     const classIds = enrollments.map(e => e.class_id).filter(id => id !== null) as string[];
-    
+    console.log('[listUpcomingExams] studentId:', studentId, '| enrollments:', enrollments.length, '| classIds:', classIds);
+
     if (classIds.length === 0) return [];
 
     const upcoming = await this.examRepo.findUpcoming();
-    return upcoming.filter(exam => exam.class_id && classIds.includes(exam.class_id));
+    console.log('[listUpcomingExams] upcoming exams in DB:', upcoming.length, '| their class_ids:', upcoming.map(e => e.class_id));
+    const filtered = upcoming.filter(exam => exam.class_id && classIds.includes(exam.class_id));
+    console.log('[listUpcomingExams] matched for student:', filtered.length);
+    return filtered;
   }
 
   async listTeacherExams(profileId: string) {
@@ -97,10 +101,12 @@ export class ExamService {
   }
 
   async getAttempt(attemptId: string) {
-    const attempts = await this.db.query.examAttempts.findFirst({
-      where: (table, { eq }) => eq(table.id, attemptId)
-    });
-    return attempts;
+    const result = await this.db
+      .select()
+      .from(examAttempts)
+      .where(eq(examAttempts.id, attemptId))
+      .limit(1);
+    return result[0] ?? null;
   }
 
   async startAttempt(studentId: string, examId: string) {
@@ -207,10 +213,11 @@ export class ExamService {
   }
 
   async getStudentResults(studentId: string) {
-    const attempts = await this.db.query.examAttempts.findMany({
-      where: (table, { eq, and }) => and(eq(table.student_id, studentId), eq(table.status, 'submitted')),
-      orderBy: (table, { desc }) => [desc(table.submitted_at)]
-    });
+    const attempts = await this.db
+      .select()
+      .from(examAttempts)
+      .where(and(eq(examAttempts.student_id, studentId), eq(examAttempts.status, 'submitted')))
+      .orderBy(desc(examAttempts.submitted_at));
 
     const enriched = [];
     for (const attempt of attempts) {
