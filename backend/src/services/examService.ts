@@ -1,12 +1,18 @@
 import { ExamRepository } from '../repositories/ExamRepository.js';
 import { EnrollmentRepository } from '../repositories/EnrollmentRepository.js';
 import { TeacherRepository } from '../repositories/TeacherRepository.js';
+import { getFileService } from './fileService.js';
 import { pdfExams, testResults } from '../repositories/schema/other.js';
+import { examAttempts } from '../repositories/schema/index.js';
 import type { DrizzleDb } from '../providers/db/drizzle.js';
 import type { NewExam, NewExamQuestion, NewExamAttempt, ExamQuestion } from '../repositories/schema/exams.js';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, gt, count } from 'drizzle-orm';
 import { AppError } from '../utils/errors.js';
 import crypto from 'crypto';
+
+function pdfStoragePath(rawPath: string): string {
+  return rawPath.startsWith('acp/') ? rawPath.slice(4) : rawPath;
+}
 
 export class ExamService {
   private examRepo: ExamRepository;
@@ -127,8 +133,7 @@ export class ExamService {
     let pdfUrl: string | null = null;
 
     if (isPdf) {
-      // In a real implementation we would fetch public URL from storage
-      pdfUrl = pdfRecords[0].pdf_path;
+      pdfUrl = getFileService().getPublicUrl('acp', pdfStoragePath(pdfRecords[0].pdf_path));
     } else {
       questions = await this.examRepo.getQuestions(examId);
     }
@@ -203,18 +208,26 @@ export class ExamService {
 
   async getStudentResults(studentId: string) {
     const attempts = await this.db.query.examAttempts.findMany({
-      where: (table, { eq, and, isNotNull }) => and(eq(table.student_id, studentId), eq(table.status, 'submitted')),
+      where: (table, { eq, and }) => and(eq(table.student_id, studentId), eq(table.status, 'submitted')),
       orderBy: (table, { desc }) => [desc(table.submitted_at)]
     });
-    
-    // We can enrich it with exam meta
+
     const enriched = [];
     for (const attempt of attempts) {
       const exam = await this.getExamDetails(attempt.exam_id);
-      enriched.push({
-        ...attempt,
-        exam
-      });
+      let rank: number | null = null;
+      if (exam && new Date() > new Date(exam.end_time)) {
+        const [{ value: higherCount }] = await this.db
+          .select({ value: count() })
+          .from(examAttempts)
+          .where(and(
+            eq(examAttempts.exam_id, attempt.exam_id),
+            eq(examAttempts.status, 'submitted'),
+            gt(examAttempts.score, attempt.score)
+          ));
+        rank = (higherCount ?? 0) + 1;
+      }
+      enriched.push({ ...attempt, rank, exam });
     }
 
     return enriched;
@@ -229,7 +242,7 @@ export class ExamService {
     let pdfAnswers: { question_no: number; correct_answer: number }[] = [];
 
     if (isPdf) {
-      pdfUrl = pdfRecords[0].pdf_path;
+      pdfUrl = getFileService().getPublicUrl('acp', pdfStoragePath(pdfRecords[0].pdf_path));
       pdfAnswers = pdfRecords.map(r => ({ question_no: r.question_no, correct_answer: r.correct_answer }));
     } else {
       questions = await this.examRepo.getQuestions(examId);
