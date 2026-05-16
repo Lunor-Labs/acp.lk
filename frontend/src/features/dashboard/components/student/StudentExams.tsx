@@ -22,6 +22,7 @@ interface ActiveExam {
   isPdf: boolean;
   pdfUrl?: string | null;
   questions?: ExamQuestion[];
+  pdfQuestionCount?: number;
   isReviewing?: boolean;
   isSubmitting?: boolean;
   pdfView?: 'paper' | 'answers';
@@ -150,6 +151,7 @@ export default function StudentExams() {
         isPdf: data.isPdf,
         pdfUrl: data.pdfUrl,
         questions: data.questions,
+        pdfQuestionCount: data.pdfQuestionCount,
         pdfView: data.isPdf ? 'paper' : undefined,
       });
     } catch (err: any) {
@@ -285,24 +287,27 @@ export default function StudentExams() {
   // RENDER: TAKING MODE
   // ══════════════════════════════════════════════════════════════════════════
   if (activeExam) {
-    const total = activeExam.isPdf ? 50 : (activeExam.questions?.length || 0);
+    const total = activeExam.isPdf ? (activeExam.pdfQuestionCount || 0) : (activeExam.questions?.length || 0);
     const answered = Object.keys(activeExam.answers).length;
     const { text: timeText, isWarning } = getRemainingTime();
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+    const getImageUrl = (path: string) =>
+      `${supabaseUrl}/storage/v1/object/public/acp/${path.replace('acp/', '')}`;
 
     return (
       <div className="fixed inset-0 bg-gray-100 z-50 flex flex-col">
         {/* Header */}
-        <div className="bg-white border-b px-3 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <div className="flex items-center space-x-4 min-w-0 flex-1">
+        <div className="bg-white border-b px-3 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+          <div className="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
             <div className="bg-red-50 p-2 rounded-lg flex-shrink-0">
               <FileText className="w-5 sm:w-6 h-5 sm:h-6 text-[#eb1b23]" />
             </div>
             <div className="min-w-0 flex-1">
               <h2 className="text-base sm:text-xl font-bold text-gray-900 truncate">{activeExam.exam.title}</h2>
-              <div className="flex items-center space-x-3 text-xs sm:text-sm text-gray-500">
-                <span>{activeExam.exam.subject}</span>
-                <span>•</span>
-                <span className={`flex items-center ${isWarning ? 'text-[#eb1b23] font-bold animate-pulse' : ''}`}>
+              <div className="flex items-center space-x-1 sm:space-x-3 text-xs sm:text-sm text-gray-500 overflow-x-auto">
+                <span className="truncate">{activeExam.exam.subject}</span>
+                <span className="flex-shrink-0">•</span>
+                <span className={`flex items-center flex-shrink-0 ${isWarning ? 'text-[#eb1b23] font-bold animate-pulse' : ''}`}>
                   <Clock className="w-3 sm:w-4 h-3 sm:h-4 mr-1" />{timeText}
                 </span>
               </div>
@@ -313,7 +318,7 @@ export default function StudentExams() {
               )}
             </div>
           </div>
-          <div className="flex items-center space-x-4 flex-shrink-0">
+          <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
             <div className="hidden sm:block text-right">
               <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Progress</p>
               <p className="font-bold text-gray-900 text-sm">{answered} / {total}</p>
@@ -350,21 +355,27 @@ export default function StudentExams() {
                 <div className="hidden md:block p-6 lg:p-8 max-w-3xl mx-auto w-full h-full overflow-auto">
                   {activeExam.questions?.[activeExam.currentQuestion] && (() => {
                     const q = activeExam.questions![activeExam.currentQuestion];
+                    const cur = activeExam.answers[q.question_number] as string;
                     return (
-                      <div className="bg-white rounded-2xl p-4 sm:p-8 shadow-sm">
-                        <div className="text-xs sm:text-sm font-bold text-[#eb1b23] mb-4 uppercase tracking-widest">
+                      <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-8 shadow-sm">
+                        <div className="text-xs sm:text-sm font-bold text-[#eb1b23] mb-3 sm:mb-4 uppercase tracking-widest">
                           Question {activeExam.currentQuestion + 1}
                         </div>
-                        <h3 className="text-lg sm:text-2xl font-bold text-gray-900 mb-6 leading-relaxed">{q.question_text}</h3>
-                        <div className="space-y-3">
+                        <h3 className="text-lg sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-8 leading-relaxed">{q.question_text}</h3>
+                        {q.image_path && (
+                          <div className="mb-4 sm:mb-8 rounded-lg overflow-hidden bg-gray-50 border border-gray-200 flex items-center justify-center p-3 sm:p-4">
+                            <img src={getImageUrl(q.image_path)} alt={`Question ${activeExam.currentQuestion + 1}`}
+                              className="max-w-full max-h-72 sm:max-h-96 object-contain" />
+                          </div>
+                        )}
+                        <div className="space-y-3 sm:space-y-4">
                           {q.options.map((option, idx) => {
                             const optNum = String(idx + 1);
-                            const cur = activeExam.answers[q.question_number] as string;
-                            const sel = cur ? cur.split(',').map(s => s.trim()).includes(optNum) : false;
+                            const sel = cur === optNum;
                             return (
                               <button key={idx} onClick={() => selectAnswer(activeExam.currentQuestion, optNum)}
-                                className={`w-full text-left p-3 sm:p-5 rounded-xl border-2 transition-all flex items-center group ${sel ? 'border-[#eb1b23] bg-red-50 shadow-md' : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'}`}>
-                                <span className={`w-8 sm:w-10 h-8 sm:h-10 rounded-lg flex items-center justify-center font-bold mr-3 text-sm transition-colors flex-shrink-0 ${sel ? 'bg-[#eb1b23] text-white' : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'}`}>{idx + 1}</span>
+                                className={`w-full text-left p-3 sm:p-5 rounded-lg sm:rounded-xl border-2 transition-all flex items-center group ${sel ? 'border-[#eb1b23] bg-red-50 shadow-md shadow-red-50' : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'}`}>
+                                <span className={`w-8 sm:w-10 h-8 sm:h-10 rounded-lg flex items-center justify-center font-bold mr-2 sm:mr-4 text-sm sm:text-base transition-colors flex-shrink-0 ${sel ? 'bg-[#eb1b23] text-white' : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'}`}>{idx + 1}</span>
                                 <span className={`text-base sm:text-lg font-medium break-words ${sel ? 'text-gray-900' : 'text-gray-700'}`}>{option}</span>
                               </button>
                             );
@@ -383,21 +394,28 @@ export default function StudentExams() {
                         <div key={qIdx} ref={el => { questionRefsRef.current[qIdx] = el; }}
                           data-question-index={qIdx}
                           className="bg-white rounded-xl p-4 sm:p-6 shadow-sm">
-                          <div className="text-xs font-bold text-[#eb1b23] mb-3 uppercase tracking-widest flex justify-between">
+                          <div className="text-xs sm:text-sm font-bold text-[#eb1b23] mb-3 sm:mb-4 uppercase tracking-widest flex justify-between items-center">
                             <span>Question {qIdx + 1}</span>
                             <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                              {Object.keys(activeExam.answers).length} / {activeExam.questions?.length}
+                              {answered} / {total}
                             </span>
                           </div>
-                          <h3 className="text-lg font-bold text-gray-900 mb-4 leading-relaxed">{q.question_text}</h3>
-                          <div className="flex flex-wrap gap-2">
+                          <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6 leading-relaxed">{q.question_text}</h3>
+                          {q.image_path && (
+                            <div className="mb-4 sm:mb-6 rounded-lg overflow-hidden bg-gray-50 border border-gray-200 flex items-center justify-center p-3 sm:p-4">
+                              <img src={getImageUrl(q.image_path)} alt={`Question ${qIdx + 1}`}
+                                className="max-w-full max-h-72 object-contain" />
+                            </div>
+                          )}
+                          <div className="space-y-2">
                             {q.options.map((option, idx) => {
                               const optNum = String(idx + 1);
-                              const sel = cur ? cur.split(',').map(s => s.trim()).includes(optNum) : false;
+                              const sel = cur === optNum;
                               return (
                                 <button key={idx} onClick={() => selectAnswer(qIdx, optNum)}
-                                  className={`flex-1 min-w-[calc(50%-0.25rem)] p-2 rounded-lg border-2 transition-all flex items-center justify-center ${sel ? 'border-[#eb1b23] bg-red-50 shadow-md' : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'}`}>
-                                  <span className={`text-xs font-medium text-center break-words ${sel ? 'text-gray-900' : 'text-gray-700'}`}>{option}</span>
+                                  className={`w-full text-left p-3 rounded-lg border-2 transition-all flex items-center group ${sel ? 'border-[#eb1b23] bg-red-50 shadow-md shadow-red-50' : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'}`}>
+                                  <span className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold mr-3 text-sm transition-colors flex-shrink-0 ${sel ? 'bg-[#eb1b23] text-white' : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'}`}>{idx + 1}</span>
+                                  <span className={`text-sm font-medium break-words ${sel ? 'text-gray-900' : 'text-gray-700'}`}>{option}</span>
                                 </button>
                               );
                             })}
@@ -414,23 +432,23 @@ export default function StudentExams() {
 
           {/* Right: nav panel */}
           <div className={`w-full md:w-80 lg:w-96 bg-white border-l flex flex-col flex-1 md:flex-none min-h-0 ${!activeExam.isPdf ? 'hidden md:flex' : (activeExam.pdfView === 'paper' ? 'hidden md:flex' : 'flex')}`}>
-            <div className="p-3 sm:p-6 border-b bg-gray-50 font-bold text-gray-700 text-sm">
+            <div className="p-3 sm:p-6 border-b bg-gray-50 font-bold text-gray-700 text-sm sm:text-base">
               {activeExam.isPdf ? 'Answer Sheet' : 'Question Map'}
             </div>
             <div className="flex-1 overflow-y-auto p-3 sm:p-6">
               {activeExam.isPdf ? (
-                <div className="space-y-3">
-                  {Array.from({ length: 50 }).map((_, i) => {
+                <div className="space-y-3 sm:space-y-6">
+                  {Array.from({ length: activeExam.pdfQuestionCount || 0 }).map((_, i) => {
                     const qNo = i + 1;
                     return (
-                      <div key={i} className="flex items-center space-x-2">
-                        <span className="w-5 text-xs font-mono text-gray-400 flex-shrink-0">{String(qNo).padStart(2, '0')}.</span>
-                        <div className="flex-1 flex justify-between bg-gray-50 p-1.5 rounded-lg border border-gray-100 gap-1">
+                      <div key={i} className="flex items-center space-x-2 sm:space-x-3">
+                        <span className="w-5 sm:w-6 text-xs font-mono text-gray-400 flex-shrink-0">{String(qNo).padStart(2, '0')}.</span>
+                        <div className="flex-1 flex justify-between bg-gray-50 p-1.5 sm:p-2 rounded-lg border border-gray-100 gap-1">
                           {[1, 2, 3, 4, 5].map(val => {
                             const sel = activeExam.answers[qNo] === val;
                             return (
                               <button key={val} onClick={() => selectAnswer(qNo, val)}
-                                className={`w-6 sm:w-8 h-6 sm:h-8 rounded-full text-xs font-bold transition-all flex items-center justify-center flex-shrink-0 ${sel ? 'bg-[#eb1b23] text-white shadow-md' : 'bg-white text-gray-400 hover:bg-gray-100'}`}>
+                                className={`w-6 sm:w-8 h-6 sm:h-8 rounded-full text-xs font-bold transition-all flex-shrink-0 flex items-center justify-center ${sel ? 'bg-[#eb1b23] text-white shadow-md' : 'bg-white text-gray-400 hover:bg-gray-100 hover:text-gray-600'}`}>
                                 {val}
                               </button>
                             );
@@ -441,13 +459,13 @@ export default function StudentExams() {
                   })}
                 </div>
               ) : (
-                <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
+                <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 sm:gap-3">
                   {activeExam.questions?.map((q, i) => {
                     const isCurrent = activeExam.currentQuestion === i;
                     const isAnswered = activeExam.answers[q.question_number] !== undefined;
                     return (
                       <button key={i} onClick={() => setActiveExam({ ...activeExam, currentQuestion: i })}
-                        className={`aspect-square rounded-xl flex items-center justify-center font-bold text-xs sm:text-sm transition-all border-2 ${isCurrent ? 'border-[#eb1b23] bg-red-50 text-[#eb1b23] scale-105' : isAnswered ? 'border-green-100 bg-green-50 text-green-600' : 'border-transparent bg-gray-50 text-gray-400 hover:bg-gray-100'}`}>
+                        className={`aspect-square rounded-lg sm:rounded-xl flex items-center justify-center font-bold text-xs sm:text-sm transition-all border-2 ${isCurrent ? 'border-[#eb1b23] bg-red-50 text-[#eb1b23] scale-105' : isAnswered ? 'border-green-100 bg-green-50 text-green-600' : 'border-transparent bg-gray-50 text-gray-400 hover:bg-gray-100'}`}>
                         {i + 1}
                       </button>
                     );
@@ -456,15 +474,15 @@ export default function StudentExams() {
               )}
             </div>
             {!activeExam.isPdf && (
-              <div className="hidden md:grid p-3 sm:p-6 border-t bg-gray-50 grid-cols-2 gap-3">
+              <div className="hidden md:grid p-3 sm:p-6 border-t bg-gray-50 grid-cols-2 gap-2 sm:gap-4">
                 <button onClick={() => setActiveExam({ ...activeExam, currentQuestion: Math.max(0, activeExam.currentQuestion - 1) })}
                   disabled={activeExam.currentQuestion === 0}
-                  className="px-4 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold text-sm hover:bg-gray-100 transition disabled:opacity-50">
+                  className="px-3 sm:px-4 py-2 sm:py-3 bg-white border border-gray-200 text-gray-700 rounded-lg sm:rounded-xl font-bold text-sm sm:text-base hover:bg-gray-100 transition disabled:opacity-50">
                   Previous
                 </button>
                 <button onClick={() => setActiveExam({ ...activeExam, currentQuestion: Math.min(total - 1, activeExam.currentQuestion + 1) })}
                   disabled={activeExam.currentQuestion === total - 1}
-                  className="px-4 py-3 bg-[#eb1b23] text-white rounded-xl font-bold text-sm hover:bg-red-700 transition shadow-lg shadow-red-100 disabled:opacity-50">
+                  className="px-3 sm:px-4 py-2 sm:py-3 bg-[#eb1b23] text-white rounded-lg sm:rounded-xl font-bold text-sm sm:text-base hover:bg-red-700 transition shadow-lg shadow-red-100 disabled:opacity-50">
                   Next
                 </button>
               </div>
@@ -474,14 +492,14 @@ export default function StudentExams() {
 
         {/* Mobile fixed footer */}
         {!activeExam.isPdf && (
-          <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 shadow-lg">
-            <div className="flex gap-3">
+          <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 sm:p-4 shadow-lg shadow-gray-300">
+            <div className="flex gap-3 sm:gap-4">
               <button onClick={() => handleSubmit()}
-                className="flex-1 bg-white border border-gray-300 text-gray-700 px-4 py-3 rounded-lg font-bold text-sm hover:bg-gray-100 transition">
+                className="flex-1 bg-white border border-gray-300 text-gray-700 px-4 py-3 rounded-lg font-bold text-sm sm:text-base hover:bg-gray-100 transition">
                 Review
               </button>
               <button onClick={() => handleSubmit()}
-                className="flex-1 bg-[#eb1b23] text-white px-4 py-3 rounded-lg font-bold text-sm hover:bg-red-700 transition shadow-lg shadow-red-100">
+                className="flex-1 bg-[#eb1b23] text-white px-4 py-3 rounded-lg font-bold text-sm sm:text-base hover:bg-red-700 transition shadow-lg shadow-red-100">
                 Submit
               </button>
             </div>

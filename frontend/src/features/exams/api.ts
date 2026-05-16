@@ -42,6 +42,7 @@ export interface ExamStartResponse {
   isPdf: boolean;
   pdfUrl?: string | null;
   questions?: ExamQuestion[];
+  pdfQuestionCount?: number;
 }
 
 export interface ExamReviewResponse {

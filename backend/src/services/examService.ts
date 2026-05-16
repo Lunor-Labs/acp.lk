@@ -149,7 +149,8 @@ export class ExamService {
       exam,
       isPdf,
       pdfUrl,
-      questions
+      questions,
+      pdfQuestionCount: isPdf ? pdfRecords.length : 0,
     };
   }
 
