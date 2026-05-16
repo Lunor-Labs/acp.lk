@@ -33,11 +33,9 @@ export const examAttempts = pgTable('exam_attempts', {
   student_id: text('student_id').notNull(),
   status: text('status').$type<'started' | 'submitted'>().notNull().default('started'),
   score: integer('score').notNull().default(0),
-  percentage: integer('percentage'),
   answers: jsonb('answers'),
   started_at: timestamp('started_at', { withTimezone: true }).defaultNow().notNull(),
   submitted_at: timestamp('submitted_at', { withTimezone: true }),
-  rank: integer('rank'),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 

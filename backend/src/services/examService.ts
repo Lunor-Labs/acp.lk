@@ -199,11 +199,8 @@ export class ExamService {
       }
     }
 
-    const percentage = exam.total_marks > 0 ? Math.round((score / exam.total_marks) * 100) : 0;
-
     const updated = await this.examRepo.updateAttempt(activeAttempt.id, {
       score,
-      percentage,
       answers,
       status: 'submitted',
       submitted_at: new Date()
