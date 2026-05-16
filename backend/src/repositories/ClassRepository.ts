@@ -1,7 +1,9 @@
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, count, sql } from 'drizzle-orm';
 import { BaseRepository } from './BaseRepository.js';
-import { classes, Class, NewClass } from './schema/index.js';
+import { classes, Class, NewClass, enrollments } from './schema/index.js';
 import type { DrizzleDb } from '../providers/db/drizzle.js';
+
+export type ClassWithStudentCount = Class & { student_count: number };
 
 export class ClassRepository extends BaseRepository {
   constructor(db: DrizzleDb) {
@@ -23,6 +25,25 @@ export class ClassRepository extends BaseRepository {
       .from(classes)
       .where(eq(classes.teacher_id, teacherId))
       .orderBy(desc(classes.created_at));
+  }
+
+  async findByTeacherIdWithCounts(teacherId: string, onlyActive = false): Promise<ClassWithStudentCount[]> {
+    const condition = onlyActive
+      ? and(eq(classes.teacher_id, teacherId), eq(classes.is_active, true))
+      : eq(classes.teacher_id, teacherId);
+
+    const rows = await this.db
+      .select({
+        ...Object.fromEntries(Object.keys(classes).map(k => [k, (classes as any)[k]])),
+        student_count: sql<number>`COALESCE(COUNT(${enrollments.id}) FILTER (WHERE ${enrollments.is_active}), 0)::int`,
+      })
+      .from(classes)
+      .leftJoin(enrollments, eq(enrollments.class_id, classes.id))
+      .where(condition)
+      .groupBy(classes.id)
+      .orderBy(desc(classes.created_at));
+
+    return rows as ClassWithStudentCount[];
   }
 
   async findActiveClasses(): Promise<Class[]> {

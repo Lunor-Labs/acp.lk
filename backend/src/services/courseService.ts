@@ -18,13 +18,10 @@ export class CourseService {
   }
 
   /**
-   * List courses by teacher
+   * List courses by teacher with enrolled student counts
    */
   async listCoursesByTeacher(teacherId: string, onlyActive = true) {
-    if (onlyActive) {
-      return this.classRepo.findActiveByTeacherId(teacherId);
-    }
-    return this.classRepo.findByTeacherId(teacherId);
+    return this.classRepo.findByTeacherIdWithCounts(teacherId, onlyActive);
   }
 
   /**

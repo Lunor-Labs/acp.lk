@@ -30,6 +30,7 @@ export interface Course {
   materials: Material[];
   weeks: Week[];
   created_at: string;
+  student_count?: number;
 }
 
 export const CoursesApi = {

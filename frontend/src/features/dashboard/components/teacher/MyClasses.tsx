@@ -266,7 +266,7 @@ export default function MyClasses() {
                     {/* Stats row */}
                     <div className="flex items-center gap-4 px-4 pb-3 text-xs text-gray-400">
                       <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {cls.weeks?.length || 0} modules</span>
-                      <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {cls.is_free ? 'Free' : 'Paid'}</span>
+                      <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {cls.student_count ?? 0} Students</span>
                     </div>
 
                     {/* Expanded modules */}
