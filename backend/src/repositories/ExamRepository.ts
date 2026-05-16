@@ -1,4 +1,4 @@
-import { eq, and, lte, gte, isNotNull, desc, asc } from 'drizzle-orm';
+import { eq, and, lte, gte, gt, isNotNull, desc, asc } from 'drizzle-orm';
 import { BaseRepository } from './BaseRepository.js';
 import { exams, examQuestions, examAttempts, Exam, NewExam, ExamQuestion, NewExamQuestion, ExamAttempt, NewExamAttempt } from './schema/index.js';
 import type { DrizzleDb } from '../providers/db/drizzle.js';
@@ -33,7 +33,7 @@ export class ExamRepository extends BaseRepository {
     return this.db
       .select()
       .from(exams)
-      .where(gte(exams.start_time, new Date()))
+      .where(gt(exams.end_time, new Date()))
       .orderBy(asc(exams.start_time));
   }
 
