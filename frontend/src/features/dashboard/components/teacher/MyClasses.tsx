@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { CoursesApi } from '../../../courses/api';
 import type { Course, Week, Material } from '../../../courses/api';
 import {
-  Plus, Edit2, Users, Clock, Search, AlertTriangle, Check,
+  Plus, Edit2, Users, Clock, Search, AlertTriangle,
   Beaker, Microscope, Calculator, BookOpen, Atom, Video,
   FileText as FileIcon, Trash2, Calendar, PlayCircle, X,
   Save, ChevronDown, ChevronUp, BookMarked,
@@ -286,9 +286,9 @@ export default function MyClasses() {
                               )}
                             </div>
                             <div className="flex items-center gap-2 flex-shrink-0">
-                              {week.zoom_link && <Video className="w-3.5 h-3.5 text-blue-400" title="Live link" />}
-                              {week.recordings?.length > 0 && <PlayCircle className="w-3.5 h-3.5 text-[#eb1b23]" title={`${week.recordings.length} recording(s)`} />}
-                              {week.materials?.length > 0 && <FileIcon className="w-3.5 h-3.5 text-gray-400" title={`${week.materials.length} file(s)`} />}
+                              {week.zoom_link && <Video className="w-3.5 h-3.5 text-blue-400" />}
+                              {week.recordings?.length > 0 && <PlayCircle className="w-3.5 h-3.5 text-[#eb1b23]" />}
+                              {week.materials?.length > 0 && <FileIcon className="w-3.5 h-3.5 text-gray-400" />}
                             </div>
                           </div>
                         ))}

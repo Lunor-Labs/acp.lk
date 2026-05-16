@@ -411,7 +411,7 @@ export default function TeacherExams() {
       <div className="lg:hidden flex-1 min-h-0 overflow-hidden p-4">
         {mobileTab === 'list' ? (
           <ExamList
-            exams={exams} classes={classes} loading={loading}
+            exams={exams} loading={loading}
             searchQuery={searchQuery} setSearchQuery={setSearchQuery}
             filterStatus={filterStatus} setFilterStatus={setFilterStatus}
             onExamClick={handleExamCardClick} onCreateClick={() => setMobileTab('create')}
@@ -457,7 +457,7 @@ export default function TeacherExams() {
         {/* Left Column - Exams List */}
         <div className="lg:col-span-2 min-h-0 flex flex-col">
           <ExamList
-            exams={exams} classes={classes} loading={loading}
+            exams={exams} loading={loading}
             searchQuery={searchQuery} setSearchQuery={setSearchQuery}
             filterStatus={filterStatus} setFilterStatus={setFilterStatus}
             onExamClick={handleExamCardClick} onCreateClick={() => {}}
