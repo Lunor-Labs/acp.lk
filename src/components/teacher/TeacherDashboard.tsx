@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Users, FileText, Package, LogOut,
   GraduationCap, TrendingUp, DollarSign, UserPlus, User,
   Menu, X, Image, MessageSquare, Trophy, AlertTriangle,
-  Home, BookOpen, Activity,
+  Home, BookOpen, Activity, CreditCard,
 } from 'lucide-react';
 import MyClasses from './MyClasses';
 import Exams from './Exams';
@@ -15,7 +15,9 @@ import ReviewsManager from './ReviewsManager';
 import TestResultsManager from './TestResultsManager';
 import SuccessManager from './SuccessManager';
 import StudentRankings from './StudentRankings';
+import PaymentRequests from './PaymentRequests';
 import { TeacherRepository } from '../../repositories/TeacherRepository';
+import { supabase } from '../../lib/supabase';
 import { dashboardRepository, DashboardStats, StudentOnboardingDataPoint } from '../../repositories/DashboardRepository';
 import ProfileMenu from '../shared/ProfileMenu';
 import ProfilePage from '../shared/ProfilePage';
@@ -40,6 +42,7 @@ export default function TeacherDashboard() {
   });
   const [onboardingData, setOnboardingData] = useState<StudentOnboardingDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pendingPayments, setPendingPayments] = useState(0);
 
   useEffect(() => {
     if (profile?.id) {
@@ -55,6 +58,19 @@ export default function TeacherDashboard() {
     if (teacherId) {
       fetchDashboardData(teacherId);
     }
+  }, [teacherId]);
+
+  useEffect(() => {
+    if (!teacherId) return;
+    supabase
+      .from('class_payments')
+      .select('id, class:classes(teacher_id)')
+      .eq('payment_method', 'bank_transfer')
+      .eq('payment_status', 'pending')
+      .then(({ data }) => {
+        const count = (data || []).filter((p: any) => p.class?.teacher_id === teacherId).length;
+        setPendingPayments(count);
+      });
   }, [teacherId]);
 
   async function fetchDashboardData(tid: string) {
@@ -78,6 +94,7 @@ export default function TeacherDashboard() {
     { path: '/teacher/classes', label: 'My Classes', icon: GraduationCap, section: 'main' },
     { path: '/teacher/exams', label: 'Exams', icon: FileText, section: 'main' },
     { path: '/teacher/study-packs', label: 'Study Packs', icon: Package, section: 'main' },
+    { path: '/teacher/payments', label: 'Payment Requests', icon: CreditCard, section: 'main' },
     { path: '/teacher/rankings', label: 'Student Rankings', icon: Trophy, section: 'main' },
     { path: '/teacher/gallery', label: 'Gallery', icon: Image, section: 'website' },
     { path: '/teacher/reviews', label: 'Reviews', icon: MessageSquare, section: 'website' },
@@ -130,6 +147,7 @@ export default function TeacherDashboard() {
           </p>
           {mainNav.map(item => {
             const Icon = item.icon;
+            const badge = item.path === '/teacher/payments' && pendingPayments > 0 ? pendingPayments : null;
             return (
               <NavLink
                 key={item.path}
@@ -144,7 +162,12 @@ export default function TeacherDashboard() {
                 }
               >
                 <Icon className="w-4 h-4 flex-shrink-0" />
-                {item.label}
+                <span className="flex-1">{item.label}</span>
+                {badge && (
+                  <span className="bg-[#eb1b23] text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                    {badge}
+                  </span>
+                )}
               </NavLink>
             );
           })}
@@ -237,6 +260,7 @@ export default function TeacherDashboard() {
           <Route path="exams" element={<Exams />} />
           <Route path="study-packs" element={<StudyPacks />} />
           <Route path="rankings" element={<StudentRankings />} />
+          <Route path="payments" element={<PaymentRequests />} />
           <Route path="gallery" element={teacherLoading ? <LoadingSpinner /> : teacherId ? <GalleryManager teacherId={teacherId} /> : <TeacherProfileMissing />} />
           <Route path="reviews" element={teacherLoading ? <LoadingSpinner /> : teacherId ? <ReviewsManager teacherId={teacherId} /> : <TeacherProfileMissing />} />
           <Route path="test-results" element={teacherLoading ? <LoadingSpinner /> : teacherId ? <TestResultsManager teacherId={teacherId} /> : <TeacherProfileMissing />} />
