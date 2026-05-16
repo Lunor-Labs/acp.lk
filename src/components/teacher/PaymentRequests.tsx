@@ -56,8 +56,7 @@ export default function PaymentRequests() {
           slip_image_url,
           rejection_reason,
           created_at,
-          class:classes(id, title, teacher_id),
-          student:profiles(id, full_name, student_number)
+          class:classes(id, title, teacher_id)
         `)
         .eq('payment_method', 'bank_transfer')
         .order('created_at', { ascending: false });
@@ -66,9 +65,20 @@ export default function PaymentRequests() {
 
       const filtered = (data || []).filter(
         (p: any) => p.class?.teacher_id === tid
-      ) as PaymentRow[];
+      );
 
-      setPayments(filtered);
+      // Fetch profiles separately (student_id references auth.users, not profiles directly)
+      const studentIds = [...new Set(filtered.map((p: any) => p.student_id))];
+      const { data: profiles } = studentIds.length > 0
+        ? await supabase.from('profiles').select('id, full_name, student_number').in('id', studentIds)
+        : { data: [] };
+
+      const profileMap = Object.fromEntries((profiles || []).map((p: any) => [p.id, p]));
+
+      setPayments(filtered.map((p: any) => ({
+        ...p,
+        student: profileMap[p.student_id] ?? null,
+      })) as PaymentRow[]);
     } catch (err) {
       console.error('Error fetching payments:', err);
       setError('Failed to load payment requests.');
