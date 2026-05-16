@@ -64,13 +64,13 @@ interface Teacher {
 
 // Subject → gradient + decorative SVG pattern
 const SUBJECT_THEMES: Record<string, { gradient: string; emoji: string }> = {
-  Physics:     { gradient: 'from-[#1a3a3a] to-[#2d6b5e]', emoji: '⚛' },
+  Physics: { gradient: 'from-[#1a3a3a] to-[#2d6b5e]', emoji: '⚛' },
   Mathematics: { gradient: 'from-[#1a2f3a] to-[#1e5c6b]', emoji: '∑' },
-  Chemistry:   { gradient: 'from-[#1a3a2a] to-[#256b4a]', emoji: '⚗' },
-  Biology:     { gradient: 'from-[#1a3a1a] to-[#3a6b2a]', emoji: '🧬' },
-  English:     { gradient: 'from-[#2a1a3a] to-[#5a2d6b]', emoji: '📖' },
-  History:     { gradient: 'from-[#3a2a1a] to-[#6b4a1e]', emoji: '🏛' },
-  ICT:         { gradient: 'from-[#1a243a] to-[#1e426b]', emoji: '💻' },
+  Chemistry: { gradient: 'from-[#1a3a2a] to-[#256b4a]', emoji: '⚗' },
+  Biology: { gradient: 'from-[#1a3a1a] to-[#3a6b2a]', emoji: '🧬' },
+  English: { gradient: 'from-[#2a1a3a] to-[#5a2d6b]', emoji: '📖' },
+  History: { gradient: 'from-[#3a2a1a] to-[#6b4a1e]', emoji: '🏛' },
+  ICT: { gradient: 'from-[#1a243a] to-[#1e426b]', emoji: '💻' },
 };
 
 function getSubjectTheme(subject: string) {
@@ -268,10 +268,10 @@ export default function BrowseClasses() {
 
   // ⚠️ UPDATE THESE VALUES with real bank account details before deploying
   const BANK_DETAILS = {
-    bank: 'Commercial Bank of Ceylon',
-    accountName: 'ACP Academy (Pvt) Ltd',
-    accountNumber: '1234567890',
-    branch: 'Colombo Main',
+    bank: 'HNB',
+    accountName: 'E.M.A.C.EDIRIMANNA',
+    accountNumber: '217020096641',
+    branch: 'WALASMULLA',
   };
 
   async function handleSubmitSlip() {
