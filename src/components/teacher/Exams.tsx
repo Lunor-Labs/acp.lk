@@ -13,6 +13,7 @@ interface Exam {
   end_time: string;
   duration_minutes: number;
   total_marks: number;
+  total_questions?: number;
   created_at: string;
   class_title?: string;
   submission_count?: number;
@@ -38,7 +39,7 @@ interface Question {
 
 interface PdfAnswer {
   question_no: number;
-  correct_answer: number;
+  correct_answer: string; // comma-separated for multi-answer e.g. "2,4"
 }
 
 interface ManualAnswer {
@@ -135,10 +136,11 @@ export default function Exams() {
   });
 
   const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [pdfQuestionCount, setPdfQuestionCount] = useState(50);
   const [pdfAnswers, setPdfAnswers] = useState<PdfAnswer[]>(
     Array.from({ length: 50 }, (_, i) => ({
       question_no: i + 1,
-      correct_answer: 0, // 0 means not selected, 1-5 for actual answers
+      correct_answer: '', // empty means not selected, comma-separated for multi-answer
     }))
   );
   const [pdfUploading, setPdfUploading] = useState(false);
@@ -513,7 +515,7 @@ export default function Exams() {
         // Save PDF exam answers - batch update all changed answers at once
         const answersToUpdate = changes.map(([questionNo, newAnswer]) => ({
           question_no: Number(questionNo),
-          correct_answer: Number(newAnswer),
+          correct_answer: String(newAnswer),
         }));
 
         await pdfPaperRepo.updateMultipleAnswers(selectedExamDetail.id, answersToUpdate);
@@ -555,30 +557,37 @@ export default function Exams() {
   }
 
   function updateAnswerEdit(identifier: string | number, answer: string | number) {
-    if (typeof answer === 'number') {
-      setEditedAnswers(prev => ({
-        ...prev,
-        [identifier]: answer
-      }));
-    } else {
-      setEditedAnswers(prev => {
+    // For PDF exams, answer comes as number — toggle it in/out of comma-separated string
+    // For manual exams, answer comes as string — toggle it in/out of comma-separated string
+    const answerStr = String(answer);
+    setEditedAnswers(prev => {
+      // Get the starting value: either the already-edited value, or the original from markedAnswers/manualQuestions
+      let startingAnswer: string;
+      if (prev[identifier] !== undefined) {
+        startingAnswer = String(prev[identifier]);
+      } else if (typeof answer === 'number') {
+        // PDF: find the original answer from markedAnswers
+        const original = markedAnswers.find(a => a.question_no === Number(identifier));
+        startingAnswer = original ? String(original.correct_answer) : '';
+      } else {
+        // Manual: find from manualQuestions
         const originalQuestion = manualQuestions.find(q => q.question_number === Number(identifier));
-        const startingAnswer = prev[identifier] !== undefined ? prev[identifier] as string : (originalQuestion?.correct_answer || '');
+        startingAnswer = originalQuestion?.correct_answer || '';
+      }
 
-        let currentAnswers = startingAnswer ? startingAnswer.split(',') : [];
-        if (currentAnswers.includes(answer as string)) {
-          currentAnswers = currentAnswers.filter(a => a !== answer);
-        } else {
-          currentAnswers.push(answer as string);
-          currentAnswers.sort();
-        }
+      let currentAnswers = startingAnswer ? startingAnswer.split(',').filter(Boolean) : [];
+      if (currentAnswers.includes(answerStr)) {
+        currentAnswers = currentAnswers.filter(a => a !== answerStr);
+      } else {
+        currentAnswers.push(answerStr);
+        currentAnswers.sort((a, b) => Number(a) - Number(b));
+      }
 
-        return {
-          ...prev,
-          [identifier]: currentAnswers.join(',')
-        };
-      });
-    }
+      return {
+        ...prev,
+        [identifier]: currentAnswers.join(',')
+      };
+    });
   }
 
   async function handleCreateExam() {
@@ -750,10 +759,11 @@ export default function Exams() {
       },
     ]);
     setPdfFile(null);
+    setPdfQuestionCount(50);
     setPdfAnswers(
       Array.from({ length: 50 }, (_, i) => ({
         question_no: i + 1,
-        correct_answer: 0,
+        correct_answer: '',
       }))
     );
     setShowPdfAnswerSheet(false);
@@ -861,10 +871,10 @@ export default function Exams() {
         return;
       }
 
-      // Validate all answers are selected (1-5)
-      const allAnswered = pdfAnswers.every(answer => answer.correct_answer > 0);
+      // Validate all answers are selected
+      const allAnswered = pdfAnswers.every(answer => answer.correct_answer !== '');
       if (!allAnswered) {
-        showToast('Please mark correct answers for all 50 questions', 'warning');
+        showToast(`Please mark correct answers for all ${pdfQuestionCount} questions`, 'warning');
         return;
       }
 
@@ -900,7 +910,8 @@ export default function Exams() {
         start_time: startTime.toISOString(),
         end_time: endTime.toISOString(),
         duration_minutes: formData.duration_minutes,
-        total_marks: 50, // 50 questions
+        total_marks: pdfQuestionCount,
+        total_questions: pdfQuestionCount,
       });
 
       // Upload PDF to storage
@@ -938,11 +949,20 @@ export default function Exams() {
 
   function updatePdfAnswer(questionNo: number, answerValue: number) {
     setPdfAnswers(
-      pdfAnswers.map(answer =>
-        answer.question_no === questionNo
-          ? { ...answer, correct_answer: answerValue }
-          : answer
-      )
+      pdfAnswers.map(answer => {
+        if (answer.question_no !== questionNo) return answer;
+        // Toggle: add or remove the answer from comma-separated string
+        const current = answer.correct_answer ? answer.correct_answer.split(',').filter(Boolean) : [];
+        const valStr = String(answerValue);
+        let updated: string[];
+        if (current.includes(valStr)) {
+          updated = current.filter(v => v !== valStr);
+        } else {
+          updated = [...current, valStr];
+          updated.sort((a, b) => Number(a) - Number(b));
+        }
+        return { ...answer, correct_answer: updated.join(',') };
+      })
     );
   }
 
@@ -1095,7 +1115,7 @@ export default function Exams() {
                 <div className="space-y-4">
                   {filteredExams.map((exam) => {
                     const status = getExamStatus(exam);
-                    const isPdfExam = exam.total_marks === 50; // Heuristic for PDF exams
+                    const isPdfExam = exam.total_questions != null && exam.total_questions > 0;
                     return (
                       <div
                         key={exam.id}
@@ -1304,6 +1324,32 @@ export default function Exams() {
                 </select>
               </div>
 
+              {formData.exam_type === 'pdf' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Number of Questions
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={50}
+                    value={pdfQuestionCount}
+                    onChange={(e) => {
+                      const count = Math.max(1, Math.min(50, parseInt(e.target.value) || 1));
+                      setPdfQuestionCount(count);
+                      setPdfAnswers(
+                        Array.from({ length: count }, (_, i) => ({
+                          question_no: i + 1,
+                          correct_answer: '',
+                        }))
+                      );
+                    }}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#eb1b23] focus:border-transparent"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">Enter a value between 1 and 50</p>
+                </div>
+              )}
+
               {formData.exam_type === 'pdf' && !showPdfAnswerSheet ? (
                 <div className="border-2 border-dashed border-[#eb1b23] rounded-lg p-6 text-center">
                   <Upload className="w-8 h-8 text-[#eb1b23] mx-auto mb-3" />
@@ -1337,7 +1383,7 @@ export default function Exams() {
                   <div className="absolute inset-0 bg-black opacity-30" onClick={() => { setShowPdfAnswerSheet(false); setPdfFile(null); }}></div>
                   <div className="relative bg-white rounded-xl shadow-lg w-[90vw] max-w-3xl p-6 overflow-y-auto max-h-[90vh]">
                     <div className="flex items-center justify-between mb-4">
-                      <h4 className="font-semibold text-gray-900">MCQ Answer Sheet (50 Questions)</h4>
+                      <h4 className="font-semibold text-gray-900">MCQ Answer Sheet ({pdfQuestionCount} Questions)</h4>
                       <button
                         onClick={() => {
                           setShowPdfAnswerSheet(false);
@@ -1357,18 +1403,22 @@ export default function Exams() {
                             Q{answer.question_no}
                           </span>
                           <div className="flex gap-2">
-                            {[1, 2, 3, 4, 5].map((option) => (
-                              <button
-                                key={option}
-                                onClick={() => updatePdfAnswer(answer.question_no, option)}
-                                className={`w-8 h-8 rounded font-semibold text-sm transition ${answer.correct_answer === option
-                                    ? 'bg-[#eb1b23] text-white'
-                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                  }`}
-                              >
-                                {option}
-                              </button>
-                            ))}
+                            {[1, 2, 3, 4, 5].map((option) => {
+                              const selectedAnswers = answer.correct_answer ? answer.correct_answer.split(',') : [];
+                              const isSelected = selectedAnswers.includes(String(option));
+                              return (
+                                <button
+                                  key={option}
+                                  onClick={() => updatePdfAnswer(answer.question_no, option)}
+                                  className={`w-8 h-8 rounded font-semibold text-sm transition ${isSelected
+                                      ? 'bg-[#eb1b23] text-white'
+                                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                    }`}
+                                >
+                                  {option}
+                                </button>
+                              );
+                            })}
                           </div>
                         </div>
                       ))}
@@ -1686,26 +1736,30 @@ export default function Exams() {
                                   <span className="font-semibold text-gray-700">
                                     Q{answer.question_no}
                                   </span>
-                                  <span className="text-xs text-gray-500">
-                                    {answer.correct_answer === 0 ? 'Not marked' : `Answer: ${answer.correct_answer}`}
+                                <span className="text-xs text-gray-500">
+                                    {!answer.correct_answer || answer.correct_answer === '0' ? 'Not marked' : `Answer: ${answer.correct_answer}`}
                                   </span>
                                 </div>
 
                                 <div className="flex gap-1 flex-wrap">
-                                  {[1, 2, 3, 4, 5].map((option) => (
-                                    <button
-                                      key={option}
-                                      onClick={() => updateAnswerEdit(answer.question_no, option)}
-                                      className={`px-3 py-1 rounded text-sm font-semibold transition ${editedAnswers[answer.question_no] === option ||
-                                          (editedAnswers[answer.question_no] === undefined &&
-                                            answer.correct_answer === option)
-                                          ? 'bg-[#eb1b23] text-white'
-                                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                        }`}
-                                    >
-                                      {option}
-                                    </button>
-                                  ))}
+                                  {[1, 2, 3, 4, 5].map((option) => {
+                                    const editedVal = editedAnswers[answer.question_no];
+                                    const currentAnswer = editedVal !== undefined ? String(editedVal) : String(answer.correct_answer || '');
+                                    const selectedArr = currentAnswer ? currentAnswer.split(',').filter(Boolean) : [];
+                                    const isSelected = selectedArr.includes(String(option));
+                                    return (
+                                      <button
+                                        key={option}
+                                        onClick={() => updateAnswerEdit(answer.question_no, option)}
+                                        className={`px-3 py-1 rounded text-sm font-semibold transition ${isSelected
+                                            ? 'bg-[#eb1b23] text-white'
+                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                          }`}
+                                      >
+                                        {option}
+                                      </button>
+                                    );
+                                  })}
                                 </div>
                               </div>
                             ))}
