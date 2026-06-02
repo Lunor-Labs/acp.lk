@@ -35,7 +35,7 @@ export class PdfPaperRepository extends BaseRepository<PdfPaper> {
 
     /**
      * Create multiple PDF answer records for a single exam
-     * Used to batch insert all 50 question answers
+     * Used to batch insert all question answers for a PDF exam
      */
     async createPdfAnswers(
         examId: string,
