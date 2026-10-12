@@ -1,42 +1,45 @@
 import { ProfileRepository } from '../repositories/ProfileRepository.js';
 import type { NewProfile } from '../repositories/schema/index.js';
-import { IAuthProvider } from '../providers/auth/IAuthProvider.js';
+import { JwtAuthProvider } from '../providers/auth/JwtAuthProvider.js';
+import { OtpService } from './otpService.js';
 import { AppError } from '../utils/errors.js';
 import { getDb } from '../providers/db/drizzle.js';
+
+const jwtAuth = new JwtAuthProvider();
 
 export class UserService {
   private profileRepo: ProfileRepository;
 
-  constructor(private authProvider: IAuthProvider) {
+  constructor() {
     this.profileRepo = new ProfileRepository(getDb());
   }
 
-  // ─── Private helpers ─────────────────────────────────────────────────────
+  // ─── Private helpers ──────────────────────────────────────────────────────
 
-  /**
-   * Resolve an identifier (email OR student ID) to an email address.
-   */
   private async resolveEmail(identifier: string): Promise<string> {
-    if (identifier.includes('@')) return identifier;
-
-    const profile = await this.profileRepo.findByStudentId(identifier);
+    if (identifier.includes('@')) return identifier.trim();
+    const profile = await this.profileRepo.findByStudentId(identifier.trim());
     if (!profile) throw AppError.forbidden('Invalid credentials');
     return profile.email;
   }
 
-  // ─── Auth ─────────────────────────────────────────────────────────────────
+  // ─── Sign in ──────────────────────────────────────────────────────────────
 
-  /**
-   * Sign in using email or student ID + password.
-   * Returns a JWT token and the user profile.
-   */
   async signIn(identifier: string, password: string) {
     const email = await this.resolveEmail(identifier);
-    const { token, user } = await this.authProvider.signIn(email, password);
 
-    const profile = await this.profileRepo.findByEmail(user.email);
-    if (!profile) throw AppError.notFound('Profile not found in database');
+    const profile = await this.profileRepo.findByEmail(email);
+    if (!profile) throw AppError.unauthorized('Invalid credentials');
     if (!profile.is_active) throw AppError.forbidden('Your account has been deactivated');
+    if (!profile.password_hash) throw AppError.unauthorized('Invalid credentials');
+
+    const valid = await jwtAuth.verifyPassword(password, profile.password_hash);
+    if (!valid) throw AppError.unauthorized('Invalid credentials');
+
+    const token = await jwtAuth.generateToken({
+      id: profile.id,
+      email: profile.email,
+    });
 
     return { token, profile };
   }
@@ -56,20 +59,17 @@ export class UserService {
   async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
     const profile = await this.profileRepo.findById(userId);
     if (!profile) throw AppError.notFound('Profile not found');
-    try {
-      await this.authProvider.signIn(profile.email, currentPassword);
-    } catch {
-      throw AppError.badRequest('Current password is incorrect');
-    }
-    await this.authProvider.updatePassword(userId, newPassword);
+    if (!profile.password_hash) throw AppError.badRequest('No password set');
+
+    const valid = await jwtAuth.verifyPassword(currentPassword, profile.password_hash);
+    if (!valid) throw AppError.badRequest('Current password is incorrect');
+
+    const hash = await jwtAuth.hashPassword(newPassword);
+    await this.profileRepo.update(userId, { password_hash: hash });
   }
 
   // ─── Sign-up OTP flow ─────────────────────────────────────────────────────
 
-  /**
-   * Step 1: Send a sign-up OTP to the provided email.
-   * Returns a pre-generated student ID so the frontend can display it to the user.
-   */
   async requestSignUpOtp(
     email: string,
     data: {
@@ -79,36 +79,32 @@ export class UserService {
       nic: string;
       whatsappNo: string;
       mobileNo: string;
-      password?: string;
+      password: string;
     }
   ): Promise<{ studentId: string }> {
-    // Prevent duplicate accounts
     const existing = await this.profileRepo.findByEmail(email);
-    if (existing) throw AppError.badRequest('Email is already registered');
+    if (existing) throw AppError.conflict('Email is already registered');
 
-    // Pre-generate student ID so it can be shown before OTP is verified
     const studentId = await this.profileRepo.generateStudentId(data.alYear, data.center);
 
-    // Send OTP — pass metadata so it arrives in the email template
-    await this.authProvider.sendOtp(email, {
+    // Store signup data in OTP metadata so we have it at verify step
+    await OtpService.send(email, 'signup', {
       full_name: data.fullName,
-      al_year: data.alYear.toString(),
+      al_year: String(data.alYear),
       center: data.center,
       student_id: studentId,
       nic: data.nic,
       whatsapp_no: data.whatsappNo,
       mobile_no: data.mobileNo,
+      password: data.password,   // stored temporarily, used at verify step
     });
 
     return { studentId };
   }
 
-  /**
-   * Step 2: Verify OTP and create the profile in the DB.
-   */
   async verifySignUpOtp(
     email: string,
-    token: string,
+    code: string,
     data: {
       fullName: string;
       alYear: number;
@@ -117,64 +113,62 @@ export class UserService {
       studentId?: string;
     }
   ): Promise<{ user: { id: string }; profile: Awaited<ReturnType<ProfileRepository['create']>> }> {
-    // Verify OTP with Supabase — this creates the auth user
-    const authUser = await this.authProvider.verifyOtp(email, token);
+    // Verify OTP — throws if invalid or expired
+    const { metadata } = await OtpService.verify(email, code, 'signup');
 
-    // If profile already exists (e.g., retry), return it as-is
-    const existing = await this.profileRepo.findById(authUser.id);
-    if (existing) return { user: authUser, profile: existing };
+    // If profile already exists (retry case), return it
+    const existing = await this.profileRepo.findByEmail(email);
+    if (existing) return { user: { id: existing.id }, profile: existing };
 
-    // Generate or reuse student ID
-    const studentId = data.studentId ?? await this.profileRepo.generateStudentId(data.alYear, data.center);
+    // Resolve values — prefer metadata stored at OTP send time
+    const fullName = metadata?.full_name ?? data.fullName;
+    const alYear = metadata?.al_year ? parseInt(metadata.al_year) : data.alYear;
+    const center = (metadata?.center ?? data.center) as 'online' | 'riochem' | 'vision';
+    const studentId = metadata?.student_id ?? data.studentId
+      ?? await this.profileRepo.generateStudentId(alYear, center);
+    const rawPassword = metadata?.password ?? data.password;
 
-    // If a password was supplied, set it via the admin API
-    if (data.password) {
-      await this.authProvider.updatePassword(authUser.id, data.password);
-    }
+    if (!rawPassword) throw AppError.badRequest('Password is required');
 
-    // Create profile record
+    const password_hash = await jwtAuth.hashPassword(rawPassword);
+    const id = crypto.randomUUID();
+
     const profile = await this.profileRepo.create({
-      id: authUser.id,
+      id,
       email,
-      full_name: data.fullName,
-      al_year: data.alYear,
-      center: data.center,
+      full_name: fullName,
+      al_year: alYear,
+      center,
       student_id: studentId,
       role: 'student',
       is_active: true,
+      password_hash,
+      nic: metadata?.nic,
+      whatsapp_no: metadata?.whatsapp_no,
+      mobile_no: metadata?.mobile_no,
     });
 
-    return { user: authUser, profile };
+    return { user: { id }, profile };
   }
 
   // ─── Password reset OTP flow ──────────────────────────────────────────────
 
-  /**
-   * Step 1: Send a password-reset OTP.
-   * Accepts email or student ID as identifier.
-   * Returns the resolved email so the frontend can display it.
-   */
   async requestPasswordResetOtp(identifier: string): Promise<{ email: string }> {
     const email = await this.resolveEmail(identifier);
-
-    // Ensure account exists before sending OTP
     const profile = await this.profileRepo.findByEmail(email);
     if (!profile) throw AppError.notFound('Account not found');
 
-    // Reuse the sendOtp method for password reset (recovery type)
-    await this.authProvider.sendOtp(email);
-
+    await OtpService.send(email, 'reset');
     return { email };
   }
 
-  /**
-   * Step 2: Verify OTP and set a new password.
-   */
-  async resetPasswordWithOtp(email: string, token: string, newPassword: string): Promise<void> {
-    // Verify the OTP — this logs the user in temporarily
-    const authUser = await this.authProvider.verifyOtp(email, token);
+  async resetPasswordWithOtp(email: string, code: string, newPassword: string): Promise<void> {
+    await OtpService.verify(email, code, 'reset');
 
-    // Use admin API to update password
-    await this.authProvider.updatePassword(authUser.id, newPassword);
+    const profile = await this.profileRepo.findByEmail(email);
+    if (!profile) throw AppError.notFound('Account not found');
+
+    const password_hash = await jwtAuth.hashPassword(newPassword);
+    await this.profileRepo.update(profile.id, { password_hash });
   }
 }

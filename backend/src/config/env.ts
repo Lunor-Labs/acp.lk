@@ -8,17 +8,27 @@ const envSchema = z.object({
   PORT: z.string().default('3001'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 
-  // Database (Supabase Postgres direct connection)
+  // Database (PostgreSQL direct connection)
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
 
-  // Supabase (for auth + storage providers)
-  SUPABASE_URL: z.string().url('SUPABASE_URL must be a valid URL'),
-  SUPABASE_ANON_KEY: z.string().min(1, 'SUPABASE_ANON_KEY is required'),
-  SUPABASE_SERVICE_KEY: z.string().min(1, 'SUPABASE_SERVICE_KEY is required'),
-  SUPABASE_JWT_SECRET: z.string().min(1, 'SUPABASE_JWT_SECRET is required'),
+  // JWT (custom — no Supabase)
+  JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
+  JWT_EXPIRES_IN: z.string().default('7d'),
 
-  // Storage
-  STORAGE_BUCKET: z.string().default('acp'),
+  // Email / SMTP (for OTP emails)
+  SMTP_HOST: z.string().min(1, 'SMTP_HOST is required'),
+  SMTP_PORT: z.string().default('587'),
+  SMTP_USER: z.string().min(1, 'SMTP_USER is required'),
+  SMTP_PASS: z.string().min(1, 'SMTP_PASS is required'),
+  SMTP_FROM: z.string().default('noreply@acp.lk'),
+
+  // S3-compatible storage
+  S3_ENDPOINT: z.string().min(1, 'S3_ENDPOINT is required'),
+  S3_REGION: z.string().default('us-east-1'),
+  S3_ACCESS_KEY: z.string().min(1, 'S3_ACCESS_KEY is required'),
+  S3_SECRET_KEY: z.string().min(1, 'S3_SECRET_KEY is required'),
+  S3_BUCKET: z.string().default('acp'),
+  S3_PUBLIC_URL: z.string().min(1, 'S3_PUBLIC_URL is required'),
 
   // CORS
   FRONTEND_URL: z.string().default('http://localhost:5173'),

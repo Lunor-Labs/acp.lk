@@ -1,7 +1,7 @@
 import { ExamRepository } from '../repositories/ExamRepository.js';
 import { EnrollmentRepository } from '../repositories/EnrollmentRepository.js';
 import { TeacherRepository } from '../repositories/TeacherRepository.js';
-import { getFileService } from './fileService.js';
+import { FileService } from './fileService.js';
 import { pdfExams, testResults } from '../repositories/schema/other.js';
 import { examAttempts } from '../repositories/schema/index.js';
 import type { DrizzleDb } from '../providers/db/drizzle.js';
@@ -139,7 +139,7 @@ export class ExamService {
     let pdfUrl: string | null = null;
 
     if (isPdf) {
-      pdfUrl = getFileService().getPublicUrl('acp', pdfStoragePath(pdfRecords[0].pdf_path));
+      pdfUrl = FileService.getPublicUrl(pdfStoragePath(pdfRecords[0].pdf_path));
     } else {
       questions = await this.examRepo.getQuestions(examId);
     }
@@ -247,7 +247,7 @@ export class ExamService {
     let pdfAnswers: { question_no: number; correct_answer: number }[] = [];
 
     if (isPdf) {
-      pdfUrl = getFileService().getPublicUrl('acp', pdfStoragePath(pdfRecords[0].pdf_path));
+      pdfUrl = FileService.getPublicUrl(pdfStoragePath(pdfRecords[0].pdf_path));
       pdfAnswers = pdfRecords.map(r => ({ question_no: r.question_no, correct_answer: r.correct_answer }));
     } else {
       questions = await this.examRepo.getQuestions(examId);

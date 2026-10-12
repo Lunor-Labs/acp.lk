@@ -1,29 +1,42 @@
-import { SupabaseStorageProvider } from '../providers/storage/SupabaseStorageProvider.js';
+import { S3StorageProvider } from '../providers/storage/S3StorageProvider.js';
 import { env } from '../config/env.js';
 
-export class FileService {
-  private storage: SupabaseStorageProvider;
+const storage = new S3StorageProvider();
 
-  constructor() {
-    this.storage = new SupabaseStorageProvider(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY);
-  }
+export const FileService = {
 
-  async getSignedUploadUrl({ bucket, path }: { bucket: string; path: string }) {
-    return this.storage.createSignedUploadUrl(bucket, path);
-  }
-  
-  // Note: the backend SupabaseClient.storage.from().createSignedUploadUrl 
-  // is specifically designed for uploads. Let's add it.
+  // ─── Upload a file buffer ─────────────────────────────────────────────────
 
-  getPublicUrl(bucket: string, path: string) {
-    return this.storage.getPublicUrl(bucket, path);
-  }
-}
+  async upload(
+    path: string,
+    file: Buffer,
+    mimeType: string,
+    options: { upsert?: boolean } = {}
+  ) {
+    return storage.upload(env.S3_BUCKET, path, file, mimeType, options);
+  },
 
-let fileServiceInstance: FileService;
-export function getFileService() {
-  if (!fileServiceInstance) {
-    fileServiceInstance = new FileService();
-  }
-  return fileServiceInstance;
-}
+  // ─── Get a signed URL for private file download ───────────────────────────
+
+  async getSignedUrl(path: string, expiresIn = 3600): Promise<string> {
+    return storage.getSignedUrl(env.S3_BUCKET, path, expiresIn);
+  },
+
+  // ─── Get a signed URL for direct browser upload ───────────────────────────
+
+  async createSignedUploadUrl(path: string) {
+    return storage.createSignedUploadUrl(env.S3_BUCKET, path);
+  },
+
+  // ─── Get a permanent public URL ───────────────────────────────────────────
+
+  getPublicUrl(path: string): string {
+    return storage.getPublicUrl(env.S3_BUCKET, path);
+  },
+
+  // ─── Delete files ─────────────────────────────────────────────────────────
+
+  async delete(paths: string[]): Promise<void> {
+    return storage.delete(env.S3_BUCKET, paths);
+  },
+};

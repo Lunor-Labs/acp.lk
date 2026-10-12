@@ -1,15 +1,13 @@
 import { SuccessRepository } from '../repositories/index.js';
 import { AppError } from '../utils/errors.js';
 import { getDb } from '../providers/db/drizzle.js';
-import { getFileService } from './fileService.js';
+import { FileService } from './fileService.js';
 import type { NewSuccessStudent } from '../repositories/schema/index.js';
 
 function resolveImageUrl(imagePath: string | null | undefined): string | null | undefined {
   if (!imagePath || imagePath.startsWith('http')) return imagePath;
-  // Old system stored just the filename under images/success/
-  // New system stores the full path like success/timestamp_file.jpg
   const storagePath = imagePath.includes('/') ? imagePath : `images/success/${imagePath}`;
-  return getFileService().getPublicUrl('acp', storagePath);
+  return FileService.getPublicUrl(storagePath);
 }
 
 class SuccessService {

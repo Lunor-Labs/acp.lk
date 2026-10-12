@@ -1,4 +1,4 @@
-import { pgTable, text, boolean, timestamp, integer, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, text, boolean, timestamp, integer } from 'drizzle-orm/pg-core';
 
 export const profiles = pgTable('profiles', {
   id: text('id').primaryKey(),
@@ -6,6 +6,7 @@ export const profiles = pgTable('profiles', {
   full_name: text('full_name').notNull(),
   role: text('role').$type<'admin' | 'teacher' | 'student'>().notNull().default('student'),
   is_active: boolean('is_active').notNull().default(true),
+  password_hash: text('password_hash'),
   phone: text('phone'),
   avatar_url: text('avatar_url'),
   student_id: text('student_id'),

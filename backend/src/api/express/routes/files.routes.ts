@@ -1,39 +1,111 @@
-import { Router, Request, Response, NextFunction } from 'express';
-import { getFileService } from '../../../services/fileService.js';
+import { Router, Response, NextFunction } from 'express';
+import { requireAuth, AuthenticatedRequest } from '../../middleware/auth.js';
+import { FileService } from '../../../services/fileService.js';
 import { sendSuccess } from '../../../utils/response.js';
 import { AppError } from '../../../utils/errors.js';
-import { requireAuth } from '../../middleware/auth.js';
+import multer from 'multer';
 
 export const filesRouter = Router();
 
-filesRouter.use(requireAuth);
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
+});
+
+// POST /api/files/upload
+// Direct server-side upload (for small files)
+filesRouter.post(
+  '/upload',
+  requireAuth,
+  upload.single('file'),
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      if (!req.file) throw AppError.badRequest('No file provided');
+
+      const { path } = req.body;
+      if (!path) throw AppError.badRequest('path is required');
+
+      const result = await FileService.upload(
+        path,
+        req.file.buffer,
+        req.file.mimetype
+      );
+
+      sendSuccess(res, result);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 // POST /api/files/signed-upload-url
-filesRouter.post('/signed-upload-url', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const userId = (req as any).user?.id;
-    if (!userId) throw AppError.unauthorized();
+// Returns a presigned URL so the browser uploads directly to S3
+filesRouter.post(
+  '/signed-upload-url',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const { path } = req.body;
+      if (!path) throw AppError.badRequest('path is required');
 
-    const { bucket, path } = req.body;
-    if (!bucket || !path) {
-      throw AppError.badRequest('Bucket and path are required');
+      const result = await FileService.createSignedUploadUrl(path);
+      sendSuccess(res, result);
+    } catch (error) {
+      next(error);
     }
-
-    const result = await getFileService().getSignedUploadUrl({ bucket, path });
-    sendSuccess(res, result);
-  } catch (err) {
-    next(err);
   }
-});
+);
 
-// GET /api/files/public-url?bucket=acp&path=pdf/papers/file.pdf
-filesRouter.get('/public-url', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { bucket, path } = req.query as { bucket: string; path: string };
-    if (!bucket || !path) throw AppError.badRequest('bucket and path are required');
-    const url = getFileService().getPublicUrl(bucket, path);
-    sendSuccess(res, { url });
-  } catch (err) {
-    next(err);
+// GET /api/files/signed-url?path=xxx
+// Returns a signed download URL for a private file
+filesRouter.get(
+  '/signed-url',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const { path, expiresIn } = req.query as { path: string; expiresIn?: string };
+      if (!path) throw AppError.badRequest('path is required');
+
+      const url = await FileService.getSignedUrl(path, expiresIn ? parseInt(expiresIn) : 3600);
+      sendSuccess(res, { url });
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
+
+// GET /api/files/public-url?bucket=xxx&path=xxx
+// Returns a permanent public URL for a public file
+filesRouter.get(
+  '/public-url',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const { path } = req.query as { path: string };
+      if (!path) throw AppError.badRequest('path is required');
+
+      const url = FileService.getPublicUrl(path);
+      sendSuccess(res, { url });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// DELETE /api/files
+// Delete one or more files
+filesRouter.delete(
+  '/',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const { paths } = req.body as { paths: string[] };
+      if (!paths?.length) throw AppError.badRequest('paths array is required');
+
+      await FileService.delete(paths);
+      sendSuccess(res, { deleted: paths.length });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
