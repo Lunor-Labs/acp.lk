@@ -2,7 +2,7 @@ name: Deploy ACP.lk API
 
 on:
   push:
-    branches: [dev, main]
+    branches: [fb-vps-deployment, dev, main]
     paths:
       - "backend/**"
       - ".github/workflows/deploy-acp-api.yml"
@@ -55,20 +55,7 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.sha_tag }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.moving_tag }}
 
-      - name: Run database migrations
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_SSH_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
-            docker run --rm \
-              --network ${{ vars.DOCKER_NETWORK }} \
-              -e DATABASE_URL="${{ secrets.ACP_DATABASE_URL }}" \
-              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.sha_tag }} \
-              npx drizzle-kit push
-
       - name: Trigger Coolify deploy
         run: |
-          curl -fsS -X POST "${{ secrets.ACP_COOLIFY_DEPLOY_WEBHOOK }}" \
+          curl -fsS -X POST "${{ secrets.COOLIFY_DEPLOY_WEBHOOK }}" \
             -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}"
