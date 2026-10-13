@@ -63,8 +63,8 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             docker run --rm \
-              --network ${{ vars.DOCKER_NETWORK }} \
-              -e DATABASE_URL="${{ secrets.ACP_DATABASE_URL }}" \
+              --network ${{ secrets.DOCKER_NETWORK }} \
+              -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
               ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.sha_tag }} \
               sh -c "npx drizzle-kit push --config=drizzle.config.js"
 
