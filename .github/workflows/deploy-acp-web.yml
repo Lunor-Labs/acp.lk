@@ -2,7 +2,7 @@ name: Deploy ACP.lk Web
 
 on:
   push:
-    branches: [dev, main]
+    branches: [fb-vps-deployment, dev, main]
     paths:
       - "frontend/**"
       - ".github/workflows/deploy-acp-web.yml"
@@ -12,11 +12,11 @@ env:
   VERCEL_PROJECT_NAME: acp-lk-v2
 
 jobs:
-  # ─── DEV → Vercel Preview ────────────────────────────────────────────────
+  # ─── FEATURE / DEV → Vercel Preview ──────────────────────────────────────
   deploy-dev:
-    if: github.ref == 'refs/heads/dev'
+    if: github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
-    environment: dev
+    environment: deployment-dev
     defaults:
       run:
         working-directory: frontend
@@ -51,7 +51,7 @@ jobs:
       - name: Deploy to Vercel Preview
         run: vercel deploy --prebuilt --target=preview --token=${{ secrets.VERCEL_TOKEN }}
 
-  # ─── PROD → Vercel Production ────────────────────────────────────────────
+  # ─── PROD → Vercel Production ─────────────────────────────────────────────
   deploy-prod:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
