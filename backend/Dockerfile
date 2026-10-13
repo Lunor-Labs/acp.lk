@@ -19,12 +19,15 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Copy package files and install production dependencies only
+# Copy package files and install all dependencies (including drizzle-kit for migrations)
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+RUN npm ci
 
 # Copy built output from builder
 COPY --from=builder /app/dist ./dist
+
+# Copy drizzle config for migrations
+COPY drizzle.config.js ./
 
 EXPOSE 3001
 
