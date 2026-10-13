@@ -9,7 +9,7 @@ on:
   workflow_dispatch: {}
 
 env:
-  VERCEL_PROJECT_NAME: acp-lk-v2
+  VERCEL_PROJECT_NAME: acp-lk-v3
 
 jobs:
   # ─── FEATURE / DEV → Vercel Preview ──────────────────────────────────────
