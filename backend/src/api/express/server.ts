@@ -17,18 +17,28 @@ import cors from 'cors';
 
 const app = express();
 
-// ─── Middleware ───────────────────────────────────────────────────────────────
+// ─── CORS ─────────────────────────────────────────────────────────────────────
+const allowedOrigins = env.ALLOWED_ORIGINS
+  ? env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+  : ['http://localhost:5173'];
+
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow any localhost origin or the configured FRONTEND_URL in development
-    if (!origin || origin.startsWith('http://localhost:') || origin === env.FRONTEND_URL) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
+    // Allow requests with no origin (mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+    // Allow any localhost port in development
+    if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
+      return callback(null, true);
     }
+    // Check against allowed origins list
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    callback(new Error(`CORS: origin ${origin} not allowed`));
   },
   credentials: true,
 }));
+
 app.use(express.json());
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
@@ -60,11 +70,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const PORT = env.PORT || 3001;
   app.listen(PORT, () => {
     console.log(`🚀 API Server running on http://localhost:${PORT}`);
-    console.log(`   Auth:    /api/auth/signin | /api/auth/me`);
-    console.log(`   Signup:  /api/auth/signup/otp | /api/auth/signup/verify`);
-    console.log(`   Reset:   /api/auth/reset/otp  | /api/auth/reset/verify`);
-    console.log(`   Courses: /api/courses`);
-    console.log(`   Users:   /api/users/me`);
+    console.log(`   Allowed origins: ${allowedOrigins.join(', ')}`);
   });
 }
 

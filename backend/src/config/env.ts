@@ -32,6 +32,7 @@ const envSchema = z.object({
 
   // CORS
   FRONTEND_URL: z.string().default('http://localhost:5173'),
+  ALLOWED_ORIGINS: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
