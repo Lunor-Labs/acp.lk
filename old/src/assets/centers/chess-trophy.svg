@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 400" fill="none">
+  <defs>
+    <linearGradient id="trophyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#FFC700;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FFB700;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="chessGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#E8E8E8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#C0C0C0;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  
+  <!-- Trophy Base -->
+  <rect x="110" y="340" width="80" height="15" rx="3" fill="url(#trophyGradient)" filter="url(#shadow)"/>
+  <rect x="120" y="320" width="60" height="20" rx="2" fill="url(#trophyGradient)"/>
+  
+  <!-- Trophy Stem -->
+  <rect x="140" y="250" width="20" height="70" fill="url(#trophyGradient)"/>
+  
+  <!-- Trophy Cup -->
+  <path d="M 100 250 
+           L 110 200
+           Q 115 180, 120 170
+           L 130 150
+           Q 140 140, 150 140
+           L 170 140
+           Q 180 140, 190 150
+           L 200 170
+           Q 205 180, 210 200
+           L 220 250
+           Q 218 260, 210 265
+           L 160 268
+           L 110 265
+           Q 102 260, 100 250 Z"
+        fill="url(#trophyGradient)"
+        filter="url(#shadow)"
+        stroke="#DAA520"
+        stroke-width="2"/>
+  
+  <!-- Trophy Handles -->
+  <path d="M 100 220 
+           Q 80 220, 70 210
+           Q 65 200, 70 190
+           Q 80 180, 95 185
+           L 100 200"
+        fill="url(#trophyGradient)"
+        stroke="#DAA520"
+        stroke-width="2"/>
+  
+  <path d="M 220 220 
+           Q 240 220, 250 210
+           Q 255 200, 250 190
+           Q 240 180, 225 185
+           L 220 200"
+        fill="url(#trophyGradient)"
+        stroke="#DAA520"
+        stroke-width="2"/>
+  
+  <!-- Chess King Piece on Top -->
+  <g transform="translate(150, 60)">
+    <!-- King Base -->
+    <ellipse cx="10" cy="80" rx="25" ry="8" fill="url(#chessGradient)"/>
+    
+    <!-- King Body -->
+    <path d="M -15 80 
+             L -10 60
+             Q -8 50, -5 45
+             L 0 35
+             Q 2 30, 5 30
+             L 15 30
+             Q 18 30, 20 35
+             L 25 45
+             Q 28 50, 30 60
+             L 35 80 Z"
+          fill="url(#chessGradient)"
+          filter="url(#shadow)"
+          stroke="#909090"
+          stroke-width="1.5"/>
+    
+    <!-- King Crown -->
+    <rect x="5" y="18" width="20" height="12" rx="2" fill="url(#chessGradient)" stroke="#909090" stroke-width="1.5"/>
+    
+    <!-- King Cross -->
+    <rect x="13" y="8" width="4" height="15" rx="1" fill="url(#chessGradient)" stroke="#909090" stroke-width="1"/>
+    <rect x="8" y="13" width="14" height="4" rx="1" fill="url(#chessGradient)" stroke="#909090" stroke-width="1"/>
+  </g>
+  
+  <!-- Stars -->
+  <g opacity="0.7">
+    <polygon points="50,80 52,86 58,86 53,90 55,96 50,92 45,96 47,90 42,86 48,86" fill="#FFD700">
+      <animate attributeName="opacity" values="0.4;1;0.4" dur="2s" repeatCount="indefinite"/>
+    </polygon>
+    <polygon points="250,120 252,126 258,126 253,130 255,136 250,132 245,136 247,130 242,126 248,126" fill="#FFD700">
+      <animate attributeName="opacity" values="0.4;1;0.4" dur="2.5s" repeatCount="indefinite"/>
+    </polygon>
+    <polygon points="270,200 272,206 278,206 273,210 275,216 270,212 265,216 267,210 262,206 268,206" fill="#FFD700">
+      <animate attributeName="opacity" values="0.4;1;0.4" dur="3s" repeatCount="indefinite"/>
+    </polygon>
+  </g>
+  
+  <!-- Shine Effect -->
+  <ellipse cx="145" cy="180" rx="8" ry="15" fill="#FFFFFF" opacity="0.3"/>
+  <ellipse cx="135" cy="240" rx="6" ry="12" fill="#FFFFFF" opacity="0.25"/>
+</svg>

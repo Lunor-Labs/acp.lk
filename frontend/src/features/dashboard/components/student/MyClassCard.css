@@ -1,0 +1,352 @@
+/* =====================================================
+   Uiverse-style animated class card for MyClasses
+   ===================================================== */
+
+.mc-card {
+  position: relative;
+  width: 100%;
+  height: 240px;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+  transition: all 0.8s ease-in-out;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.mc-card:hover {
+  transform: scale(1.03);
+  box-shadow: rgba(100, 100, 111, 0.35) 0px 12px 40px 0px;
+}
+
+/* ── Background ─────────────────────────────────────── */
+.mc-card .mc-background {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 100% 107%,
+    #ffd6d8 0%,
+    #b2e8e3 35%,
+    #dce9ff 65%,
+    #c8f0ec 100%
+  );
+}
+
+/* ── Logo / Icon area ───────────────────────────────── */
+.mc-card .mc-logo {
+  position: absolute;
+  right: 50%;
+  bottom: 50%;
+  transform: translate(50%, 50%);
+  transition: all 0.6s ease-in-out;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.mc-card:hover .mc-logo {
+  transform: translate(0, 0);
+  bottom: 14px;
+  right: 14px;
+}
+
+.mc-logo-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.mc-logo-subject {
+  font-size: 9px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.95);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: rgba(0,0,0,0.2);
+  border-radius: 6px;
+  padding: 2px 6px;
+  white-space: nowrap;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: none;
+}
+
+.mc-card:hover .mc-logo-subject {
+  display: block;
+}
+
+/* ── Week boxes ─────────────────────────────────────── */
+.mc-box {
+  position: absolute;
+  padding: 10px 12px;
+  text-align: right;
+  background: rgba(255, 255, 255, 0.35);
+  border-top: 2px solid rgba(255, 255, 255, 0.9);
+  border-right: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 10% 13% 42% 0% / 10% 12% 75% 0%;
+  box-shadow: rgba(100, 100, 111, 0.3) -5px 5px 20px 0px;
+  transform-origin: bottom left;
+  transition: all 0.8s ease-in-out;
+  cursor: pointer;
+  z-index: 3;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+
+.mc-box::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.45s ease-in-out;
+}
+
+.mc-box:hover::before {
+  opacity: 1;
+}
+
+.mc-box-label {
+  position: relative;
+  z-index: 2;
+  font-size: 10px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1.3;
+  text-align: right;
+  pointer-events: none;
+}
+
+.mc-box-label .week-num {
+  font-size: 13px;
+  display: block;
+}
+
+.mc-box-label .week-title {
+  display: block;
+  font-size: 8px;
+  font-weight: 600;
+  opacity: 0;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: opacity 0.3s ease;
+}
+
+.mc-box:hover .week-title {
+  opacity: 1;
+}
+
+/* Lock overlay on week box */
+.mc-box-locked {
+  cursor: default;
+}
+.mc-box-locked .mc-box-label {
+  opacity: 0.5;
+}
+
+/* ── Colour variants (::before gradient per brand) ──── */
+/* Red – Week 1 / 5 / 9 … */
+.mc-box.color-red::before {
+  background: radial-gradient(circle at 30% 107%, #ff6b6b 0%, #eb1b23 90%);
+}
+/* Teal – Week 2 / 6 / 10 … */
+.mc-box.color-teal::before {
+  background: radial-gradient(circle at 30% 107%, #5eead4 0%, #0d9488 90%);
+}
+/* Blue – Week 3 / 7 / 11 … */
+.mc-box.color-blue::before {
+  background: radial-gradient(circle at 30% 107%, #93c5fd 0%, #1e40af 90%);
+}
+/* Purple – Week 4 / 8 / 12 … */
+.mc-box.color-purple::before {
+  background: radial-gradient(circle at 30% 107%, #c4b5fd 0%, #6d28d9 90%);
+}
+/* Neutral – "+N more" overflow */
+.mc-box.color-neutral::before {
+  background: radial-gradient(circle at 30% 107%, #6b7280 0%, #374151 90%);
+}
+
+/* ── Box sizing — 3 visible + overflow ──────────────── */
+/* box-1: largest */
+.mc-box-1 {
+  width: 68%;
+  height: 68%;
+  bottom: -70%;
+  left: -70%;
+  transition-delay: 0s;
+}
+/* box-2: medium */
+.mc-box-2 {
+  width: 46%;
+  height: 46%;
+  bottom: -50%;
+  left: -50%;
+  transition-delay: 0.15s;
+}
+/* box-3: small */
+.mc-box-3 {
+  width: 27%;
+  height: 27%;
+  bottom: -30%;
+  left: -30%;
+  transition-delay: 0.3s;
+}
+/* box-4 (overflow / "+N more") */
+.mc-box-4 {
+  width: 14%;
+  height: 14%;
+  bottom: -15%;
+  left: -15%;
+  transition-delay: 0.45s;
+}
+
+/* Slide IN on card hover */
+.mc-card:hover .mc-box {
+  bottom: -1px;
+  left: -1px;
+}
+
+/* ── Info strip at top (always visible) ─────────────── */
+.mc-info-strip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 14px 16px 10px;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.mc-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #1f2937;
+  margin: 0 0 4px;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.mc-meta {
+  font-size: 11px;
+  color: #4b5563;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.mc-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.mc-badge-active {
+  background: rgba(16, 185, 129, 0.18);
+  color: #065f46;
+}
+
+.mc-badge-completed {
+  background: rgba(107, 114, 128, 0.18);
+  color: #374151;
+}
+
+.mc-badge-free {
+  background: rgba(16, 185, 129, 0.18);
+  color: #065f46;
+}
+
+.mc-badge-paid {
+  background: rgba(235, 27, 35, 0.12);
+  color: #991b1b;
+}
+
+/* ── Locked overlay on whole card ────────────────────── */
+.mc-locked-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(0,0,0,0.42);
+  backdrop-filter: blur(3px);
+  border-radius: 24px;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+}
+
+.mc-card:hover .mc-locked-overlay {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.mc-locked-overlay p {
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  padding: 0 20px;
+}
+
+.mc-pay-btn {
+  padding: 8px 18px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #eb1b23, #c01018);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(235,27,35,0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mc-pay-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(235,27,35,0.45);
+}
+
+/* ── No-weeks fallback box ───────────────────────────── */
+.mc-browse-badge {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  z-index: 4;
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.85);
+  background: rgba(0,0,0,0.2);
+  border-radius: 8px;
+  padding: 4px 10px;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.3s;
+}
+
+.mc-card:hover .mc-browse-badge {
+  opacity: 0;
+}
