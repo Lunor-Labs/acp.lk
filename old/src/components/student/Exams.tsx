@@ -53,6 +53,7 @@ interface ActiveExam {
   isReviewing?: boolean;
   isSubmitting?: boolean;
   pdfView?: 'paper' | 'answers';
+  pdfQuestionCount?: number;
 }
 
 interface ReviewingResultData {
@@ -60,13 +61,23 @@ interface ReviewingResultData {
   isPdf: boolean;
   pdfUrl?: string | null;
   questions?: ExamQuestion[];
-  pdfAnswers?: { question_no: number; correct_answer: number }[];
+  pdfAnswers?: { question_no: number; correct_answer: string }[];
+}
+
+interface MonthlyResult {
+  month: string;
+  monthKey: string;
+  totalScore: number;
+  totalPossibleMarks: number;
+  rank: number;
+  attempts: ExamAttempt[];
 }
 
 export default function Exams() {
   const { profile } = useAuth();
   const [upcomingExams, setUpcomingExams] = useState<Exam[]>([]);
   const [results, setResults] = useState<ExamAttempt[]>([]);
+  const [monthlyResults, setMonthlyResults] = useState<MonthlyResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeExam, setActiveExam] = useState<ActiveExam | null>(null);
   const [view, setView] = useState<'upcoming' | 'results'>('upcoming');
@@ -133,27 +144,97 @@ export default function Exams() {
 
       if (resultsError) throw resultsError;
 
-      // Calculate ranks dynamically for finished exams
+      // Group by month
+      const monthsMap: Record<string, MonthlyResult> = {};
+      
       const resultsWithRanks = await Promise.all((resultsData || []).map(async (result) => {
         const endTime = new Date(result.exam.end_time);
-        if (new Date() > endTime) {
-          // Count how many students have a higher score for this specific exam
+        const isEnded = new Date() > endTime;
+        
+        // Only calculate rank once the exam window has closed; 0 = rank pending
+        let rank = 0;
+        if (isEnded) {
           const { count } = await supabase
             .from('exam_attempts')
             .select('*', { count: 'exact', head: true })
             .eq('exam_id', result.exam_id)
             .eq('status', 'submitted')
             .gt('score', result.score);
-          
-          return {
-            ...result,
-            rank: (count || 0) + 1
+          rank = (count || 0) + 1;
+        }
+
+        const resultWithRank = { ...result, rank };
+
+        // Always group submitted attempts by month, regardless of exam status
+        const monthDate = new Date(result.exam.end_time);
+        const monthKey = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`;
+        const monthName = monthDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+        if (!monthsMap[monthKey]) {
+          monthsMap[monthKey] = {
+            month: monthName,
+            monthKey,
+            totalScore: 0,
+            totalPossibleMarks: 0,
+            rank: 0,
+            attempts: []
           };
         }
-        return result;
+        monthsMap[monthKey].totalScore += result.score;
+        monthsMap[monthKey].totalPossibleMarks += result.exam.total_marks;
+        monthsMap[monthKey].attempts.push(resultWithRank);
+
+        return resultWithRank;
       }));
 
+      // Calculate monthly ranks
+      const sortedMonths = Object.keys(monthsMap).sort((a, b) => b.localeCompare(a));
+      const finalMonthlyResults: MonthlyResult[] = [];
+
+      for (const monthKey of sortedMonths) {
+        const monthlyData = monthsMap[monthKey];
+        
+        // Fetch all exams in this month for the student's classes
+        const startOfMonth = new Date(`${monthKey}-01T00:00:00Z`);
+        const endOfMonth = new Date(startOfMonth);
+        endOfMonth.setMonth(endOfMonth.getMonth() + 1);
+
+        const { data: monthExams } = await supabase
+          .from('exams')
+          .select('id')
+          .in('class_id', classIds)
+          .gte('end_time', startOfMonth.toISOString())
+          .lt('end_time', endOfMonth.toISOString());
+
+        const monthExamIds = monthExams?.map(e => e.id) || [];
+
+        if (monthExamIds.length > 0) {
+          // Fetch all attempts for these exams to calculate aggregate rank
+          const { data: allAttempts } = await supabase
+            .from('exam_attempts')
+            .select('student_id, score')
+            .in('exam_id', monthExamIds)
+            .eq('status', 'submitted');
+
+          if (allAttempts) {
+            // Group by student and sum scores
+            const studentSums: Record<string, number> = {};
+            allAttempts.forEach(att => {
+              studentSums[att.student_id] = (studentSums[att.student_id] || 0) + att.score;
+            });
+
+            // Calculate rank
+            const currentStudentScore = studentSums[profile?.id] || 0;
+            const higherScoresCount = Object.values(studentSums).filter(s => s > currentStudentScore).length;
+            monthlyData.rank = higherScoresCount + 1;
+          }
+        }
+
+        finalMonthlyResults.push(monthlyData);
+      }
+
       setResults(resultsWithRanks);
+      setMonthlyResults(finalMonthlyResults);
     } catch (error) {
       console.error('Error loading exams:', error);
     } finally {
@@ -210,9 +291,10 @@ export default function Exams() {
         .from('pdf_exams')
         .select('*')
         .eq('exam_id', exam.id)
-        .limit(1);
+        .order('question_no', { ascending: true });
 
       const isPdf = !!(pdfData && pdfData.length > 0);
+      const pdfQuestionCount = isPdf ? pdfData!.length : 0;
       let questions: ExamQuestion[] = [];
       let pdfUrl: string | null = null;
 
@@ -285,6 +367,7 @@ export default function Exams() {
         pdfUrl,
         questions,
         pdfView: isPdf ? 'paper' : undefined,
+        pdfQuestionCount,
       });
     } catch (error) {
       console.error('Error starting exam:', error);
@@ -307,32 +390,12 @@ export default function Exams() {
 
     const question = activeExam.questions?.[questionIndex];
     if (!question) return;
-    const isMultiChoice = question.correct_answer?.includes(',');
     const answerKey = question.question_number;
 
-    if (!isMultiChoice) {
-      setActiveExam({
-        ...activeExam,
-        answers: { ...activeExam.answers, [answerKey]: answerValue },
-      });
-      return;
-    }
-
-    const currentAnswerStr = (activeExam.answers[answerKey] as string) || '';
-    let selectedArr = currentAnswerStr ? currentAnswerStr.split(',') : [];
-
-    if (selectedArr.includes(answerValue as string)) {
-      selectedArr = selectedArr.filter(a => a !== answerValue);
-    } else {
-      selectedArr.push(answerValue as string);
-      selectedArr.sort(); // Sort alphabetically (A, C) naturally
-    }
-
-    const newAnswerStr = selectedArr.join(',');
-
+    // Always single-select: student can only pick one answer per question
     setActiveExam({
       ...activeExam,
-      answers: { ...activeExam.answers, [answerKey]: newAnswerStr },
+      answers: { ...activeExam.answers, [answerKey]: answerValue },
     });
   };
 
@@ -354,7 +417,7 @@ export default function Exams() {
       let score = 0;
       let correctCount = 0;
       let incorrectCount = 0;
-      const totalQuestions = activeExam.isPdf ? 50 : (activeExam.questions?.length || 0);
+      const totalQuestions = activeExam.isPdf ? (activeExam.pdfQuestionCount || 0) : (activeExam.questions?.length || 0);
 
       if (!activeExam.isPdf && activeExam.questions) {
         activeExam.questions.forEach((q) => {
@@ -362,13 +425,11 @@ export default function Exams() {
           const studentAnswer = activeExam.answers[answerKey] as string;
           if (studentAnswer !== undefined && studentAnswer !== '') {
             const correctArr = (q.correct_answer || '').split(',').map(s => s.trim()).filter(Boolean);
-            const studentArr = studentAnswer.split(',').map(s => s.trim()).filter(Boolean);
-            
-            const isFullyCorrect = 
-              correctArr.length === studentArr.length && 
-              correctArr.every(ca => studentArr.includes(ca));
-              
-            if (isFullyCorrect) {
+
+            // Student picks one answer; correct if it matches any of the correct answers
+            const isCorrect = correctArr.includes(studentAnswer.trim());
+
+            if (isCorrect) {
               score += q.marks;
               correctCount++;
             } else {
@@ -377,20 +438,22 @@ export default function Exams() {
           }
         });
       }
-      
+
       // For PDF exams
       if (activeExam.isPdf) {
         const { data: correctAnswers } = await supabase
           .from('pdf_exams')
           .select('question_no, correct_answer')
           .eq('exam_id', activeExam.exam.id);
-        
+
         if (correctAnswers) {
           correctAnswers.forEach(correct => {
             const studentAnswer = activeExam.answers[correct.question_no];
             if (studentAnswer !== undefined) {
-              if (studentAnswer === correct.correct_answer) {
-                score += 1; // Assuming 1 mark per question for PDF
+              const correctArr = String(correct.correct_answer || '').split(',').map(s => s.trim()).filter(Boolean);
+              const isCorrect = correctArr.includes(String(studentAnswer).trim());
+              if (isCorrect) {
+                score += 1; // 1 mark per question for PDF
                 correctCount++;
               } else {
                 incorrectCount++;
@@ -459,11 +522,11 @@ export default function Exams() {
     const interval = setInterval(() => {
       const now = new Date();
       setCurrentTime(now);
-      
+
       const examEndTime = new Date(activeExam.exam.end_time);
       const elapsedMs = now.getTime() - activeExam.startTime.getTime();
       const elapsedMinutes = elapsedMs / 60000;
-      
+
       if (elapsedMinutes >= activeExam.exam.duration_minutes || now >= examEndTime) {
         clearInterval(interval);
         showToast('Time is up! Your exam is being automatically submitted.', 'warning');
@@ -503,18 +566,18 @@ export default function Exams() {
 
   const getRemainingTimeDisplay = () => {
     if (!activeExam) return { text: '0m 0s', isWarning: false };
-    
+
     const maxDurationMs = activeExam.exam.duration_minutes * 60000;
     const timerEndTime = activeExam.startTime.getTime() + maxDurationMs;
     const examEndTime = new Date(activeExam.exam.end_time).getTime();
-    
+
     // Choose the sooner closure time
     const hardEndTime = Math.min(timerEndTime, examEndTime);
     const msRemaining = Math.max(0, hardEndTime - currentTime.getTime());
-    
+
     const m = Math.floor(msRemaining / 60000);
     const s = Math.floor((msRemaining % 60000) / 1000);
-    
+
     return {
       text: `${m}m ${s}s`,
       isWarning: msRemaining > 0 && msRemaining <= 300000 // Last 5 minutes
@@ -526,7 +589,7 @@ export default function Exams() {
     // RENDER: REVIEW MODE
     // -------------------------------------------------------------------------
     if (activeExam.isReviewing) {
-      const totalQuestions = activeExam.isPdf ? 50 : (activeExam.questions?.length || 0);
+      const totalQuestions = activeExam.isPdf ? (activeExam.pdfQuestionCount || 0) : (activeExam.questions?.length || 0);
       const answeredCount = Object.keys(activeExam.answers).length;
 
       return (
@@ -573,11 +636,10 @@ export default function Exams() {
                       <button
                         key={i}
                         onClick={() => setActiveExam({ ...activeExam, isReviewing: false, currentQuestion: i })}
-                        className={`aspect-square rounded-lg sm:rounded-xl flex flex-col items-center justify-center transition-all border-2 text-xs sm:text-sm ${
-                          hasAnswer
+                        className={`aspect-square rounded-lg sm:rounded-xl flex flex-col items-center justify-center transition-all border-2 text-xs sm:text-sm ${hasAnswer
                             ? 'bg-[#eb1b23] border-[#eb1b23] text-white shadow-md shadow-red-100'
                             : 'bg-white border-gray-100 text-gray-400 hover:border-[#eb1b23] hover:text-[#eb1b23]'
-                        }`}
+                          }`}
                       >
                         <span className="text-[8px] sm:text-[10px] uppercase font-bold opacity-70 mb-0.5">Q{questionNo}</span>
                         <span className="font-black text-sm sm:text-lg">{hasAnswer ? answer : '-'}</span>
@@ -618,7 +680,7 @@ export default function Exams() {
     // -------------------------------------------------------------------------
     // RENDER: TAKING MODE (PDF OR MANUAL)
     // -------------------------------------------------------------------------
-    const totalQuestions = activeExam.isPdf ? 50 : (activeExam.questions?.length || 0);
+    const totalQuestions = activeExam.isPdf ? (activeExam.pdfQuestionCount || 0) : (activeExam.questions?.length || 0);
     const answeredCount = Object.keys(activeExam.answers).length;
 
     return (
@@ -667,17 +729,15 @@ export default function Exams() {
           <div className="md:hidden flex bg-white border-b sticky top-0 z-10">
             <button
               onClick={() => setActiveExam({ ...activeExam, pdfView: 'paper' })}
-              className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors ${
-                activeExam.pdfView === 'paper' ? 'border-[#eb1b23] text-[#eb1b23]' : 'border-transparent text-gray-400'
-              }`}
+              className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors ${activeExam.pdfView === 'paper' ? 'border-[#eb1b23] text-[#eb1b23]' : 'border-transparent text-gray-400'
+                }`}
             >
               Question Paper
             </button>
             <button
               onClick={() => setActiveExam({ ...activeExam, pdfView: 'answers' })}
-              className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors ${
-                activeExam.pdfView === 'answers' ? 'border-[#eb1b23] text-[#eb1b23]' : 'border-transparent text-gray-400'
-              }`}
+              className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors ${activeExam.pdfView === 'answers' ? 'border-[#eb1b23] text-[#eb1b23]' : 'border-transparent text-gray-400'
+                }`}
             >
               Answer Sheet
             </button>
@@ -687,9 +747,8 @@ export default function Exams() {
         {/* Exam Body */}
         <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
           {/* Left Panel: Content (PDF or Manual Question) */}
-          <div className={`flex-1 bg-gray-200 overflow-auto relative min-h-0 ${
-            activeExam.isPdf && activeExam.pdfView === 'answers' ? 'hidden md:block' : 'block'
-          }`}>
+          <div className={`flex-1 bg-gray-200 overflow-auto relative min-h-0 ${activeExam.isPdf && activeExam.pdfView === 'answers' ? 'hidden md:block' : 'block'
+            }`}>
             {activeExam.isPdf ? (
               activeExam.pdfUrl ? (
                 <iframe
@@ -732,20 +791,18 @@ export default function Exams() {
                           const currentQuestionData = activeExam.questions![activeExam.currentQuestion];
                           const answerKey = currentQuestionData.question_number;
                           const currentAnswerObj = activeExam.answers[answerKey] as string;
-                          const isSelected = currentAnswerObj ? currentAnswerObj.split(',').map(s => s.trim()).includes(optNum) : false;
+                          const isSelected = currentAnswerObj === optNum;
                           return (
                             <button
                               key={idx}
                               onClick={() => selectAnswer(activeExam.currentQuestion, optNum)}
-                              className={`w-full text-left p-3 sm:p-5 rounded-lg sm:rounded-xl border-2 transition-all flex items-center group ${
-                                isSelected
+                              className={`w-full text-left p-3 sm:p-5 rounded-lg sm:rounded-xl border-2 transition-all flex items-center group ${isSelected
                                   ? 'border-[#eb1b23] bg-red-50 shadow-md shadow-red-50'
                                   : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'
-                              }`}
+                                }`}
                             >
-                              <span className={`w-8 sm:w-10 h-8 sm:h-10 rounded-lg flex items-center justify-center font-bold mr-2 sm:mr-4 text-sm sm:text-base transition-colors flex-shrink-0 ${
-                                isSelected ? 'bg-[#eb1b23] text-white' : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'
-                              }`}>
+                              <span className={`w-8 sm:w-10 h-8 sm:h-10 rounded-lg flex items-center justify-center font-bold mr-2 sm:mr-4 text-sm sm:text-base transition-colors flex-shrink-0 ${isSelected ? 'bg-[#eb1b23] text-white' : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'
+                                }`}>
                                 {idx + 1}
                               </span>
                               <span className={`text-base sm:text-lg font-medium ${isSelected ? 'text-gray-900' : 'text-gray-700'} break-words`}>
@@ -798,16 +855,15 @@ export default function Exams() {
                               const optNum = String(idx + 1);
                               const answerKey = question.question_number;
                               const currentAnswerObj = activeExam.answers[answerKey] as string;
-                              const isSelected = currentAnswerObj ? currentAnswerObj.split(',').map(s => s.trim()).includes(optNum) : false;
+                              const isSelected = currentAnswerObj === optNum;
                               return (
                                 <button
                                   key={idx}
                                   onClick={() => selectAnswer(qIdx, optNum)}
-                                  className={`flex-1 min-w-[calc(50%-0.25rem)] p-2 rounded-lg border-2 transition-all flex items-center group justify-center ${
-                                    isSelected
+                                  className={`flex-1 min-w-[calc(50%-0.25rem)] p-2 rounded-lg border-2 transition-all flex items-center group justify-center ${isSelected
                                       ? 'border-[#eb1b23] bg-red-50 shadow-md shadow-red-50'
                                       : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'
-                                  }`}
+                                    }`}
                                 >
                                   <span className={`text-xs sm:text-sm font-medium text-center ${isSelected ? 'text-gray-900' : 'text-gray-700'} break-words`}>
                                     {option}
@@ -828,18 +884,17 @@ export default function Exams() {
           </div>
 
           {/* Right Panel: Navigation / Bubble Sheet - Hidden on Mobile for Manual Exams */}
-          <div className={`w-full md:w-80 lg:w-96 bg-white border-l flex flex-col flex-1 md:flex-none min-h-0 ${
-            !activeExam.isPdf ? 'hidden md:flex' : (activeExam.isPdf && activeExam.pdfView === 'paper' ? 'hidden md:flex' : 'flex')
-          }`}>
+          <div className={`w-full md:w-80 lg:w-96 bg-white border-l flex flex-col flex-1 md:flex-none min-h-0 ${!activeExam.isPdf ? 'hidden md:flex' : (activeExam.isPdf && activeExam.pdfView === 'paper' ? 'hidden md:flex' : 'flex')
+            }`}>
             <div className="p-3 sm:p-6 border-b bg-gray-50 font-bold text-gray-700 text-sm sm:text-base">
               {activeExam.isPdf ? 'Answer Sheet' : 'Question Map'}
             </div>
-            
+
             <div className="flex-1 overflow-y-auto p-3 sm:p-6">
               {activeExam.isPdf ? (
                 // Bubble Sheet for PDF
                 <div className="space-y-3 sm:space-y-6">
-                  {Array.from({ length: 50 }).map((_, i) => {
+                  {Array.from({ length: activeExam.pdfQuestionCount || 0 }).map((_, i) => {
                     const qNo = i + 1;
                     return (
                       <div key={i} className="flex items-center space-x-2 sm:space-x-3">
@@ -851,11 +906,10 @@ export default function Exams() {
                               <button
                                 key={val}
                                 onClick={() => selectAnswer(qNo, val)}
-                                className={`w-6 sm:w-8 h-6 sm:h-8 rounded-full text-xs font-bold transition-all flex-shrink-0 flex items-center justify-center ${
-                                  isSelected
+                                className={`w-6 sm:w-8 h-6 sm:h-8 rounded-full text-xs font-bold transition-all flex-shrink-0 flex items-center justify-center ${isSelected
                                     ? 'bg-[#eb1b23] text-white shadow-md'
                                     : 'bg-white text-gray-400 hover:bg-gray-100 hover:text-gray-600'
-                                }`}
+                                  }`}
                               >
                                 {val}
                               </button>
@@ -876,13 +930,12 @@ export default function Exams() {
                       <button
                         key={i}
                         onClick={() => setActiveExam({ ...activeExam, currentQuestion: i })}
-                        className={`aspect-square rounded-lg sm:rounded-xl flex items-center justify-center font-bold text-xs sm:text-sm transition-all border-2 ${
-                          isSelected
+                        className={`aspect-square rounded-lg sm:rounded-xl flex items-center justify-center font-bold text-xs sm:text-sm transition-all border-2 ${isSelected
                             ? 'border-[#eb1b23] bg-red-50 text-[#eb1b23] scale-105'
                             : isAnswered
-                            ? 'border-green-100 bg-green-50 text-green-600'
-                            : 'border-transparent bg-gray-50 text-gray-400 hover:bg-gray-100'
-                        }`}
+                              ? 'border-green-100 bg-green-50 text-green-600'
+                              : 'border-transparent bg-gray-50 text-gray-400 hover:bg-gray-100'
+                          }`}
                       >
                         {i + 1}
                       </button>
@@ -939,7 +992,7 @@ export default function Exams() {
   const viewResultDetails = async (attempt: ExamAttempt) => {
     try {
       setLoading(true);
-      
+
       const { data: pdfData } = await supabase
         .from('pdf_exams')
         .select('*')
@@ -948,19 +1001,19 @@ export default function Exams() {
       const isPdf = !!(pdfData && pdfData.length > 0);
       let questions: ExamQuestion[] = [];
       let pdfUrl: string | null = null;
-      let pdfAnswers: { question_no: number; correct_answer: number }[] = [];
+      let pdfAnswers: { question_no: number; correct_answer: string }[] = [];
 
       if (isPdf) {
         const pdfPath = pdfData![0].pdf_path;
         const storagePath = pdfPath.startsWith('acp/') ? pdfPath.slice(4) : pdfPath;
         const { data: urlData } = supabase.storage.from('acp').getPublicUrl(storagePath);
         pdfUrl = urlData?.publicUrl || null;
-        
+
         const { data: answersData } = await supabase
           .from('pdf_exams')
           .select('question_no, correct_answer')
           .eq('exam_id', attempt.exam_id);
-          
+
         pdfAnswers = answersData || [];
       } else {
         const { data: qData, error: qError } = await supabase
@@ -997,7 +1050,7 @@ export default function Exams() {
         questions,
         pdfAnswers
       });
-      
+
     } catch (error) {
       console.error('Error loading result details:', error);
       showToast('Failed to load exam details', 'error');
@@ -1033,17 +1086,30 @@ export default function Exams() {
                   <h3 className="font-bold text-xl mb-6 text-gray-900">Your Marking Map</h3>
                   <div className="space-y-4">
                     {reviewingData.pdfAnswers?.map((ans) => {
-                      const studentChoice = Number((reviewingData.attempt.answers as any)?.[ans.question_no]);
+                      const studentChoice = String((reviewingData.attempt.answers as any)?.[ans.question_no] ?? '');
+                      const correctArr = String(ans.correct_answer || '').split(',').map(s => s.trim()).filter(Boolean);
+                      const hasAnswer = studentChoice !== '' && studentChoice !== 'undefined';
+                      const isStudentCorrect = hasAnswer && correctArr.includes(studentChoice);
+
                       return (
                         <div key={ans.question_no} className="flex items-center space-x-3">
                           <span className="w-6 text-sm font-mono font-bold text-gray-500">{ans.question_no.toString().padStart(2, '0')}.</span>
                           <div className="flex-1 flex justify-between gap-1">
-                            {[1,2,3,4,5].map(val => {
-                              const isStu = studentChoice === val;
-                              const isTrue = Number(ans.correct_answer) === val;
+                            {[1, 2, 3, 4, 5].map(val => {
+                              const valStr = String(val);
+                              const isStu = hasAnswer && studentChoice === valStr;
+                              const isCorrectOption = correctArr.includes(valStr);
+
+                              // Determine bubble style
                               let bClass = "bg-gray-50 border-gray-200 text-gray-400";
-                              if (isTrue) bClass = "bg-green-500 border-green-600 text-white shadow-sm z-10 scale-105";
-                              else if (isStu) bClass = "bg-red-500 border-red-600 text-white shadow-sm z-10 scale-105";
+
+                              if (isCorrectOption) {
+                                // All correct answers always show green
+                                bClass = "bg-green-500 border-green-600 text-white shadow-sm";
+                              } else if (isStu) {
+                                // Student picked this wrong answer
+                                bClass = "bg-red-500 border-red-600 text-white shadow-sm";
+                              }
 
                               return (
                                 <div key={val} className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all ${bClass}`}>
@@ -1051,6 +1117,16 @@ export default function Exams() {
                                 </div>
                               )
                             })}
+                          </div>
+                          {/* Result indicator */}
+                          <div className="w-5 flex-shrink-0 text-center">
+                            {hasAnswer ? (
+                              isStudentCorrect
+                                ? <span className="text-green-600 font-bold text-sm">✓</span>
+                                : <span className="text-red-500 font-bold text-sm">✕</span>
+                            ) : (
+                              <span className="text-gray-300 text-sm">—</span>
+                            )}
                           </div>
                         </div>
                       )
@@ -1063,24 +1139,22 @@ export default function Exams() {
                 {reviewingData.questions?.map((q, idx) => {
                   const studentAnswer = (reviewingData.attempt.answers as any)?.[q.question_number] as string;
                   const correctAnswers = (q.correct_answer || '').split(',').map(s => s.trim()).filter(Boolean);
-                  const studentAnswers = studentAnswer ? studentAnswer.split(',').map(s => s.trim()).filter(Boolean) : [];
 
-                  const isFullyCorrect = 
-                    correctAnswers.length === studentAnswers.length && 
-                    correctAnswers.every(ca => studentAnswers.includes(ca));
+                  // Student picks one answer; correct if it matches any of the correct answers
+                  const isCorrect = studentAnswer ? correctAnswers.includes(studentAnswer.trim()) : false;
 
                   return (
                     <div key={idx} className="p-6 sm:p-8 border border-gray-200 rounded-3xl bg-white shadow-sm transition hover:shadow-md">
                       <div className="flex justify-between items-center mb-6 pb-6 border-b border-gray-100">
                         <h4 className="text-xl font-bold text-gray-900 border-l-4 border-[#eb1b23] pl-3">Question {q.question_number}</h4>
-                        <div className={`font-bold px-4 py-2 rounded-full text-sm flex items-center shadow-sm border ${isFullyCorrect ? 'bg-green-50 text-green-700 border-green-100' : 'bg-red-50 text-red-700 border-red-100'}`}>
-                          {isFullyCorrect ? 'Correct' : 'Incorrect'}
-                           {/* <span className="ml-2 bg-white px-2 py-0.5 rounded text-xs shadow-sm">{isFullyCorrect ? q.marks : 0}/{q.marks}</span> */}
+                        <div className={`font-bold px-4 py-2 rounded-full text-sm flex items-center shadow-sm border ${isCorrect ? 'bg-green-50 text-green-700 border-green-100' : 'bg-red-50 text-red-700 border-red-100'}`}>
+                          {isCorrect ? 'Correct' : 'Incorrect'}
+                          {/* <span className="ml-2 bg-white px-2 py-0.5 rounded text-xs shadow-sm">{isFullyCorrect ? q.marks : 0}/{q.marks}</span> */}
                         </div>
                       </div>
-                      
+
                       <p className="text-gray-800 text-lg mb-8 leading-relaxed whitespace-pre-wrap">{q.question_text}</p>
-                      
+
                       {q.image_path && (
                         <div className="mb-8 rounded-2xl overflow-hidden bg-gray-50 flex justify-center p-6 border border-gray-100">
                           <img
@@ -1094,16 +1168,16 @@ export default function Exams() {
                       <div className="hidden md:block space-y-3">
                         {q.options.map((opt, optIdx) => {
                           const optNum = String(optIdx + 1);
-                          const isStudentChoice = studentAnswers.includes(optNum.trim());
+                          const isStudentChoice = studentAnswer?.trim() === optNum.trim();
                           const isTrueCorrect = correctAnswers.includes(optNum.trim());
 
                           let bgClass = "bg-white border-gray-200 text-gray-700";
                           if (isTrueCorrect) {
-                            bgClass = "bg-green-50 border-green-500 text-green-900 shadow-md ring-1 ring-green-100"; 
+                            bgClass = "bg-green-50 border-green-500 text-green-900 shadow-md ring-1 ring-green-100";
                           } else if (isStudentChoice) {
                             bgClass = "bg-red-50 border-red-500 text-red-900 shadow-sm";
                           }
-                          
+
                           return (
                             <div key={optIdx} className={`p-4 sm:p-5 border-2 rounded-2xl flex items-center transition-all ${bgClass}`}>
                               <span className={`w-10 h-10 flex items-center justify-center rounded-xl font-bold text-lg mr-4 ${isTrueCorrect ? 'bg-green-500 text-white shadow-sm' : isStudentChoice ? 'bg-red-500 text-white shadow-sm' : 'bg-gray-100 text-gray-500'}`}>
@@ -1121,7 +1195,7 @@ export default function Exams() {
                       <div className="md:hidden flex flex-wrap gap-2">
                         {q.options.map((opt, optIdx) => {
                           const optNum = String(optIdx + 1);
-                          const isStudentChoice = studentAnswers.includes(optNum.trim());
+                          const isStudentChoice = studentAnswer?.trim() === optNum.trim();
                           const isTrueCorrect = correctAnswers.includes(optNum.trim());
 
                           let containerClass = "border-gray-100 bg-gray-50";
@@ -1140,7 +1214,7 @@ export default function Exams() {
                             containerClass = "border-green-500 bg-green-100";
                             statusIcon = null;
                           }
-                          
+
                           return (
                             <div
                               key={optIdx}
@@ -1220,9 +1294,9 @@ export default function Exams() {
             </div>
             <div className="min-w-0">
               <p className="text-xl sm:text-2xl font-bold text-slate-900">
-                {results.length > 0 ? Math.round(results.reduce((sum, r) => sum + (r.score / r.exam.total_marks) * 100, 0) / results.length) : 0}%
+                {monthlyResults.length > 0 ? monthlyResults[0].totalScore : 0}
               </p>
-              <p className="text-xs text-slate-500">Avg Score</p>
+              <p className="text-xs text-slate-500">Latest Monthly Sum</p>
             </div>
           </div>
         </div>
@@ -1233,12 +1307,9 @@ export default function Exams() {
             </div>
             <div className="min-w-0">
               <p className="text-xl sm:text-2xl font-bold text-slate-900">
-                {results.filter(r => {
-                  const endTime = new Date(r.exam.end_time);
-                  return new Date() > endTime && r.rank && r.rank <= 3;
-                }).length}
+                {monthlyResults.length > 0 ? `#${monthlyResults[0].rank}` : 'N/A'}
               </p>
-              <p className="text-xs text-slate-500">Top 3 Ranks</p>
+              <p className="text-xs text-slate-500">Latest Monthly Rank</p>
             </div>
           </div>
         </div>
@@ -1250,11 +1321,10 @@ export default function Exams() {
           <div className="flex p-1 sm:p-2 gap-1">
             <button
               onClick={() => setView('upcoming')}
-              className={`flex-1 px-3 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 ${
-                view === 'upcoming'
+              className={`flex-1 px-3 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 ${view === 'upcoming'
                   ? 'bg-[#eb1b23] text-white shadow-md'
                   : 'text-slate-600 hover:bg-slate-50'
-              }`}
+                }`}
             >
               <span className="flex items-center justify-center gap-1 sm:gap-2 flex-wrap">
                 <Calendar className="w-3 sm:w-4 h-3 sm:h-4" />
@@ -1269,11 +1339,10 @@ export default function Exams() {
             </button>
             <button
               onClick={() => setView('results')}
-              className={`flex-1 px-3 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 ${
-                view === 'results'
+              className={`flex-1 px-3 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 ${view === 'results'
                   ? 'bg-[#eb1b23] text-white shadow-md'
                   : 'text-slate-600 hover:bg-slate-50'
-              }`}
+                }`}
             >
               <span className="flex items-center justify-center gap-1 sm:gap-2 flex-wrap">
                 <Award className="w-3 sm:w-4 h-3 sm:h-4" />
@@ -1319,13 +1388,12 @@ export default function Exams() {
                     >
                       <div className="flex items-start gap-3 sm:gap-4">
                         {/* Subject Icon */}
-                        <div className={`flex-shrink-0 w-12 sm:w-14 h-12 sm:h-14 rounded-lg sm:rounded-xl flex items-center justify-center text-lg sm:text-xl ${
-                          exam.subject.toLowerCase().includes('physics') ? 'bg-red-50 text-red-600' :
-                          exam.subject.toLowerCase().includes('chemistry') ? 'bg-blue-50 text-blue-600' :
-                          exam.subject.toLowerCase().includes('maths') || exam.subject.toLowerCase().includes('math') ? 'bg-purple-50 text-purple-600' :
-                          exam.subject.toLowerCase().includes('bio') ? 'bg-green-50 text-green-600' :
-                          'bg-amber-50 text-amber-600'
-                        }`}>
+                        <div className={`flex-shrink-0 w-12 sm:w-14 h-12 sm:h-14 rounded-lg sm:rounded-xl flex items-center justify-center text-lg sm:text-xl ${exam.subject.toLowerCase().includes('physics') ? 'bg-red-50 text-red-600' :
+                            exam.subject.toLowerCase().includes('chemistry') ? 'bg-blue-50 text-blue-600' :
+                              exam.subject.toLowerCase().includes('maths') || exam.subject.toLowerCase().includes('math') ? 'bg-purple-50 text-purple-600' :
+                                exam.subject.toLowerCase().includes('bio') ? 'bg-green-50 text-green-600' :
+                                  'bg-amber-50 text-amber-600'
+                          }`}>
                           {exam.subject.toLowerCase().includes('maths') || exam.subject.toLowerCase().includes('math') ? (
                             <span className="font-bold">∑</span>
                           ) : exam.subject.toLowerCase().includes('physics') ? (
@@ -1366,7 +1434,7 @@ export default function Exams() {
                               <h4 className="text-base sm:text-lg font-bold text-slate-900 group-hover:text-[#eb1b23] transition-colors line-clamp-2">
                                 {exam.title}
                               </h4>
-                              <p className="text-xs sm:text-sm text-slate-500 mt-1 line-clamp-1">{exam.description || 'No description'}</p>
+                              {/* <p className="text-xs sm:text-sm text-slate-500 mt-1 line-clamp-1">{exam.description || 'No description'}</p> */}
                             </div>
                             {isActive && (
                               <button
@@ -1407,7 +1475,7 @@ export default function Exams() {
             </div>
           ) : (
             <div className="space-y-3 sm:space-y-4">
-              {results.length === 0 ? (
+              {monthlyResults.length === 0 ? (
                 <div className="text-center py-12 sm:py-16">
                   <div className="w-16 sm:w-20 h-16 sm:h-20 bg-slate-50 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4">
                     <Award className="w-8 sm:w-10 h-8 sm:h-10 text-slate-300" />
@@ -1418,100 +1486,70 @@ export default function Exams() {
                   </p>
                 </div>
               ) : (
-                results.map((result) => {
-                  const endTime = new Date(result.exam.end_time);
-                  const now = new Date();
-                  const isExamEnded = now > endTime;
-                  const percentage = Math.round((result.score / result.exam.total_marks) * 100);
+                monthlyResults.map((monthly) => {
+                  const percentage = Math.round((monthly.totalScore / monthly.totalPossibleMarks) * 100);
 
                   return (
                     <div
-                      key={result.id}
-                      className="group bg-white border border-gray-100 rounded-lg sm:rounded-xl p-3 sm:p-5 hover:shadow-lg hover:border-[#eb1b23]/30 transition-all duration-300"
+                      key={monthly.monthKey}
+                      className="bg-white border border-gray-100 rounded-lg sm:rounded-xl p-3 sm:p-5 hover:shadow-lg transition-all duration-300"
                     >
-                      <div className="flex items-start gap-3 sm:gap-4">
-                        {/* Subject Icon */}
-                        <div className={`flex-shrink-0 w-12 sm:w-14 h-12 sm:h-14 rounded-lg sm:rounded-xl flex items-center justify-center text-lg sm:text-xl ${
-                          result.exam.subject.toLowerCase().includes('physics') ? 'bg-red-50 text-red-600' :
-                          result.exam.subject.toLowerCase().includes('chemistry') ? 'bg-blue-50 text-blue-600' :
-                          result.exam.subject.toLowerCase().includes('maths') || result.exam.subject.toLowerCase().includes('math') ? 'bg-purple-50 text-purple-600' :
-                          result.exam.subject.toLowerCase().includes('bio') ? 'bg-green-50 text-green-600' :
-                          'bg-amber-50 text-amber-600'
-                        }`}>
-                          {result.exam.subject.toLowerCase().includes('maths') || result.exam.subject.toLowerCase().includes('math') ? (
-                            <span className="font-bold">∑</span>
-                          ) : result.exam.subject.toLowerCase().includes('physics') ? (
-                            <span className="font-bold">⚛</span>
-                          ) : result.exam.subject.toLowerCase().includes('chemistry') ? (
-                            <span className="font-bold">⚗</span>
-                          ) : result.exam.subject.toLowerCase().includes('bio') ? (
-                            <span className="font-bold">🧬</span>
-                          ) : (
-                            <BookOpen className="w-5 sm:w-7 h-5 sm:h-7" />
-                          )}
+                      <div className="flex flex-col gap-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-[#eb1b23]/5 rounded-lg">
+                              <Calendar className="w-5 h-5 text-[#eb1b23]" />
+                            </div>
+                            <div>
+                              <h4 className="text-lg font-bold text-slate-900">{monthly.month}</h4>
+                              <p className="text-xs text-slate-500">{monthly.attempts.length} Tests Completed</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Monthly Rank</p>
+                            <p className="text-3xl font-black text-[#eb1b23]">
+                              {monthly.rank > 0 ? `#${monthly.rank}` : <span className="text-lg text-slate-400">Pending</span>}
+                            </p>
+                          </div>
                         </div>
 
-                        {/* Content */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2 sm:gap-3">
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-1 sm:gap-2 mb-1 flex-wrap">
-                                <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
-                                  {result.exam.subject}
-                                </span>
-                                <span className="text-xs text-slate-400">
-                                  {new Date(result.submitted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}
-                                </span>
-                                {!isExamEnded && (
-                                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 flex items-center gap-1 whitespace-nowrap">
-                                    <Clock className="w-3 h-3" />
-                                    Pending
-                                  </span>
-                                )}
-                              </div>
-                              <h4 className="text-base sm:text-lg font-bold text-slate-900 group-hover:text-[#eb1b23] transition-colors line-clamp-2">
-                                {result.exam.title}
-                              </h4>
-                            </div>
+                        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                          <div className="bg-slate-50 rounded-xl p-3 sm:p-4 flex flex-col items-center">
+                            <p className="text-[10px] sm:text-xs text-slate-500 mb-1 uppercase tracking-wider font-bold">Total Marks</p>
+                            <p className="text-lg sm:text-xl font-bold text-slate-900">{monthly.totalScore} / {monthly.totalPossibleMarks}</p>
                           </div>
-
-                          {/* Score Stats */}
-                          <div className="grid grid-cols-3 gap-1.5 sm:gap-3 mt-3 sm:mt-4">
-                            <div className="bg-slate-50 rounded p-2 sm:p-3 flex flex-col items-center text-center min-w-0">
-                              <div className="text-xs text-slate-500 mb-1 truncate w-full">Score</div>
-                              <div className="text-sm sm:text-lg font-bold text-slate-900 truncate">{result.score}/{result.exam.total_marks}</div>
-                            </div>
-                            <div className="bg-slate-50 rounded p-2 sm:p-3 flex flex-col items-center text-center min-w-0">
-                              <div className="text-xs text-slate-500 mb-1">%</div>
-                              <div className={`text-sm sm:text-lg font-bold truncate ${
-                                percentage >= 75 ? 'text-green-600' :
-                                percentage >= 50 ? 'text-amber-600' :
-                                'text-red-600'
-                              }`}>{percentage}%</div>
-                            </div>
-                            <div className="bg-slate-50 rounded p-2 sm:p-3 flex flex-col items-center text-center min-w-0">
-                              <div className="text-xs text-slate-500 mb-1">Rank</div>
-                              <div className="text-sm sm:text-lg font-bold text-[#eb1b23] truncate">
-                                {isExamEnded ? `#${result.rank || 'N/A'}` : 'Pending'}
-                              </div>
-                            </div>
+                          <div className="bg-slate-50 rounded-xl p-3 sm:p-4 flex flex-col items-center">
+                            <p className="text-[10px] sm:text-xs text-slate-500 mb-1 uppercase tracking-wider font-bold">Percentage</p>
+                            <p className={`text-lg sm:text-xl font-bold ${percentage >= 75 ? 'text-green-600' : percentage >= 50 ? 'text-amber-600' : 'text-red-600'}`}>
+                              {percentage}%
+                            </p>
                           </div>
+                        </div>
 
-                          {/* Action */}
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-100">
-                            {!isExamEnded ? (
-                              <div className="flex items-center text-amber-600 text-xs sm:text-sm min-w-0">
-                                <AlertCircle className="w-3 sm:w-4 h-3 sm:h-4 mr-1 flex-shrink-0" />
-                                <span className="truncate">Rank on {endTime.toLocaleDateString()}</span>
+                        <div className="border-t border-dashed border-gray-100 pt-4 mt-2">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Individual Test Scores</p>
+                          <div className="space-y-2">
+                            {monthly.attempts.map((att) => (
+                              <div key={att.id} className="flex items-center justify-between p-3 bg-gray-50/50 rounded-lg border border-gray-50 hover:bg-white hover:border-[#eb1b23]/20 transition-all group">
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-sm font-bold text-slate-800 truncate group-hover:text-[#eb1b23]">{att.exam.title}</p>
+                                  <p className="text-[10px] text-slate-500">{att.exam.subject} • {new Date(att.submitted_at).toLocaleDateString()}</p>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                  <div className="text-right">
+                                    <p className="text-sm font-bold text-slate-900">{att.score}/{att.exam.total_marks}</p>
+                                    <p className="text-[10px] font-medium">{att.rank > 0 ? <span className="text-[#eb1b23]">Rank #{att.rank}</span> : <span className="text-amber-500">Rank Pending</span>}</p>
+                                  </div>
+                                  <button
+                                    onClick={() => viewResultDetails(att)}
+                                    className="p-2 hover:bg-[#eb1b23]/5 rounded-lg text-slate-400 hover:text-[#eb1b23] transition-colors"
+                                    title="Review Details"
+                                  >
+                                    <FileText className="w-4 h-4" />
+                                  </button>
+                                </div>
                               </div>
-                            ) : <div className="hidden sm:block" />}
-                            <button
-                              onClick={() => viewResultDetails(result)}
-                              className="flex items-center justify-center sm:justify-start gap-1 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-white border-2 border-gray-200 text-slate-700 hover:border-[#eb1b23] hover:text-[#eb1b23] font-medium rounded-lg sm:rounded-xl transition text-xs sm:text-sm whitespace-nowrap flex-shrink-0"
-                            >
-                              <FileText className="w-3 sm:w-4 h-3 sm:h-4" />
-                              <span>Review</span>
-                            </button>
+                            ))}
                           </div>
                         </div>
                       </div>
@@ -1526,25 +1564,22 @@ export default function Exams() {
 
       {/* Toast Notification */}
       {toast && (
-        <div className={`fixed bottom-3 left-3 right-3 sm:bottom-6 sm:right-6 z-[100] transition-all duration-300 transform ${
-          toast.visible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
-        }`}>
-          <div className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-3 sm:py-4 rounded-lg sm:rounded-xl shadow-2xl border-l-4 ${
-            toast.type === 'success' ? 'bg-white border-green-500 text-slate-800' :
-            toast.type === 'error' ? 'bg-white border-red-500 text-slate-800' :
-            toast.type === 'warning' ? 'bg-white border-amber-500 text-slate-800' :
-            'bg-white border-blue-500 text-slate-800'
+        <div className={`fixed bottom-3 left-3 right-3 sm:bottom-6 sm:right-6 z-[100] transition-all duration-300 transform ${toast.visible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
           }`}>
-            <div className={`p-1 sm:p-2 rounded-lg flex-shrink-0 ${
-              toast.type === 'success' ? 'bg-green-100' :
-              toast.type === 'error' ? 'bg-red-100' :
-              toast.type === 'warning' ? 'bg-amber-100' :
-              'bg-blue-100'
+          <div className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-3 sm:py-4 rounded-lg sm:rounded-xl shadow-2xl border-l-4 ${toast.type === 'success' ? 'bg-white border-green-500 text-slate-800' :
+              toast.type === 'error' ? 'bg-white border-red-500 text-slate-800' :
+                toast.type === 'warning' ? 'bg-white border-amber-500 text-slate-800' :
+                  'bg-white border-blue-500 text-slate-800'
             }`}>
+            <div className={`p-1 sm:p-2 rounded-lg flex-shrink-0 ${toast.type === 'success' ? 'bg-green-100' :
+                toast.type === 'error' ? 'bg-red-100' :
+                  toast.type === 'warning' ? 'bg-amber-100' :
+                    'bg-blue-100'
+              }`}>
               {toast.type === 'success' ? <Check className="w-4 sm:w-5 h-4 sm:h-5 text-green-600" /> :
-               toast.type === 'error' ? <AlertTriangle className="w-4 sm:w-5 h-4 sm:h-5 text-red-600" /> :
-               toast.type === 'warning' ? <AlertTriangle className="w-4 sm:w-5 h-4 sm:h-5 text-amber-600" /> :
-               <Info className="w-4 sm:w-5 h-4 sm:h-5 text-blue-600" />}
+                toast.type === 'error' ? <AlertTriangle className="w-4 sm:w-5 h-4 sm:h-5 text-red-600" /> :
+                  toast.type === 'warning' ? <AlertTriangle className="w-4 sm:w-5 h-4 sm:h-5 text-amber-600" /> :
+                    <Info className="w-4 sm:w-5 h-4 sm:h-5 text-blue-600" />}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs sm:text-sm font-medium line-clamp-3">{toast.message}</p>
