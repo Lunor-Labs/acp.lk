@@ -13,6 +13,7 @@ import { galleryRouter } from './routes/gallery.routes.js';
 import { reviewsRouter } from './routes/reviews.routes.js';
 import { successRouter } from './routes/success.routes.js';
 import { rankListsRouter } from './routes/rank-lists.routes.js';
+import { mediaRouter } from './routes/media.routes.js';
 import cors from 'cors';
 
 const app = express();
@@ -40,6 +41,7 @@ app.use(cors({
 }));
 
 app.use(express.json());
+app.use('/media', mediaRouter);
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 app.use('/api/auth', authRouter);
