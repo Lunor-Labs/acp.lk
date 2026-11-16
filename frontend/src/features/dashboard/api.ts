@@ -55,7 +55,7 @@ export interface StudyPack {
   title: string;
   description: string;
   subject: string;
-  price: number;
+  price: number | string; // API returns numeric columns as strings, e.g. "5000.00"
   is_free: boolean;
   materials: VideoLesson[];
   created_at: string;
@@ -63,13 +63,15 @@ export interface StudyPack {
   sales_count?: number;
 }
 
+// apiClient already unwraps { success, data }, so do NOT read .data again
 export const StudyPacksApi = {
-  getTeacherPacks: () => apiClient.get<{ data: StudyPack[] }>('/studypacks/teacher').then(r => r.data),
-  createPack: (data: Omit<StudyPack, 'id' | 'created_at' | 'status' | 'sales_count'>) => apiClient.post<{ data: StudyPack }>('/studypacks', data).then(r => r.data),
-  updatePack: (id: string, data: Partial<StudyPack>) => apiClient.patch<{ data: StudyPack }>(`/studypacks/${id}`, data).then(r => r.data),
+  getTeacherPacks: () => apiClient.get<StudyPack[]>('/studypacks/teacher'),
+  createPack: (data: Omit<StudyPack, 'id' | 'created_at' | 'status' | 'sales_count'>) =>
+    apiClient.post<StudyPack>('/studypacks', data),
+  updatePack: (id: string, data: Partial<StudyPack>) =>
+    apiClient.patch<StudyPack>(`/studypacks/${id}`, data),
   deletePack: (id: string) => apiClient.delete(`/studypacks/${id}`),
 };
-
 export const FilesApi = {
   getSignedUploadUrl: (bucket: string, path: string) =>
     apiClient.post<{ signedUrl: string; token: string; path: string }>('/files/signed-upload-url', { bucket, path }),

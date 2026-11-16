@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { mediaUrl } from '@/lib/media';
 import {
   ExamsApi,
   type Exam,
@@ -290,9 +291,7 @@ export default function StudentExams() {
     const total = activeExam.isPdf ? (activeExam.pdfQuestionCount || 0) : (activeExam.questions?.length || 0);
     const answered = Object.keys(activeExam.answers).length;
     const { text: timeText, isWarning } = getRemainingTime();
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-    const getImageUrl = (path: string) =>
-      `${supabaseUrl}/storage/v1/object/public/acp/${path.replace('acp/', '')}`;
+    const getImageUrl = (path: string) => mediaUrl(path);
 
     return (
       <div className="fixed inset-0 bg-gray-100 z-50 flex flex-col">

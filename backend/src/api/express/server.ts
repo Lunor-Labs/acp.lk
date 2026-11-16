@@ -23,19 +23,17 @@ const allowedOrigins = env.ALLOWED_ORIGINS
   ? env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
   : ['http://localhost:5173'];
 
+const previewPattern = /^https:\/\/acp-lk-[a-z0-9-]+-lunor-labs\.vercel\.app$/;
+
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, curl, Postman)
     if (!origin) return callback(null, true);
-    // Allow any localhost port in development
     if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
       return callback(null, true);
     }
-    // Check against allowed origins list
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    callback(new Error(`CORS: origin ${origin} not allowed`));
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    if (previewPattern.test(origin)) return callback(null, true);
+    callback(null, false);
   },
   credentials: true,
 }));

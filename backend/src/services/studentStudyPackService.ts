@@ -19,13 +19,20 @@ class StudentStudyPackService {
 
     return {
       purchased: allPacks.filter(p => purchasedIds.has(p.id) || p.is_free),
-      available: allPacks.filter(p => !purchasedIds.has(p.id) && !p.is_free),
+      // paid packs the student does not own: no lesson links in the response
+      available: allPacks
+        .filter(p => !purchasedIds.has(p.id) && !p.is_free)
+        .map(p => ({ ...p, materials: [] })),
     };
   }
 
   async purchasePack(studentId: string, packId: string) {
     const pack = await this.packRepo.findById(packId);
     if (!pack) throw AppError.notFound('Study pack not found');
+
+    // Until a payment flow exists, students can only self-enroll in free packs.
+    if (!pack.is_free) throw AppError.forbidden('Payment required for this study pack');
+
     const existing = await this.purchaseRepo.findExisting(studentId, packId);
     if (existing) throw AppError.conflict('Already purchased');
     return this.purchaseRepo.create({
