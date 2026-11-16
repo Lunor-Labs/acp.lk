@@ -1,16 +1,10 @@
 import { X, Calendar, Clock, Edit, Trash2, FileText, Image } from 'lucide-react';
 import type { ExamDetail, ManualQuestion } from './types';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { mediaUrl } from '@/lib/media';
 
-// Derives public URL from stored image_path (format: "acp/questions/images/foo.jpg")
-function getImageUrl(imagePath: string): string {
-  // image_path is stored as "acp/path/to/file" - strip the bucket prefix
-  const path = imagePath.startsWith('acp/') ? imagePath.slice(4) : imagePath;
-  // The backend's /api/files/public-url is async, so we construct the URL directly
-  // from the known Supabase public URL pattern via env var
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-  return `${supabaseUrl}/storage/v1/object/public/acp/${path}`;
-}
+// image_path is stored as "acp/questions/images/foo.jpg"; mediaUrl() maps it to the API media route
+const getImageUrl = (imagePath: string): string => mediaUrl(imagePath);
 
 interface ExamDetailModalProps {
   open: boolean;

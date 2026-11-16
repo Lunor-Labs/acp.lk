@@ -1,0 +1,50 @@
+﻿features\dashboard\components\student\StudentExams.tsx:295: `${supabaseUrl}/storage/v1/object/public/acp/${path.replace('acp/', '')}`;
+features\dashboard\components\student\StudentExams.tsx:365: {q.image_path && (
+features\dashboard\components\student\StudentExams.tsx:367: <img src={getImageUrl(q.image_path)} alt={`Question ${activeExam.currentQuestion + 1}`}
+features\dashboard\components\student\StudentExams.tsx:404: {q.image_path && (
+features\dashboard\components\student\StudentExams.tsx:406: <img src={getImageUrl(q.image_path)} alt={`Question ${qIdx + 1}`}
+features\dashboard\components\student\StudentProfile.tsx:39: const url = await FilesApi.getPublicUrl('acp', storagePath);
+features\dashboard\components\teacher\exams\ExamDetailModal.tsx:5: // Derives public URL from stored image_path (format: "acp/questions/images/foo.jpg")
+features\dashboard\components\teacher\exams\ExamDetailModal.tsx:7: // image_path is stored as "acp/path/to/file" - strip the bucket prefix
+features\dashboard\components\teacher\exams\ExamDetailModal.tsx:12: return `${supabaseUrl}/storage/v1/object/public/acp/${path}`;
+features\dashboard\components\teacher\exams\ExamDetailModal.tsx:329: {editQuestionData?.image_preview || (editQuestionData?.image_path && !editQuestionData?.remove_image) ? (
+features\dashboard\components\teacher\exams\ExamDetailModal.tsx:341: src={editQuestionData.image_preview || getImageUrl(editQuestionData.image_path || '')}
+features\dashboard\components\teacher\exams\ExamDetailModal.tsx:426: {question.image_path && (
+features\dashboard\components\teacher\exams\ExamDetailModal.tsx:429: src={getImageUrl(question.image_path)}
+features\dashboard\components\teacher\exams\types.ts:28: image_path?: string;
+features\dashboard\components\teacher\exams\types.ts:50: image_path?: string;
+features\dashboard\components\teacher\GalleryManager.tsx:32: const publicUrl = await FilesApi.getPublicUrl('acp', storagePath);
+features\dashboard\components\teacher\SuccessManager.tsx:59: console.debug('[SuccessManager] raw stories from API:', JSON.stringify(data.map(s => ({ id: s.id, image_path: s.image_path }))));
+features\dashboard\components\teacher\SuccessManager.tsx:63: if (!s.image_path || s.image_path.startsWith('http')) return s;
+features\dashboard\components\teacher\SuccessManager.tsx:64: const storagePath = s.image_path.includes('/')
+features\dashboard\components\teacher\SuccessManager.tsx:65: ? s.image_path
+features\dashboard\components\teacher\SuccessManager.tsx:66: : `images/success/${s.image_path}`;
+features\dashboard\components\teacher\SuccessManager.tsx:68: const url = await FilesApi.getPublicUrl('acp', storagePath);
+features\dashboard\components\teacher\SuccessManager.tsx:69: console.debug('[SuccessManager] resolved', s.image_path, '->', url);
+features\dashboard\components\teacher\SuccessManager.tsx:70: return { ...s, image_path: url };
+features\dashboard\components\teacher\SuccessManager.tsx:72: console.warn('[SuccessManager] could not resolve path:', s.image_path, e);
+features\dashboard\components\teacher\SuccessManager.tsx:102: setPreviewUrl(story.image_path ?? null);
+features\dashboard\components\teacher\SuccessManager.tsx:133: let imagePath = editing?.image_path;
+features\dashboard\components\teacher\SuccessManager.tsx:138: imagePath = await FilesApi.getPublicUrl('acp', storagePath);
+features\dashboard\components\teacher\SuccessManager.tsx:147: image_path: imagePath || undefined,
+features\dashboard\components\teacher\SuccessManager.tsx:350: {story.image_path ? (
+features\dashboard\components\teacher\SuccessManager.tsx:351: <img src={story.image_path} alt={story.full_name ?? ''} className="w-full h-full object-cover" />
+features\dashboard\components\teacher\SuccessManager.tsx:417: {deleteTarget.image_path && (
+features\dashboard\components\teacher\SuccessManager.tsx:419: <img src={deleteTarget.image_path} alt="" className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
+features\dashboard\components\teacher\TeacherExams.tsx:40: image_path?: string;
+features\dashboard\components\teacher\TeacherExams.tsx:135: image_path: q.image_path,
+features\dashboard\components\teacher\TeacherExams.tsx:221: let finalImagePath: string | null = editQuestionData.image_path || null;
+features\dashboard\components\teacher\TeacherExams.tsx:238: image_path: finalImagePath,
+features\dashboard\components\teacher\TeacherExams.tsx:245: image_path: finalImagePath || undefined
+features\dashboard\components\teacher\TeacherExams.tsx:322: const validQuestions = questions.filter(q => q.question_text.trim() || q.image_file || q.image_path);
+features\dashboard\components\teacher\TeacherExams.tsx:344: correct_answer: q.correct_answer, marks: q.marks, image_path: imagePath,
+features\dashboard\components\teacher\TeacherExams.tsx:517: setEditingQuestionId(q.id); setEditQuestionData({ id: q.id, question_text: q.question_text, options: [...q.options], marks: q.marks, image_path: q.image_path });
+features\dashboard\components\teacher\TeacherProfile.tsx:41: const url = await FilesApi.getPublicUrl('acp', storagePath);
+features\dashboard\components\teacher\TestResultsManager.tsx:46: const publicUrl = await FilesApi.getPublicUrl('acp', storagePath);
+features\dashboard\components\teacher\TestResultsManager.tsx:50: image_path: storagePath,
+features\dashboard\api.ts:94: getPublicUrl: (bucket: string, path: string): Promise<string> =>
+features\exams\api.ts:10: image_path?: string | null;
+features\landing\components\Success\Success.tsx:28: image: s.image_path ?? '',
+features\teacher\api.ts:63: image_path: string;
+features\teacher\api.ts:70: createRankList: (data: { year: number; exam_name: string; image_path: string; public_url?: string }) =>
+features\teacher\api.ts:84: image_path?: string;

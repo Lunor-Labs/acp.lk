@@ -109,7 +109,7 @@ export default function TeacherStudyPacks() {
 
   function handleEditPack(pack: StudyPack) {
     setEditingPackId(pack.id);
-    setFormData({ title: pack.title, subject: pack.subject, price: pack.price.toString(), description: pack.description || '', is_free: pack.is_free });
+    setFormData({ title: pack.title, subject: pack.subject, price: String(pack.price ?? ''), description: pack.description || '', is_free: pack.is_free });
     setVideos(pack.materials || []);
     setMobileTab('create');
   }
@@ -229,7 +229,7 @@ export default function TeacherStudyPacks() {
                     <div className="flex items-center gap-3 mt-1 flex-wrap text-xs text-gray-400">
                       <span className="flex items-center gap-1"><Video className="w-3 h-3" />{pack.materials?.length || 0} lessons</span>
                       <span className="flex items-center gap-1"><ShoppingBag className="w-3 h-3" />{pack.sales_count ?? 0} sales</span>
-                      {!pack.is_free && <span className="font-semibold text-gray-600">LKR {pack.price.toLocaleString()}</span>}
+                      {!pack.is_free && <span className="font-semibold text-gray-600">LKR {Number(pack.price).toLocaleString()}</span>}
                     </div>
                   </div>
 
