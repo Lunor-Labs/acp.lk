@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-
+import { SuccessApi } from '@/features/teacher/api';
+import "./Success.css";
 
 interface FormattedSuccessStudent {
   name: string;
@@ -9,7 +10,6 @@ interface FormattedSuccessStudent {
   faculty: string;
   university: string;
 }
-import "./Success.css";
 
 const Success: React.FC = () => {
   const [marqueeStudents, setMarqueeStudents] = useState<FormattedSuccessStudent[]>([]);
@@ -20,8 +20,17 @@ const Success: React.FC = () => {
     const fetchStudents = async () => {
       try {
         setLoading(true);
-        // TODO: fetch from /api/success once backend route is available
-        setMarqueeStudents([]);
+        const rows = await SuccessApi.getStories();
+        setMarqueeStudents(
+          (rows ?? []).map((s) => ({
+            name: s.full_name ?? '',
+            subtitle: s.index_no ?? '',
+            image: s.image_path ?? '',
+            grade: s.results ?? '',
+            faculty: s.faculty ?? '',
+            university: s.university ?? '',
+          }))
+        );
       } catch {
         setHasError(true);
         setMarqueeStudents([]);
